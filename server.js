@@ -1170,6 +1170,7 @@ app.get('/admin/api/pause-status', requireAdmin, (req, res) => {
     res.json({ paused: ordersPaused });
 });
 
+// ── Admin: stream config ────────────────────────────────────────────────────
 app.get('/admin/api/stream', requireAdmin, (req, res) => {
     res.json(db.getStreamConfig());
 });
