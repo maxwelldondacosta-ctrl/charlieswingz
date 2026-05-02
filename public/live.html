@@ -708,6 +708,12 @@
         }
     }
 
+    function stateKey(cfg) {
+        if (cfg.isLive && cfg.streamUrl) return 'live';
+        if (!cfg.isLive && (cfg.nextStreamAt || cfg.channelId || cfg.streamTitle)) return 'offline';
+        return 'none';
+    }
+
     // ── Poll /api/stream every 30s ────────────────────────────────────────────
     async function fetchAndRender() {
         try {
@@ -715,7 +721,7 @@
             if (!res.ok) return;
             const cfg = await res.json();
             // Only re-render if state changed (avoids iframe src flicker)
-            const newState = cfg.isLive ? 'live' : 'offline';
+            const newState = stateKey(cfg);
             if (newState !== currentState) {
                 currentState = newState;
                 renderState(cfg);
@@ -725,10 +731,14 @@
 
     // ── Init ──────────────────────────────────────────────────────────────────
     (async function init() {
-        const res = await fetch('/api/stream');
-        const cfg = await res.json();
-        currentState = cfg.isLive ? 'live' : 'offline';
-        renderState(cfg);
+        try {
+            const res = await fetch('/api/stream');
+            const cfg = await res.json();
+            currentState = stateKey(cfg);
+            renderState(cfg);
+        } catch (e) {
+            document.getElementById('state-none').style.display = 'flex';
+        }
         pollInterval = setInterval(fetchAndRender, 30000);
     })();
 </script>
