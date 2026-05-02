@@ -3361,6 +3361,44 @@
                 window.history.replaceState({}, '', '/');
             }
         })();
+
+        // ── Reorder pre-fill ─────────────────────────────────────────────────
+        (function handleReorder() {
+            const params    = new URLSearchParams(window.location.search);
+            const reorderId = params.get('reorder');
+            if (!reorderId) return;
+
+            fetch('/api/orders/' + encodeURIComponent(reorderId) + '/items')
+                .then(r => r.ok ? r.json() : null)
+                .then(data => {
+                    if (!data || !data.items || data.items.length === 0) return;
+                    const allItems = Object.assign({}, MENU.wings, MENU.meals, MENU.bundles, MENU.sides);
+                    data.items.forEach(item => {
+                        if (!allItems[item.id]) return; // item no longer on menu — skip
+                        const existing = cart.findIndex(c => c.id === item.id);
+                        if (existing >= 0) {
+                            cart[existing].quantity += (item.quantity || 1);
+                        } else {
+                            cart.push({
+                                id:            item.id,
+                                name:          item.name,
+                                price:         allItems[item.id].price, // use current price
+                                quantity:      item.quantity || 1,
+                                wingCut:       item.wingCut       || 'Mixed',
+                                flavourChoice: item.flavourChoice || null,
+                                sauce:         item.sauce         || null,
+                                drinkChoice:   item.drinkChoice   || null
+                            });
+                        }
+                    });
+                    updateCartUI();
+                    // Open the cart sidebar so the customer sees their pre-filled items
+                    const sidebar = document.querySelector('.cart-sidebar');
+                    if (sidebar) sidebar.classList.add('active');
+                })
+                .catch(() => { /* fetch failed — silently ignore */ });
+        })();
+
         function showPaymentMessage(type, message) {
             const messageDiv = document.getElementById('payment-message');
             messageDiv.className = `payment-message ${type}`;
