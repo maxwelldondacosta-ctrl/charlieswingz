@@ -592,12 +592,21 @@
 
 <script>
     // ── Helpers ───────────────────────────────────────────────────────────────
+    function escapeHtml(s) {
+        return String(s ?? '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+    }
+
     function getSession() {
         try { return JSON.parse(localStorage.getItem('cw_session') || 'null'); } catch { return null; }
     }
     function getToken() {
         const s = getSession();
-        return s ? s.token : null;
+        return (s && typeof s === 'object' && s.token) ? s.token : null;
     }
     function authHeaders() {
         return { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + getToken() };
@@ -697,7 +706,7 @@
             if (res.status === 401) { logout(); return; }
             if (!res.ok) return;
             renderLoyalty(await res.json());
-        } catch (e) { /* server offline */ }
+        } catch (e) { /* server offline — leave Loading… in place */ }
     }
 
     function renderLoyalty(data) {
@@ -726,7 +735,7 @@
         const remaining = tierTarget - progressInTier;
         document.getElementById('stamp-msg').innerHTML = allClaimed
             ? 'You\'ve claimed all rewards — keep ordering to earn more.'
-            : `<strong>${remaining}</strong> more stamp${remaining === 1 ? '' : 's'} to unlock <strong>${nextTier.name}</strong>`;
+            : `<strong>${remaining}</strong> more stamp${remaining === 1 ? '' : 's'} to unlock <strong>${escapeHtml(nextTier.name)}</strong>`;
 
         // Rewards
         const rewardsEl = document.getElementById('loyalty-rewards');
@@ -735,12 +744,15 @@
             return;
         }
         rewardsEl.innerHTML = rewards.map(r => `
-            <div class="reward-card" onclick="copyCode('${r.code}', this)">
-                <div class="reward-card-label">${r.description || 'Loyalty Reward'}</div>
-                <div class="reward-card-code">${r.code}</div>
+            <div class="reward-card" data-code="${escapeHtml(r.code)}">
+                <div class="reward-card-label">${escapeHtml(r.description || 'Loyalty Reward')}</div>
+                <div class="reward-card-code">${escapeHtml(r.code)}</div>
                 <div class="reward-card-hint">Tap to copy</div>
             </div>
         `).join('');
+        rewardsEl.querySelectorAll('.reward-card').forEach(card => {
+            card.addEventListener('click', () => copyCode(card.dataset.code, card));
+        });
     }
 
     // ── Orders tab ────────────────────────────────────────────────────────────
@@ -766,21 +778,25 @@
                 day: 'numeric', month: 'short', year: 'numeric',
                 hour: '2-digit', minute: '2-digit'
             });
-            const statusClass = 'status-' + (order.status || 'received');
-            const itemsHtml = (order.items || []).map(item =>
-                `<span>${item.quantity}× ${item.name}</span>${item.flavourChoice ? ` (${Array.isArray(item.flavourChoice) ? item.flavourChoice.join(', ') : item.flavourChoice})` : ''}`
-            ).join('<br>');
+            const safeStatus = /^[a-z]+$/.test(order.status || '') ? order.status : 'received';
+            const statusClass = 'status-' + safeStatus;
+            const itemsHtml = (order.items || []).map(item => {
+                const flavour = item.flavourChoice
+                    ? ` (${escapeHtml(Array.isArray(item.flavourChoice) ? item.flavourChoice.join(', ') : item.flavourChoice)})`
+                    : '';
+                return `<span>${escapeHtml(String(item.quantity || 1))}× ${escapeHtml(item.name || '')}</span>${flavour}`;
+            }).join('<br>');
             const total = '£' + ((order.totalPence || 0) / 100).toFixed(2);
             return `
                 <div class="order-card">
                     <div class="order-card-header">
                         <span class="order-date">${date}</span>
-                        <span class="status-badge ${statusClass}">${order.status || 'received'}</span>
+                        <span class="status-badge ${statusClass}">${escapeHtml(safeStatus)}</span>
                     </div>
                     <div class="order-items">${itemsHtml || '<em>No items</em>'}</div>
                     <div class="order-footer">
                         <span class="order-total">${total}</span>
-                        <a class="reorder-btn" href="/?reorder=${order.id}">Reorder</a>
+                        <a class="reorder-btn" href="/?reorder=${encodeURIComponent(order.id || '')}">Reorder</a>
                     </div>
                 </div>
             `;
@@ -794,7 +810,7 @@
             if (res.status === 401) { logout(); return; }
             if (!res.ok) return;
             renderGame(await res.json());
-        } catch (e) { /* server offline */ }
+        } catch (e) { /* server offline — leave Loading… in place */ }
     }
 
     function renderGame(data) {
@@ -822,12 +838,15 @@
             return;
         }
         rewardsEl.innerHTML = rewards.map(r => `
-            <div class="reward-card" onclick="copyCode('${r.code}', this)">
-                <div class="reward-card-label">${r.label || 'Game Reward'}</div>
-                <div class="reward-card-code">${r.code}</div>
+            <div class="reward-card" data-code="${escapeHtml(r.code)}">
+                <div class="reward-card-label">${escapeHtml(r.label || 'Game Reward')}</div>
+                <div class="reward-card-code">${escapeHtml(r.code)}</div>
                 <div class="reward-card-hint">Tap to copy</div>
             </div>
         `).join('');
+        rewardsEl.querySelectorAll('.reward-card').forEach(card => {
+            card.addEventListener('click', () => copyCode(card.dataset.code, card));
+        });
     }
 
     // ── Account tab ───────────────────────────────────────────────────────────
@@ -849,6 +868,8 @@
 
     async function saveAccount() {
         const msgEl = document.getElementById('save-msg');
+        const saveBtn = document.querySelector('#tab-account .btn-primary');
+        if (saveBtn) saveBtn.disabled = true;
         const contactPref = document.querySelector('input[name="contactPref"]:checked')?.value || 'sms';
         const body = {
             name:        document.getElementById('acc-name').value.trim(),
@@ -877,6 +898,8 @@
             msgEl.style.color   = '#ff6b6b';
             msgEl.textContent   = '✗ Save failed — please try again.';
             msgEl.style.display = 'block';
+        } finally {
+            if (saveBtn) saveBtn.disabled = false;
         }
     }
 
@@ -888,10 +911,11 @@
         if (!email) return;
         btn.disabled = true;
         try {
-            await fetch('/api/account/reset-request', {
+            const resetRes = await fetch('/api/account/reset-request', {
                 method: 'POST', headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email })
             });
+            if (!resetRes.ok) throw new Error(resetRes.status);
             msgEl.style.color   = '#4caf50';
             msgEl.textContent   = '✓ Reset link sent — check your email.';
             msgEl.style.display = 'block';
