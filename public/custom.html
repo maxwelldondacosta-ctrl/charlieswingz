@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Charlie's Wingz — Custom Orders & Events</title>
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Bebas+Neue&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root { --black: #0a0a0a; --gold: #d4af37; --cream: #f5f0e8; --dark: #1a1a1a; }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--black);
+            color: var(--cream);
+            line-height: 1.6;
+            border-left: 4px solid var(--gold);
+            border-right: 4px solid var(--gold);
+            border-bottom: 4px solid var(--gold);
+        }
+
+        .header {
+            text-align: center;
+            padding: 2rem 1rem;
+            border-bottom: 2px solid var(--gold);
+        }
+        .header img { width: 200px; margin-bottom: 1rem; }
+        .header h1 {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 2.2rem;
+            color: var(--gold);
+            letter-spacing: 0.05em;
+        }
+        .header p { color: #aaa; font-size: 0.9rem; margin-top: 0.3rem; }
+
+        .container { max-width: 600px; margin: 0 auto; padding: 2rem 1.5rem 3rem; }
+
+        .intro {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        .intro p {
+            color: #ccc;
+            font-size: 0.9rem;
+            line-height: 1.8;
+            margin-bottom: 0.75rem;
+        }
+
+        .features {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.75rem;
+            margin-bottom: 2rem;
+        }
+        .feature {
+            background: var(--dark);
+            border: 1px solid rgba(212,175,55,0.15);
+            border-radius: 8px;
+            padding: 1rem;
+            text-align: center;
+        }
+        .feature-icon { font-size: 1.5rem; margin-bottom: 0.4rem; }
+        .feature-title { font-size: 0.8rem; font-weight: 700; color: var(--gold); }
+        .feature-desc { font-size: 0.75rem; color: #aaa; margin-top: 0.2rem; }
+
+        .notice {
+            background: rgba(212,175,55,0.08);
+            border-left: 3px solid var(--gold);
+            padding: 1rem 1.2rem;
+            border-radius: 4px;
+            margin-bottom: 2rem;
+            font-size: 0.85rem;
+            color: var(--cream);
+        }
+
+        .form-section {
+            background: var(--dark);
+            border: 1px solid rgba(212,175,55,0.2);
+            border-radius: 12px;
+            padding: 1.5rem;
+        }
+        .form-title {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 1.3rem;
+            color: var(--gold);
+            letter-spacing: 0.05em;
+            margin-bottom: 1rem;
+            text-align: center;
+        }
+
+        .form-group { margin-bottom: 0.75rem; }
+        .form-label { font-size: 0.8rem; color: var(--gold); display: block; margin-bottom: 0.3rem; }
+        .form-input {
+            width: 100%;
+            padding: 0.65rem 0.75rem;
+            background: #111;
+            border: 1px solid #333;
+            border-radius: 6px;
+            color: var(--cream);
+            font-size: 0.9rem;
+            font-family: 'Inter', sans-serif;
+        }
+        .form-input:focus { outline: none; border-color: var(--gold); }
+        .form-input::placeholder { color: #555; }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.75rem;
+        }
+
+        .submit-btn {
+            width: 100%;
+            padding: 0.9rem;
+            background: var(--gold);
+            color: #000;
+            border: none;
+            border-radius: 6px;
+            font-weight: 700;
+            font-size: 0.95rem;
+            cursor: pointer;
+            letter-spacing: 0.03em;
+            margin-top: 0.5rem;
+        }
+        .submit-btn:hover { background: var(--cream); }
+        .submit-btn:disabled { opacity: 0.5; cursor: wait; }
+
+        .form-error { display: none; color: #c0392b; font-size: 0.8rem; margin-top: 0.5rem; text-align: center; }
+        .form-success { display: none; color: #4caf50; font-size: 0.85rem; margin-top: 0.75rem; text-align: center; line-height: 1.6; }
+
+        .ideas {
+            margin-top: 2rem;
+            text-align: center;
+        }
+        .ideas h3 {
+            font-family: 'Playfair Display', serif;
+            color: var(--gold);
+            font-size: 1rem;
+            margin-bottom: 1rem;
+        }
+        .ideas-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 0.5rem;
+        }
+        .idea-tag {
+            background: rgba(212,175,55,0.08);
+            border: 1px solid rgba(212,175,55,0.2);
+            border-radius: 20px;
+            padding: 0.4rem 0.8rem;
+            font-size: 0.75rem;
+            color: #ccc;
+        }
+
+        .footer-links {
+            text-align: center;
+            margin-top: 2.5rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid #333;
+        }
+        .footer-links a {
+            color: var(--gold);
+            text-decoration: none;
+            font-size: 0.85rem;
+            margin: 0 0.5rem;
+        }
+        .footer-links a:hover { text-decoration: underline; }
+
+        @media (max-width: 480px) {
+            .features { grid-template-columns: 1fr; }
+            .form-row { grid-template-columns: 1fr; }
+            .ideas-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <a href="/"><img src="logo.png" alt="Charlie's Wingz"></a>
+    <h1>Custom Orders & Events</h1>
+    <p>Premium wings for any occasion 👑</p>
+</div>
+
+<div class="container">
+    <div class="intro">
+        <p>Whether it's a birthday party, office lunch, football night with the boys, or a full-blown event — we've got you covered. Tell us what you need and we'll make it happen.</p>
+    </div>
+
+    <div class="features">
+        <div class="feature">
+            <div class="feature-icon">🍗</div>
+            <div class="feature-title">Any Size</div>
+            <div class="feature-desc">From 20 to 500+ wings</div>
+        </div>
+        <div class="feature">
+            <div class="feature-icon">🚚</div>
+            <div class="feature-title">Free Delivery</div>
+            <div class="feature-desc">Delivered hot to your door</div>
+        </div>
+        <div class="feature">
+            <div class="feature-icon">🎨</div>
+            <div class="feature-title">Custom Menus</div>
+            <div class="feature-desc">Mix flavours & sides your way</div>
+        </div>
+        <div class="feature">
+            <div class="feature-icon">📅</div>
+            <div class="feature-title">Scheduled</div>
+            <div class="feature-desc">Pick your date & time</div>
+        </div>
+    </div>
+
+    <div class="notice">
+        <strong>📋 48 Hours Notice Required</strong><br>
+        All custom and event orders need at least 48 hours notice so we can prep fresh for you. For very large orders (200+ wings), please give us as much notice as possible.
+    </div>
+
+    <div class="form-section">
+        <div class="form-title">👑 Send Your Request</div>
+
+        <div id="custom-order-form">
+            <div class="form-group">
+                <label class="form-label">Your Name *</label>
+                <input type="text" id="co-name" class="form-input" placeholder="Full name">
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">Phone *</label>
+                    <input type="tel" id="co-phone" class="form-input" placeholder="07xxx xxxxxx">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Email</label>
+                    <input type="email" id="co-email" class="form-input" placeholder="email@example.com">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">Date Needed *</label>
+                    <input type="date" id="co-date" class="form-input" style="color-scheme:dark">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Time Needed</label>
+                    <input type="time" id="co-time" class="form-input" style="color-scheme:dark">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">Approx. Guests</label>
+                    <input type="number" id="co-guests" class="form-input" placeholder="e.g. 20" min="1">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Occasion</label>
+                    <input type="text" id="co-occasion" class="form-input" placeholder="e.g. Birthday, Office">
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">What do you need? *</label>
+                <textarea id="co-details" class="form-input" rows="4" placeholder="e.g. 100 wings — mixed flavours, 50 Lemon Pepper Gold, 50 Korean Sweet Heat. Need fries and drinks too. Delivering to E4 area." style="resize:vertical"></textarea>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Delivery Address (if known)</label>
+                <input type="text" id="co-address" class="form-input" placeholder="Full address or postcode">
+            </div>
+
+            <button class="submit-btn" id="co-submit" onclick="submitCustomOrder()">SEND REQUEST</button>
+            <p class="form-error" id="co-error"></p>
+            <p class="form-success" id="co-success"></p>
+        </div>
+    </div>
+
+    <div class="ideas">
+        <h3>Popular Requests</h3>
+        <div class="ideas-grid">
+            <div class="idea-tag">🎂 Birthday Parties</div>
+            <div class="idea-tag">🏢 Office Lunches</div>
+            <div class="idea-tag">⚽ Match Day</div>
+            <div class="idea-tag">🎉 House Parties</div>
+            <div class="idea-tag">🎓 Graduations</div>
+            <div class="idea-tag">💼 Corporate Events</div>
+        </div>
+    </div>
+
+    <div class="footer-links">
+        <a href="/">← Back to Menu</a> · <a href="/terms">Terms</a> · <a href="/allergens">Allergens</a>
+    </div>
+</div>
+
+<script>
+    // Set min date to 48hrs from now
+    (function() {
+        const dateInput = document.getElementById('co-date');
+        if (dateInput) {
+            const minDate = new Date(Date.now() + 48 * 60 * 60 * 1000);
+            dateInput.min = minDate.toISOString().split('T')[0];
+        }
+    })();
+
+    async function submitCustomOrder() {
+        const name = document.getElementById('co-name').value.trim();
+        const phone = document.getElementById('co-phone').value.trim();
+        const email = document.getElementById('co-email').value.trim();
+        const date = document.getElementById('co-date').value;
+        const time = document.getElementById('co-time').value;
+        const guests = document.getElementById('co-guests').value;
+        const occasion = document.getElementById('co-occasion').value.trim();
+        const details = document.getElementById('co-details').value.trim();
+        const address = document.getElementById('co-address').value.trim();
+        const errEl = document.getElementById('co-error');
+        const successEl = document.getElementById('co-success');
+        errEl.style.display = 'none';
+        successEl.style.display = 'none';
+
+        if (!name) { errEl.textContent = 'Please enter your name.'; errEl.style.display = 'block'; return; }
+        if (!phone) { errEl.textContent = 'Please enter your phone number.'; errEl.style.display = 'block'; return; }
+        if (!date) { errEl.textContent = 'Please select a date.'; errEl.style.display = 'block'; return; }
+        if (!details) { errEl.textContent = 'Please tell us what you need.'; errEl.style.display = 'block'; return; }
+
+        // Check 48hr lead time
+        const eventDate = new Date(date + 'T00:00:00');
+        const now = new Date();
+        if ((eventDate - now) / (1000 * 60 * 60) < 48) {
+            errEl.textContent = 'We need at least 48 hours notice. Please choose a later date.';
+            errEl.style.display = 'block';
+            return;
+        }
+
+        // Build full details string with extras
+        let fullDetails = details;
+        if (occasion) fullDetails = `[${occasion}] ${fullDetails}`;
+        if (time) fullDetails += ` | Time: ${time}`;
+        if (address) fullDetails += ` | Address: ${address}`;
+
+        const btn = document.getElementById('co-submit');
+        btn.disabled = true;
+        btn.textContent = 'Sending...';
+
+        try {
+            const res = await fetch('/api/catering', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name, phone, email, date, guests, details: fullDetails })
+            });
+            const data = await res.json();
+            if (data.success) {
+                successEl.innerHTML = `✓ Request sent! Reference: <strong>${data.requestId}</strong><br>We'll get back to you shortly to confirm details and pricing. 👑`;
+                successEl.style.display = 'block';
+                document.getElementById('co-name').value = '';
+                document.getElementById('co-phone').value = '';
+                document.getElementById('co-email').value = '';
+                document.getElementById('co-date').value = '';
+                document.getElementById('co-time').value = '';
+                document.getElementById('co-guests').value = '';
+                document.getElementById('co-occasion').value = '';
+                document.getElementById('co-details').value = '';
+                document.getElementById('co-address').value = '';
+            } else {
+                errEl.textContent = data.error || 'Something went wrong. Please try again.';
+                errEl.style.display = 'block';
+            }
+        } catch(e) {
+            errEl.textContent = 'Network error — please try again.';
+            errEl.style.display = 'block';
+        }
+        btn.disabled = false;
+        btn.textContent = 'SEND REQUEST';
+    }
+</script>
+</body>
+</html>

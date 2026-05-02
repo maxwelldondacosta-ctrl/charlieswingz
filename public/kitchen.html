@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Charlie's Wingz — Kitchen</title>
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Inter', sans-serif; background: #0a0a0a; color: #f5f0e8; overflow-x: hidden; }
+
+        .header {
+            background: #111;
+            border-bottom: 3px solid #d4af37;
+            padding: 0.8rem 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .header h1 {
+            font-family: 'Bebas Neue', sans-serif;
+            color: #d4af37;
+            font-size: 1.4rem;
+            letter-spacing: 0.05em;
+        }
+        .header .status {
+            font-size: 0.75rem;
+            color: #4caf50;
+        }
+        .header .status.error { color: #c0392b; }
+        .order-count {
+            background: #d4af37;
+            color: #000;
+            padding: 0.2rem 0.6rem;
+            border-radius: 12px;
+            font-weight: 700;
+            font-size: 0.85rem;
+        }
+
+        .columns {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 0;
+            min-height: calc(100vh - 60px);
+        }
+        @media (max-width: 900px) {
+            .columns { grid-template-columns: 1fr; }
+        }
+
+        .column {
+            border-right: 1px solid #222;
+            padding: 0.75rem;
+        }
+        .column:last-child { border-right: none; }
+
+        .col-header {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 1.1rem;
+            letter-spacing: 0.05em;
+            padding: 0.5rem 0.75rem;
+            border-radius: 6px;
+            margin-bottom: 0.75rem;
+            text-align: center;
+        }
+        .col-new .col-header { background: rgba(231,76,60,0.2); color: #e74c3c; }
+        .col-cooking .col-header { background: rgba(243,156,18,0.2); color: #f39c12; }
+        .col-ready .col-header { background: rgba(46,204,113,0.2); color: #2ecc71; }
+
+        .order-card {
+            background: #1a1a1a;
+            border: 1px solid #333;
+            border-radius: 8px;
+            padding: 0.75rem;
+            margin-bottom: 0.6rem;
+            animation: fadeIn 0.3s ease;
+        }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+
+        .order-card.new { border-left: 4px solid #e74c3c; }
+        .order-card.cooking { border-left: 4px solid #f39c12; }
+        .order-card.ready { border-left: 4px solid #2ecc71; }
+
+        .order-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+        .order-id {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 1.2rem;
+            color: #d4af37;
+        }
+        .order-type {
+            font-size: 0.7rem;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+        .order-type.delivery { background: rgba(74,158,255,0.2); color: #4a9eff; }
+        .order-type.collection { background: rgba(46,204,113,0.2); color: #2ecc71; }
+
+        .order-time {
+            font-size: 0.7rem;
+            color: #888;
+            margin-bottom: 0.5rem;
+        }
+        .order-time .elapsed { color: #e74c3c; font-weight: 700; }
+
+        .order-items {
+            list-style: none;
+            padding: 0;
+        }
+        .order-items li {
+            font-size: 0.85rem;
+            padding: 0.25rem 0;
+            border-bottom: 1px solid #222;
+            display: flex;
+            justify-content: space-between;
+        }
+        .order-items li:last-child { border-bottom: none; }
+        .item-qty { color: #d4af37; font-weight: 700; margin-right: 0.3rem; }
+        .item-detail { font-size: 0.7rem; color: #999; }
+
+        .order-notes {
+            margin-top: 0.5rem;
+            padding: 0.4rem 0.6rem;
+            background: rgba(212,175,55,0.08);
+            border-left: 2px solid #d4af37;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            color: #d4af37;
+        }
+
+        .order-action {
+            margin-top: 0.5rem;
+        }
+        .action-btn {
+            width: 100%;
+            padding: 0.6rem;
+            border: none;
+            border-radius: 6px;
+            font-weight: 700;
+            font-size: 0.85rem;
+            cursor: pointer;
+        }
+        .btn-cook { background: #f39c12; color: #000; }
+        .btn-ready { background: #2ecc71; color: #000; }
+        .btn-cook:hover { background: #e67e22; }
+        .btn-ready:hover { background: #27ae60; }
+
+        .empty-col {
+            text-align: center;
+            color: #555;
+            font-size: 0.85rem;
+            padding: 2rem 0;
+        }
+
+        /* Audio ping for new orders */
+        .ping-dot {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            background: #e74c3c;
+            border-radius: 50%;
+            margin-left: 0.3rem;
+            animation: pulse 1s infinite;
+        }
+        @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <h1>👑 KITCHEN DISPLAY</h1>
+    <span class="status" id="status">Connecting...</span>
+    <span class="order-count" id="order-count">0</span>
+</div>
+
+<div class="columns">
+    <div class="column col-new">
+        <div class="col-header">🔴 NEW ORDERS</div>
+        <div id="col-new"></div>
+    </div>
+    <div class="column col-cooking">
+        <div class="col-header">🟠 COOKING</div>
+        <div id="col-cooking"></div>
+    </div>
+    <div class="column col-ready">
+        <div class="col-header">🟢 READY / OUT</div>
+        <div id="col-ready"></div>
+    </div>
+</div>
+
+<!-- Audio notification for new orders -->
+<audio id="ping-sound" preload="auto">
+    <source src="data:audio/wav;base64,UklGRl9vT19teleXkFVRTZmbXQgUklGRl9v" type="audio/wav">
+</audio>
+
+<script>
+    const params = new URLSearchParams(window.location.search);
+    const token = params.get('token');
+
+    if (!token) {
+        document.body.innerHTML = '<div style="text-align:center;padding:4rem"><h1 style="color:#c0392b">Access Denied</h1><p style="color:#aaa;margin-top:1rem">Kitchen token required. Add ?token=YOUR_TOKEN to the URL.</p></div>';
+        throw new Error('No token');
+    }
+
+    let previousOrderIds = new Set();
+    let firstLoad = true;
+
+    async function fetchOrders() {
+        try {
+            const res = await fetch(`/api/kitchen/orders?token=${token}`);
+            if (res.status === 401) {
+                document.getElementById('status').textContent = 'Invalid token';
+                document.getElementById('status').className = 'status error';
+                return;
+            }
+            const orders = await res.json();
+            document.getElementById('status').textContent = 'Live';
+            document.getElementById('status').className = 'status';
+            renderOrders(orders);
+        } catch(e) {
+            document.getElementById('status').textContent = 'Offline';
+            document.getElementById('status').className = 'status error';
+        }
+    }
+
+    function renderOrders(orders) {
+        const newOrders = orders.filter(o => o.status === 'received');
+        const cookingOrders = orders.filter(o => o.status === 'cooking');
+        const readyOrders = orders.filter(o => o.status === 'out_for_delivery' || o.status === 'ready');
+
+        document.getElementById('order-count').textContent = orders.length;
+
+        // Check for new orders (audio ping)
+        if (!firstLoad) {
+            const currentIds = new Set(orders.map(o => o.id));
+            for (const id of currentIds) {
+                if (!previousOrderIds.has(id)) {
+                    playPing();
+                    break;
+                }
+            }
+        }
+        previousOrderIds = new Set(orders.map(o => o.id));
+        firstLoad = false;
+
+        document.getElementById('col-new').innerHTML = newOrders.length
+            ? newOrders.map(o => renderCard(o, 'new')).join('')
+            : '<p class="empty-col">No new orders</p>';
+
+        document.getElementById('col-cooking').innerHTML = cookingOrders.length
+            ? cookingOrders.map(o => renderCard(o, 'cooking')).join('')
+            : '<p class="empty-col">Nothing cooking</p>';
+
+        document.getElementById('col-ready').innerHTML = readyOrders.length
+            ? readyOrders.map(o => renderCard(o, 'ready')).join('')
+            : '<p class="empty-col">Nothing ready</p>';
+    }
+
+    function renderCard(order, state) {
+        let items = [];
+        try { items = JSON.parse(order.items_json || '[]'); } catch(e) {}
+
+        const created = new Date(order.created_at);
+        const elapsed = Math.floor((Date.now() - created.getTime()) / 60000);
+        const timeStr = created.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+        const elapsedClass = elapsed > 15 ? 'elapsed' : '';
+
+        const itemsHtml = items.map(i => {
+            let detail = [];
+            // Flavour(s) — can be string or array
+            const flav = Array.isArray(i.flavourChoice) ? i.flavourChoice.join(', ') : (i.flavourChoice || '');
+            if (flav) detail.push(flav);
+            // Boneless flag (overrides cut display)
+            if (i.boneless || i.wingCut === 'Boneless') {
+                detail.push('🍗 BONELESS');
+            } else if (i.wingCut && i.wingCut !== 'Mixed') {
+                detail.push(i.wingCut);
+            }
+            // Sauce/dip
+            if (i.sauce) detail.push('Dip: ' + i.sauce);
+            // Drink(s)
+            if (Array.isArray(i.drinkChoice)) {
+                detail.push('Drinks: ' + i.drinkChoice.join(', '));
+            } else if (i.drinkChoice) {
+                detail.push('Drink: ' + i.drinkChoice);
+            }
+            // Royal Loaded Fries upgrade
+            if (i.loadedUpgrade) detail.push('👑 ROYAL LOADED FRIES');
+            return `<li>
+                <span><span class="item-qty">${i.quantity}×</span> ${i.name}${detail.length ? '<br><span class="item-detail">' + detail.join(' · ') + '</span>' : ''}</span>
+            </li>`;
+        }).join('');
+
+        let actionHtml = '';
+        if (state === 'new') {
+            actionHtml = `<div class="order-action"><button class="action-btn btn-cook" onclick="updateStatus('${order.id}', 'cooking')">🍳 START COOKING</button></div>`;
+        } else if (state === 'cooking') {
+            actionHtml = `<div class="order-action"><button class="action-btn btn-ready" onclick="updateStatus('${order.id}', 'ready')">✅ READY</button></div>`;
+        }
+
+        const notes = order.order_notes || order.delivery_notes;
+
+        return `
+            <div class="order-card ${state}">
+                <div class="order-top">
+                    <span class="order-id">#${order.id.slice(-6)}</span>
+                    <span class="order-type ${order.order_type}">${order.order_type}</span>
+                </div>
+                <div class="order-time">${timeStr} · <span class="${elapsedClass}">${elapsed}m ago</span> · ${order.customer_name}</div>
+                <ul class="order-items">${itemsHtml}</ul>
+                ${notes ? `<div class="order-notes">📝 ${notes}</div>` : ''}
+                ${actionHtml}
+            </div>
+        `;
+    }
+
+    async function updateStatus(id, status) {
+        try {
+            await fetch(`/api/kitchen/orders/${id}/status`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ token, status })
+            });
+            fetchOrders();
+        } catch(e) {}
+    }
+
+    function playPing() {
+        try {
+            const ctx = new (window.AudioContext || window.webkitAudioContext)();
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.frequency.value = 880;
+            osc.type = 'sine';
+            gain.gain.value = 0.3;
+            osc.start();
+            gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.5);
+            osc.stop(ctx.currentTime + 0.5);
+        } catch(e) {}
+    }
+
+    // Poll every 5 seconds
+    fetchOrders();
+    setInterval(fetchOrders, 5000);
+
+    // Keep screen awake on mobile
+    if ('wakeLock' in navigator) {
+        navigator.wakeLock.request('screen').catch(() => {});
+    }
+</script>
+</body>
+</html>

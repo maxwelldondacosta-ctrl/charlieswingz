@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Charlie's Wingz — Delivery</title>
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">
+    <style>
+        :root {
+            --black: #0a0a0a;
+            --gold: #d4af37;
+            --cream: #f5f0e8;
+            --dark: #1a1a1a;
+            --red: #8b0000;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--black);
+            color: var(--cream);
+            min-height: 100vh;
+            padding: 0;
+        }
+        .header {
+            background: var(--dark);
+            border-bottom: 2px solid var(--gold);
+            padding: 16px 20px;
+            text-align: center;
+        }
+        .header h1 {
+            font-size: 1.1rem;
+            color: var(--gold);
+            font-weight: 700;
+            letter-spacing: 1px;
+        }
+        .header .order-id {
+            font-size: 0.85rem;
+            color: #999;
+            margin-top: 4px;
+        }
+
+        .container {
+            padding: 20px;
+            max-width: 500px;
+            margin: 0 auto;
+        }
+
+        .status-banner {
+            text-align: center;
+            padding: 12px;
+            border-radius: 8px;
+            font-weight: 700;
+            font-size: 0.85rem;
+            letter-spacing: 1px;
+            margin-bottom: 20px;
+        }
+        .status-banner.out_for_delivery {
+            background: rgba(74, 158, 255, 0.15);
+            color: #4a9eff;
+            border: 1px solid rgba(74, 158, 255, 0.3);
+        }
+        .status-banner.delivered {
+            background: rgba(76, 175, 80, 0.15);
+            color: #4caf50;
+            border: 1px solid rgba(76, 175, 80, 0.3);
+        }
+
+        .section {
+            background: var(--dark);
+            border: 1px solid rgba(212, 175, 55, 0.2);
+            border-radius: 10px;
+            padding: 16px;
+            margin-bottom: 16px;
+        }
+        .section-label {
+            font-size: 0.7rem;
+            color: #888;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 8px;
+        }
+        .customer-name {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--cream);
+        }
+
+        .address-text {
+            font-size: 1rem;
+            line-height: 1.5;
+            color: var(--cream);
+        }
+        .delivery-notes {
+            margin-top: 10px;
+            padding: 10px 12px;
+            background: rgba(212, 175, 55, 0.1);
+            border-left: 3px solid var(--gold);
+            border-radius: 4px;
+            font-size: 0.85rem;
+            color: var(--gold);
+        }
+
+        .action-row {
+            display: flex;
+            gap: 10px;
+            margin-top: 12px;
+        }
+        .action-btn {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 14px 12px;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 700;
+            cursor: pointer;
+            text-decoration: none;
+            transition: opacity 0.2s;
+        }
+        .action-btn:active { opacity: 0.8; }
+
+        .btn-navigate {
+            background: var(--gold);
+            color: #000;
+        }
+        .btn-call {
+            background: #2ecc71;
+            color: #fff;
+        }
+        .btn-whatsapp {
+            background: #25d366;
+            color: #fff;
+        }
+
+        .items-list {
+            font-size: 0.85rem;
+            color: #ccc;
+            line-height: 1.8;
+        }
+
+        .confirm-btn {
+            display: block;
+            width: 100%;
+            padding: 18px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            font-weight: 700;
+            cursor: pointer;
+            letter-spacing: 0.5px;
+            transition: opacity 0.2s;
+            margin-top: 8px;
+        }
+        .confirm-btn:active { opacity: 0.8; }
+        .confirm-btn.pending {
+            background: #4caf50;
+            color: #fff;
+        }
+        .confirm-btn.done {
+            background: #333;
+            color: #4caf50;
+            cursor: default;
+        }
+        .confirm-btn:disabled {
+            opacity: 0.5;
+            cursor: wait;
+        }
+
+        .confirm-message {
+            text-align: center;
+            margin-top: 12px;
+            font-size: 0.85rem;
+            color: #4caf50;
+            display: none;
+        }
+
+        .loading {
+            text-align: center;
+            color: #888;
+            padding: 60px 20px;
+            font-size: 0.9rem;
+        }
+        .error-msg {
+            text-align: center;
+            color: #c0392b;
+            padding: 60px 20px;
+        }
+
+        .contact-footer {
+            text-align: center;
+            padding: 20px;
+            margin-top: 10px;
+            font-size: 0.8rem;
+            color: #666;
+        }
+        .contact-footer a {
+            color: var(--gold);
+            text-decoration: none;
+        }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <h1>👑 CHARLIE'S WINGZ</h1>
+    <div class="order-id" id="order-id-display">Loading...</div>
+</div>
+
+<div class="container">
+    <div id="loading" class="loading">Loading delivery details...</div>
+    <div id="error" class="error-msg" style="display:none"></div>
+
+    <div id="content" style="display:none">
+        <!-- Status -->
+        <div id="status-banner" class="status-banner out_for_delivery">🛵 OUT FOR DELIVERY</div>
+
+        <!-- Customer -->
+        <div class="section">
+            <div class="section-label">Customer</div>
+            <div class="customer-name" id="customer-name"></div>
+            <div class="action-row" id="contact-buttons"></div>
+        </div>
+
+        <!-- Address -->
+        <div class="section">
+            <div class="section-label">Delivery Address</div>
+            <div class="address-text" id="address-text"></div>
+            <div class="delivery-notes" id="delivery-notes" style="display:none"></div>
+            <div class="action-row">
+                <a id="navigate-btn" class="action-btn btn-navigate" target="_blank" rel="noopener">
+                    📍 Navigate
+                </a>
+            </div>
+        </div>
+
+        <!-- Items -->
+        <div class="section">
+            <div class="section-label">Order Items</div>
+            <div class="items-list" id="items-list"></div>
+        </div>
+
+        <!-- ETA -->
+        <div class="section" id="eta-section">
+            <div class="section-label">Send ETA to Customer <span id="eta-counter" style="color:#aaa;font-size:0.65rem">(3 updates remaining)</span></div>
+            <div class="action-row" style="flex-wrap:wrap" id="eta-buttons">
+                <button class="action-btn" style="background:#e67e22;color:#fff;flex:1;min-width:70px" onclick="sendDriverETA('2 minutes')">2 min</button>
+                <button class="action-btn" style="background:#e67e22;color:#fff;flex:1;min-width:70px" onclick="sendDriverETA('5 minutes')">5 min</button>
+                <button class="action-btn" style="background:#e67e22;color:#fff;flex:1;min-width:70px" onclick="sendDriverETA('10 minutes')">10 min</button>
+                <button class="action-btn" style="background:#e67e22;color:#fff;flex:1;min-width:70px" onclick="sendDriverETA('15 minutes')">15 min</button>
+            </div>
+            <div style="display:flex;gap:8px;margin-top:8px" id="eta-custom-row">
+                <input type="text" id="custom-eta" placeholder="Custom ETA e.g. 7 minutes" style="flex:1;padding:10px 12px;background:#111;border:1px solid rgba(212,175,55,0.3);border-radius:6px;color:#f5f0e8;font-size:0.85rem">
+                <button class="action-btn" style="background:#e67e22;color:#fff;white-space:nowrap" onclick="sendCustomETA()">Send</button>
+            </div>
+            <div id="eta-status" style="text-align:center;font-size:0.8rem;margin-top:8px;color:#4caf50;display:none"></div>
+            <div id="eta-maxed" style="display:none;text-align:center;font-size:0.8rem;margin-top:8px;color:#aaa">Maximum ETA updates sent. Use "I'm Here" or call the customer.</div>
+        </div>
+
+        <!-- I'm Here -->
+        <div id="here-section">
+            <button id="here-btn" style="display:block;width:100%;padding:14px;border:none;border-radius:10px;font-size:1rem;font-weight:700;cursor:pointer;background:#e67e22;color:#fff;margin-bottom:8px" onclick="sendImHere()">
+                📍 I'm Here — Notify Customer
+            </button>
+        </div>
+
+        <!-- Confirm Delivery -->
+        <div id="confirm-section">
+            <button id="confirm-btn" class="confirm-btn pending" onclick="confirmDelivery()">
+                ✅ Confirm Delivery
+            </button>
+            <div id="confirm-message" class="confirm-message">
+                Delivery confirmed — customer has been notified. 👑
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="contact-footer">
+    Problems? Contact base<br>
+    <a id="base-call" href="#">📞 Call</a> &nbsp;·&nbsp; <a id="base-wa" href="#">💬 WhatsApp</a>
+</div>
+
+<script>
+    const params = new URLSearchParams(window.location.search);
+    const token = params.get('token');
+
+    // Base contact — set from env or hardcoded
+    const BASE_PHONE = ''; // Will be populated from API
+
+    async function loadOrder() {
+        if (!token) {
+            showError('No delivery token provided.');
+            return;
+        }
+
+        try {
+            const res = await fetch(`/api/driver/order?token=${encodeURIComponent(token)}`);
+            if (!res.ok) {
+                const data = await res.json().catch(() => ({}));
+                showError(data.error || 'Could not load order.');
+                return;
+            }
+
+            const order = await res.json();
+            renderOrder(order);
+        } catch (e) {
+            showError('Network error — please check your connection.');
+        }
+    }
+
+    function renderOrder(order) {
+        document.getElementById('loading').style.display = 'none';
+        document.getElementById('content').style.display = 'block';
+        document.getElementById('order-id-display').textContent = `Delivery #${order.shortId}`;
+
+        // Status
+        const banner = document.getElementById('status-banner');
+        if (order.status === 'delivered' || order.status === 'complete') {
+            banner.className = 'status-banner delivered';
+            banner.textContent = '✅ DELIVERED';
+            document.getElementById('confirm-btn').className = 'confirm-btn done';
+            document.getElementById('confirm-btn').textContent = '✅ Delivery Confirmed';
+            document.getElementById('confirm-btn').disabled = true;
+            document.getElementById('confirm-message').style.display = 'block';
+            document.getElementById('eta-section').style.display = 'none';
+            document.getElementById('here-section').style.display = 'none';
+        }
+
+        // Customer
+        document.getElementById('customer-name').textContent = order.customerName;
+
+        // Contact buttons
+        const contactBtns = document.getElementById('contact-buttons');
+        let btnsHtml = '';
+        if (order.customerPhone) {
+            const normPhone = order.customerPhone.startsWith('+') ? order.customerPhone : '+44' + order.customerPhone.replace(/^0/, '');
+            btnsHtml += `<a href="tel:${normPhone}" class="action-btn btn-call">📞 Call</a>`;
+            btnsHtml += `<a href="https://wa.me/${normPhone.replace('+', '')}" class="action-btn btn-whatsapp" target="_blank">💬 WhatsApp</a>`;
+        }
+        contactBtns.innerHTML = btnsHtml || '<span style="color:#888;font-size:0.85rem">No phone number provided</span>';
+
+        // Address
+        const addrParts = [order.address, order.city, order.postcode].filter(Boolean);
+        document.getElementById('address-text').textContent = addrParts.join(', ') || 'No address provided';
+
+        if (order.deliveryNotes) {
+            const notesEl = document.getElementById('delivery-notes');
+            notesEl.textContent = '📝 ' + order.deliveryNotes;
+            notesEl.style.display = 'block';
+        }
+
+        // Navigate button
+        const navBtn = document.getElementById('navigate-btn');
+        if (order.lat && order.lng) {
+            navBtn.href = `https://www.google.com/maps/dir/?api=1&destination=${order.lat},${order.lng}`;
+        } else {
+            navBtn.href = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(addrParts.join(', '))}`;
+        }
+
+        // Items
+        const itemsHtml = order.items.map(i => {
+            const cut = (i.wingCut && i.wingCut !== 'Mixed' && i.wingCut !== 'Boneless') ? ` · ${i.wingCut}` : '';
+            const flav = Array.isArray(i.flavourChoice) ? i.flavourChoice.join('/') : (i.flavourChoice || '');
+            const dip = i.sauce ? ` · Dip: ${i.sauce}` : '';
+            const bone = i.boneless ? ' · Boneless' : '';
+            const loaded = i.loadedUpgrade ? ' · 👑 Loaded' : '';
+            return `${i.quantity}× ${i.name}${flav ? ' · ' + flav : ''}${bone}${cut}${dip}${loaded}`;
+        }).join('<br>');
+        document.getElementById('items-list').innerHTML = itemsHtml;
+
+        // Base contact
+        fetch('/api/config').then(r => r.json()).then(() => {
+            // We'll use the owner phone from a separate endpoint
+        }).catch(() => {});
+    }
+
+    async function confirmDelivery() {
+        const btn = document.getElementById('confirm-btn');
+        if (btn.disabled) return;
+
+        // Double-check with driver
+        if (!confirm('Confirm this delivery has been completed?')) return;
+
+        btn.disabled = true;
+        btn.textContent = 'Confirming...';
+
+        try {
+            const res = await fetch('/api/driver/confirm', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ token })
+            });
+
+            const data = await res.json();
+
+            if (data.success) {
+                btn.className = 'confirm-btn done';
+                btn.textContent = '✅ Delivery Confirmed';
+                document.getElementById('confirm-message').style.display = 'block';
+
+                const banner = document.getElementById('status-banner');
+                banner.className = 'status-banner delivered';
+                banner.textContent = '✅ DELIVERED';
+            } else {
+                btn.disabled = false;
+                btn.textContent = '✅ Confirm Delivery';
+                alert(data.error || 'Failed to confirm delivery.');
+            }
+        } catch (e) {
+            btn.disabled = false;
+            btn.textContent = '✅ Confirm Delivery';
+            alert('Network error — please try again.');
+        }
+    }
+
+    let etaSendsRemaining = 3;
+
+    async function sendDriverETA(eta) {
+        if (etaSendsRemaining <= 0) return;
+
+        const statusEl = document.getElementById('eta-status');
+        statusEl.style.display = 'block';
+        statusEl.style.color = '#aaa';
+        statusEl.textContent = 'Sending...';
+
+        try {
+            const res = await fetch('/api/driver/eta', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ token, eta })
+            });
+            const data = await res.json();
+            if (data.success) {
+                etaSendsRemaining--;
+                document.getElementById('eta-counter').textContent = `(${etaSendsRemaining} update${etaSendsRemaining !== 1 ? 's' : ''} remaining)`;
+                statusEl.style.color = '#4caf50';
+                statusEl.textContent = `✓ "${eta}" sent to customer`;
+                setTimeout(() => { statusEl.style.display = 'none'; }, 4000);
+
+                if (etaSendsRemaining <= 0) {
+                    document.getElementById('eta-buttons').style.display = 'none';
+                    document.getElementById('eta-custom-row').style.display = 'none';
+                    document.getElementById('eta-maxed').style.display = 'block';
+                    document.getElementById('eta-counter').textContent = '(no updates remaining)';
+                }
+            } else {
+                statusEl.style.color = '#c0392b';
+                statusEl.textContent = data.error || 'Failed to send';
+            }
+        } catch(e) {
+            statusEl.style.color = '#c0392b';
+            statusEl.textContent = 'Network error — try again';
+        }
+    }
+
+    function sendCustomETA() {
+        const input = document.getElementById('custom-eta');
+        const eta = input.value.trim();
+        if (!eta) return;
+        sendDriverETA(eta);
+        input.value = '';
+    }
+
+    async function sendImHere() {
+        const btn = document.getElementById('here-btn');
+        btn.disabled = true;
+        btn.textContent = 'Notifying...';
+
+        try {
+            const res = await fetch('/api/driver/eta', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ token, arrived: true })
+            });
+            const data = await res.json();
+            if (data.success) {
+                btn.textContent = '✓ Customer Notified';
+                btn.style.background = '#4caf50';
+                // Don't re-enable — they can call if no answer
+            } else {
+                btn.textContent = '📍 I\'m Here — Notify Customer';
+                btn.disabled = false;
+            }
+        } catch(e) {
+            btn.textContent = '📍 I\'m Here — Notify Customer';
+            btn.disabled = false;
+        }
+    }
+
+    // Allow Enter key on custom ETA input
+    document.addEventListener('DOMContentLoaded', () => {
+        const input = document.getElementById('custom-eta');
+        if (input) {
+            input.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') { e.preventDefault(); sendCustomETA(); }
+            });
+        }
+    });
+
+    function showError(msg) {
+        document.getElementById('loading').style.display = 'none';
+        document.getElementById('error').textContent = msg;
+        document.getElementById('error').style.display = 'block';
+    }
+
+    // Load base contact info
+    async function loadBaseContact() {
+        try {
+            const res = await fetch('/api/contact');
+            const data = await res.json();
+            if (data.phone) {
+                document.getElementById('base-call').href = data.phoneLink;
+                document.getElementById('base-wa').href = data.whatsapp;
+            } else {
+                document.querySelector('.contact-footer').style.display = 'none';
+            }
+        } catch(e) {
+            document.querySelector('.contact-footer').style.display = 'none';
+        }
+    }
+
+    loadOrder();
+    loadBaseContact();
+</script>
+</body>
+</html>

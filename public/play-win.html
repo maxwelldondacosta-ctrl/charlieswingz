@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Play & Win | Charlie's Wingz</title>
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: #111;
+            color: #eee;
+            font-family: 'Segoe UI', -apple-system, sans-serif;
+            min-height: 100dvh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .header {
+            text-align: center;
+            padding: 40px 20px 20px;
+            width: 100%;
+            max-width: 500px;
+        }
+        .header .crown { font-size: 56px; margin-bottom: 8px; }
+        .header .brand {
+            font-size: 12px;
+            letter-spacing: 5px;
+            color: #DAA520;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+        .header h1 {
+            font-size: 32px;
+            font-weight: 900;
+            letter-spacing: 3px;
+            margin: 4px 0 8px;
+            background: linear-gradient(135deg, #DAA520, #FFD700);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .header .tagline {
+            font-size: 14px;
+            color: #7f8c9a;
+            margin-bottom: 10px;
+        }
+
+        .games-container {
+            width: 100%;
+            max-width: 500px;
+            padding: 0 16px 30px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .game-card {
+            background: #16213e;
+            border: 1px solid #233554;
+            border-radius: 16px;
+            padding: 24px;
+            text-decoration: none;
+            color: inherit;
+            display: block;
+            transition: transform 0.2s, border-color 0.2s;
+        }
+        .game-card:hover, .game-card:active {
+            transform: scale(1.02);
+            border-color: #DAA520;
+        }
+        .game-card .icon { font-size: 42px; margin-bottom: 12px; }
+        .game-card .title {
+            font-size: 22px;
+            font-weight: 900;
+            letter-spacing: 2px;
+            margin-bottom: 6px;
+        }
+        .game-card .desc {
+            font-size: 13px;
+            color: #7f8c9a;
+            line-height: 1.5;
+            margin-bottom: 16px;
+        }
+        .game-card .play-btn {
+            display: inline-block;
+            padding: 12px 32px;
+            font-size: 15px;
+            font-weight: 800;
+            letter-spacing: 2px;
+            border-radius: 10px;
+            text-transform: uppercase;
+            color: #fff;
+        }
+        .game-card.snake .play-btn {
+            background: linear-gradient(135deg, #4caf50, #2e7d32);
+        }
+        .game-card.wingrun .play-btn {
+            background: linear-gradient(135deg, #e53935, #b71c1c);
+        }
+
+        .rewards-section {
+            width: 100%;
+            max-width: 500px;
+            padding: 0 16px 40px;
+        }
+        .rewards-section h2 {
+            font-size: 14px;
+            letter-spacing: 3px;
+            color: #7f8c9a;
+            text-transform: uppercase;
+            margin-bottom: 16px;
+            text-align: center;
+        }
+        .tier-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 14px 18px;
+            background: #16213e;
+            border: 1px solid #233554;
+            border-radius: 12px;
+            margin-bottom: 10px;
+        }
+        .tier-coins {
+            font-size: 13px;
+            color: #fdd835;
+            font-weight: 700;
+        }
+        .tier-reward {
+            font-size: 16px;
+            font-weight: 900;
+            color: #4caf50;
+        }
+        .tier-icon { font-size: 24px; margin-right: 12px; }
+
+        .back-link {
+            display: inline-block;
+            margin: 0 0 30px;
+            color: #DAA520;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 600;
+            letter-spacing: 1px;
+        }
+        .back-link:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <div class="crown">👑</div>
+        <div class="brand">Charlie's Wingz</div>
+        <h1>PLAY & WIN</h1>
+        <p class="tagline">Play games. Hit milestones. Unlock real discount codes.</p>
+    </div>
+
+    <div class="games-container">
+        <a href="/wing-run" class="game-card wingrun">
+            <div class="icon">🚴</div>
+            <div class="title">WING RUN</div>
+            <div class="desc">Deliver wings across the city on your e-bike. Dodge traffic, build combos, and hit score milestones to unlock real discount codes!</div>
+            <span class="play-btn">Play Now →</span>
+        </a>
+
+        <a href="/snake" class="game-card snake">
+            <div class="icon">🐍</div>
+            <div class="title">SNAKE</div>
+            <div class="desc">Classic snake with a Charlie's Wingz twist. Hit milestones to unlock discount codes for your next order.</div>
+            <span class="play-btn">Play Now →</span>
+        </a>
+    </div>
+
+    <div class="rewards-section">
+        <h2>🎁 How Rewards Work</h2>
+        <p style="color:#aaa;font-size:14px;margin-bottom:16px">Hit score milestones across all games to unlock discount codes. Claim both, then the targets go up!</p>
+        <div class="tier-row">
+            <div style="display:flex;align-items:center;">
+                <span class="tier-icon">🥉</span>
+                <div>
+                    <div class="tier-reward">£2 OFF</div>
+                    <div class="tier-coins">10,000 points</div>
+                </div>
+            </div>
+        </div>
+        <div class="tier-row">
+            <div style="display:flex;align-items:center;">
+                <span class="tier-icon">🥇</span>
+                <div>
+                    <div class="tier-reward">£4 OFF</div>
+                    <div class="tier-coins">100,000 points</div>
+                </div>
+            </div>
+        </div>
+        <p style="color:#888;font-size:12px;margin-top:12px">Claim both codes to reset — targets increase each round. One code per order.</p>
+    </div>
+
+    <a href="/" class="back-link">← Back to Menu</a>
+
+</body>
+</html>

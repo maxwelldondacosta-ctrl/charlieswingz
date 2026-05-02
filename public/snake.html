@@ -1,0 +1,1246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Charlie's Wingz — Snake</title>
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Dela+Gothic+One&display=swap');
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html, body {
+    width: 100%; height: 100%;
+    background: #0d0d1a;
+    background-image: radial-gradient(ellipse at 50% 30%, #1a1040 0%, #0d0d1a 70%);
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Press Start 2P', monospace;
+    overflow: hidden;
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: none;
+  }
+
+  .app { display: flex; flex-direction: row; align-items: flex-start; justify-content: center; gap: 16px; }
+  .cabinet { display: flex; flex-direction: column; align-items: center; }
+
+  /* LEGEND PANEL */
+  .snake-legend {
+    background: #14142a;
+    border: 2px solid #2a2a44;
+    border-radius: 10px;
+    padding: 12px 14px;
+    width: 160px;
+    flex-shrink: 0;
+    margin-top: 2px;
+    font-family: 'Press Start 2P', monospace;
+  }
+  .snake-legend .lg-title {
+    color: #e8a838; font-size: 6px; letter-spacing: 2px;
+    text-align: center; margin-bottom: 10px;
+    border-bottom: 1px solid #2a2a44; padding-bottom: 6px;
+  }
+  .snake-legend .lg-section {
+    color: #445; font-size: 5px; letter-spacing: 2px;
+    text-transform: uppercase; margin: 8px 0 4px;
+  }
+  .snake-legend .lg-row {
+    display: flex; align-items: center; gap: 6px;
+    margin-bottom: 5px;
+  }
+  .snake-legend .lg-icon {
+    width: 14px; height: 14px; border-radius: 3px;
+    flex-shrink: 0; display: flex; align-items: center;
+    justify-content: center; font-size: 10px;
+  }
+  .snake-legend .lg-dot {
+    width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0;
+  }
+  .snake-legend .lg-text { color: #778; font-size: 5px; line-height: 1.4; }
+  .snake-legend .lg-pts { color: #e8a838; font-size: 5px; white-space: nowrap; }
+  .snake-legend .lg-tip {
+    color: #445; font-size: 4px; line-height: 1.5;
+    margin-top: 8px; padding-top: 6px;
+    border-top: 1px solid #2a2a44;
+  }
+  /* Hide legend on mobile — it shows inline below controls instead */
+  @media (max-width: 600px) {
+    .app { flex-direction: column; align-items: center; }
+    .snake-legend { display: none; }
+  }
+
+  /* AUTH OVERLAY */
+  .auth-overlay {
+    position: fixed; inset: 0;
+    background: rgba(10,10,26,0.97);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 100;
+  }
+  .auth-overlay.hidden { display: none; }
+
+  .auth-box {
+    background: #14142a;
+    border: 2px solid #2a2a50;
+    border-radius: 12px;
+    padding: 28px 24px;
+    width: 320px;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.6), 0 0 60px rgba(232,168,56,0.06);
+  }
+  .auth-box h2 {
+    font-family: 'Dela Gothic One', sans-serif;
+    color: #e8a838;
+    font-size: 16px;
+    text-align: center;
+    margin-bottom: 4px;
+    letter-spacing: 1px;
+  }
+  .auth-box .subtitle {
+    text-align: center;
+    color: #667;
+    font-size: 6px;
+    margin-bottom: 20px;
+    letter-spacing: 2px;
+  }
+  .auth-box label {
+    display: block;
+    color: #889;
+    font-size: 6px;
+    margin-bottom: 4px;
+    letter-spacing: 1px;
+  }
+  .auth-box input {
+    width: 100%;
+    padding: 10px 12px;
+    background: #0d0d1a;
+    border: 1px solid #333;
+    border-radius: 6px;
+    color: #fff;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 8px;
+    margin-bottom: 12px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .auth-box input:focus { border-color: #e8a838; }
+  .auth-box input::placeholder { color: #444; }
+
+  .auth-btn {
+    width: 100%;
+    padding: 12px;
+    background: linear-gradient(180deg, #e8a838, #c47820);
+    border: 2px solid #a06010;
+    border-radius: 8px;
+    color: #1a0800;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 8px;
+    letter-spacing: 1px;
+    cursor: pointer;
+    margin-top: 4px;
+    transition: all 0.15s;
+  }
+  .auth-btn:hover { background: linear-gradient(180deg, #f0b848, #d08828); }
+  .auth-btn:active { transform: scale(0.97); }
+  .auth-btn:disabled { opacity: 0.5; cursor: default; }
+
+  .auth-toggle {
+    text-align: center;
+    margin-top: 14px;
+    color: #667;
+    font-size: 6px;
+  }
+  .auth-toggle a {
+    color: #e8a838;
+    cursor: pointer;
+    text-decoration: none;
+  }
+  .auth-toggle a:hover { text-decoration: underline; }
+
+  .auth-error {
+    background: rgba(224,64,64,0.1);
+    border: 1px solid #e04040;
+    border-radius: 4px;
+    padding: 6px 8px;
+    color: #e04040;
+    font-size: 6px;
+    margin-bottom: 10px;
+    display: none;
+  }
+  .auth-error.show { display: block; }
+
+  /* HEADER BAR (when logged in) */
+  .header-bar {
+    width: 340px;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 6px 8px;
+    margin-bottom: 2px;
+  }
+  .header-bar.hidden { display: none; }
+  .header-user {
+    color: #e8a838;
+    font-size: 6px;
+    letter-spacing: 1px;
+  }
+  .header-stats {
+    display: flex; gap: 12px;
+  }
+  .header-stat {
+    color: #889;
+    font-size: 6px;
+  }
+  .header-stat span { color: #ffe080; }
+  .header-btn {
+    background: none; border: 1px solid #444;
+    border-radius: 4px; padding: 3px 8px;
+    color: #888; font-family: 'Press Start 2P', monospace;
+    font-size: 5px; cursor: pointer;
+    transition: all 0.15s;
+  }
+  .header-btn:hover { border-color: #e8a838; color: #e8a838; }
+
+
+  .marquee {
+    background: linear-gradient(180deg, #e8a838 0%, #c47820 50%, #e8a838 100%);
+    padding: 6px 32px; border-radius: 12px 12px 0 0;
+    border: 2px solid #a06010; border-bottom: none;
+    text-align: center;
+    box-shadow: 0 -4px 20px rgba(232,168,56,0.3);
+  }
+  .marquee h1 {
+    font-family: 'Dela Gothic One', sans-serif;
+    font-size: 15px; color: #1a0800;
+    text-shadow: 0 1px 0 rgba(255,255,255,0.3);
+    letter-spacing: 2px;
+  }
+  .marquee-sub {
+    font-size: 6px; color: #5a3000;
+    letter-spacing: 4px; margin-top: 2px;
+    font-family: 'Press Start 2P', monospace;
+  }
+
+  .screen-frame {
+    background: #1c1c2e; border: 3px solid #2a2a44;
+    border-radius: 4px; padding: 8px;
+    box-shadow: 0 0 0 1px #111, 0 8px 32px rgba(0,0,0,0.6), inset 0 0 30px rgba(0,0,0,0.4);
+  }
+  .screen {
+    position: relative; background: #111118;
+    border-radius: 2px; overflow: hidden; line-height: 0;
+  }
+  canvas { display: block; width: 320px; height: 320px; image-rendering: pixelated; image-rendering: crisp-edges; }
+  .screen-glare {
+    position: absolute; inset: 0;
+    background: linear-gradient(135deg, rgba(255,255,255,0.03) 0%, transparent 40%);
+    pointer-events: none;
+  }
+
+  .controls {
+    display: flex; align-items: center; justify-content: center;
+    gap: 28px; padding: 16px 0 4px;
+  }
+  .dpad { position: relative; width: 100px; height: 100px; }
+  @media (max-width: 600px) {
+    .dpad { display: none !important; }
+    .action-btns { display: none !important; }
+  }
+  .swipe-hint { display: none; text-align: center; font-size: 0.75rem; color: #888; padding: 8px; }
+  @media (max-width: 600px) {
+    .swipe-hint { display: block; }
+  }
+  .dpad-btn {
+    position: absolute;
+    background: linear-gradient(180deg, #3a3a55, #2a2a40);
+    border: 1px solid #444466; border-radius: 6px;
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+    color: #aaa; font-size: 12px;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .dpad-btn:active { background: #1e1e30; border-color: #e8a838; color: #e8a838; }
+  .dpad-up    { top: 0; left: 32px; width: 36px; height: 36px; }
+  .dpad-down  { bottom: 0; left: 32px; width: 36px; height: 36px; }
+  .dpad-left  { top: 32px; left: 0; width: 36px; height: 36px; }
+  .dpad-right { top: 32px; right: 0; width: 36px; height: 36px; }
+  .dpad-center { position: absolute; top: 30px; left: 30px; width: 40px; height: 40px; border-radius: 50%; background: #222238; border: 1px solid #333355; pointer-events: none; }
+
+  .right-btns { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+  .action-btn {
+    width: 52px; height: 32px;
+    background: linear-gradient(180deg, #444, #333);
+    border: 1px solid #555; border-radius: 16px;
+    color: #ccc; font-family: 'Press Start 2P', monospace;
+    font-size: 5px; letter-spacing: 1px; cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .action-btn:active { background: #222; border-color: #e8a838; color: #e8a838; }
+  .action-btn.start-btn {
+    background: linear-gradient(180deg, #e8a838, #c47820);
+    border-color: #a06010; color: #1a0800;
+  }
+  .action-btn.start-btn:active { background: linear-gradient(180deg, #c47820, #a06010); }
+
+  .legend { display: flex; gap: 10px; justify-content: center; padding-top: 10px; }
+  .legend-item { display: flex; align-items: center; gap: 4px; font-size: 5px; color: #667; }
+  .legend-item .dot { width: 8px; height: 8px; border-radius: 2px; }
+
+  /* MILESTONE POPUP */
+  .milestone-popup {
+    position: fixed; top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    background: #14142a;
+    border: 2px solid #e8a838;
+    border-radius: 12px;
+    padding: 24px 28px;
+    z-index: 200;
+    text-align: center;
+    box-shadow: 0 0 80px rgba(232,168,56,0.2), 0 16px 48px rgba(0,0,0,0.7);
+    animation: popIn 0.3s ease-out;
+  }
+  .milestone-popup.hidden { display: none; }
+  .milestone-popup h3 {
+    font-family: 'Dela Gothic One', sans-serif;
+    color: #ffe080; font-size: 14px; margin-bottom: 8px;
+  }
+  .milestone-popup .code {
+    background: #0d0d1a;
+    border: 2px dashed #e8a838;
+    border-radius: 8px;
+    padding: 12px 20px;
+    margin: 12px 0;
+    color: #ffe080;
+    font-size: 12px;
+    letter-spacing: 3px;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .milestone-popup .code:hover { background: #1a1a30; }
+  .milestone-popup .discount {
+    color: #50c060; font-size: 10px; margin-bottom: 4px;
+  }
+  .milestone-popup .hint {
+    color: #556; font-size: 5px; margin-top: 8px;
+  }
+  .milestone-popup .close-btn {
+    margin-top: 14px;
+    background: linear-gradient(180deg, #e8a838, #c47820);
+    border: 2px solid #a06010; border-radius: 8px;
+    padding: 8px 24px;
+    color: #1a0800; font-family: 'Press Start 2P', monospace;
+    font-size: 7px; cursor: pointer;
+  }
+  @keyframes popIn { from { transform: translate(-50%,-50%) scale(0.8); opacity: 0; } to { transform: translate(-50%,-50%) scale(1); opacity: 1; } }
+
+  /* CODES TAB */
+  .codes-overlay {
+    position: fixed; inset: 0;
+    background: rgba(10,10,26,0.95);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 150;
+  }
+  .codes-overlay.hidden { display: none; }
+  .codes-box {
+    background: #14142a;
+    border: 2px solid #2a2a50;
+    border-radius: 12px;
+    padding: 24px;
+    width: 320px;
+  }
+  .codes-box h2 {
+    font-family: 'Dela Gothic One', sans-serif;
+    color: #e8a838; font-size: 13px;
+    text-align: center; margin-bottom: 16px;
+  }
+  .code-milestone {
+    background: #0d0d1a;
+    border: 1px solid #2a2a44;
+    border-radius: 8px;
+    padding: 12px;
+    margin-bottom: 10px;
+  }
+  .code-milestone.unlocked { border-color: #e8a838; }
+  .code-milestone .target {
+    color: #889; font-size: 7px; margin-bottom: 4px;
+  }
+  .code-milestone .reward {
+    font-size: 9px; margin-bottom: 6px;
+  }
+  .code-milestone.unlocked .reward { color: #50c060; }
+  .code-milestone.locked .reward { color: #444; }
+  .code-milestone .code-val {
+    color: #ffe080; font-size: 10px; letter-spacing: 2px;
+    cursor: pointer;
+  }
+  .code-milestone .locked-msg {
+    color: #444; font-size: 6px; font-style: italic;
+  }
+  .code-milestone .progress-bar {
+    height: 4px; background: #1a1a30; border-radius: 2px;
+    margin-top: 6px; overflow: hidden;
+  }
+  .code-milestone .progress-fill {
+    height: 100%; background: linear-gradient(90deg, #e8a838, #ffe080);
+    border-radius: 2px; transition: width 0.3s;
+  }
+  .codes-close {
+    width: 100%; margin-top: 6px;
+    padding: 10px;
+    background: linear-gradient(180deg, #333, #222);
+    border: 1px solid #444; border-radius: 8px;
+    color: #aaa; font-family: 'Press Start 2P', monospace;
+    font-size: 6px; cursor: pointer;
+  }
+
+  @media (max-height: 680px) { .app { transform: scale(0.82); transform-origin: center; } }
+  @media (max-height: 540px) { .app { transform: scale(0.65); transform-origin: center; } }
+</style>
+</head>
+<body>
+
+<!-- AUTH OVERLAY -->
+<div class="auth-overlay" id="authOverlay">
+  <div class="auth-box">
+    <h2>CHARLIE'S WINGZ</h2>
+    <div class="subtitle" id="authSubtitle">● SIGN IN TO PLAY ●</div>
+    <div class="auth-error" id="authError"></div>
+
+    <!-- Login form -->
+    <div id="loginForm">
+      <label>EMAIL</label>
+      <input type="email" id="loginEmail" placeholder="your@email.com" autocomplete="email">
+      <label>PASSWORD</label>
+      <input type="password" id="loginPass" placeholder="••••••••" autocomplete="current-password">
+      <button class="auth-btn" id="loginBtn" onclick="handleLogin()">SIGN IN</button>
+      <div class="auth-toggle">
+        NEW HERE? <a onclick="showRegister()">CREATE ACCOUNT</a>
+      </div>
+    </div>
+
+    <!-- Register form -->
+    <div id="registerForm" style="display:none">
+      <label>NAME</label>
+      <input type="text" id="regName" placeholder="Your name" autocomplete="name">
+      <label>EMAIL</label>
+      <input type="email" id="regEmail" placeholder="your@email.com" autocomplete="email">
+      <label>PASSWORD</label>
+      <input type="password" id="regPass" placeholder="Min 6 characters" autocomplete="new-password">
+      <button class="auth-btn" id="regBtn" onclick="handleRegister()">CREATE ACCOUNT</button>
+      <div class="auth-toggle">
+        ALREADY PLAYING? <a onclick="showLogin()">SIGN IN</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MILESTONE POPUP -->
+<div class="milestone-popup hidden" id="milestonePopup">
+  <h3 id="milestoneTitle">MILESTONE UNLOCKED!</h3>
+  <div class="discount" id="milestoneDiscount">£5 OFF</div>
+  <div class="code" id="milestoneCode" onclick="copyCode(this)">---</div>
+  <div class="hint">TAP CODE TO COPY</div>
+  <button class="close-btn" onclick="closeMilestone()">NICE!</button>
+</div>
+
+<!-- CODES OVERLAY -->
+<div class="codes-overlay hidden" id="codesOverlay">
+  <div class="codes-box">
+    <h2>MY DISCOUNT CODES</h2>
+    <div id="codesListEl"></div>
+    <button class="codes-close" onclick="closeCodes()">BACK TO GAME</button>
+  </div>
+</div>
+
+<!-- GAME APP -->
+<div class="app">
+  <div class="header-bar hidden" id="headerBar">
+    <a href="/" style="color:#e8a838;text-decoration:none;font-size:10px;font-weight:700;letter-spacing:1px;padding:2px 6px;border:1px solid rgba(232,168,56,0.4);border-radius:4px">← MENU</a>
+    <div class="header-user" id="headerUser">PLAYER</div>
+    <div class="header-stats">
+      <div class="header-stat">TOTAL: <span id="headerTotal">0</span></div>
+      <div class="header-stat">BEST: <span id="headerBest">0</span></div>
+    </div>
+    <button class="header-btn" onclick="showCodes()">CODES</button>
+    <button class="header-btn" onclick="handleLogout()">OUT</button>
+  </div>
+
+  <div class="cabinet">
+    <div class="marquee">
+      <h1>CHARLIE'S WINGZ</h1>
+      <div class="marquee-sub">● SNAKE EDITION ●</div>
+    </div>
+    <div class="screen-frame">
+      <div class="screen">
+        <canvas id="game" width="320" height="320"></canvas>
+        <div class="screen-glare"></div>
+      </div>
+    </div>
+    <div class="swipe-hint">👆 Swipe to move · Tap to start</div>
+    <div class="controls">
+      <div class="dpad">
+        <button class="dpad-btn dpad-up" ontouchstart="inputDir(0,-1);event.preventDefault()" onclick="inputDir(0,-1)">▲</button>
+        <button class="dpad-btn dpad-down" ontouchstart="inputDir(0,1);event.preventDefault()" onclick="inputDir(0,1)">▼</button>
+        <button class="dpad-btn dpad-left" ontouchstart="inputDir(-1,0);event.preventDefault()" onclick="inputDir(-1,0)">◄</button>
+        <button class="dpad-btn dpad-right" ontouchstart="inputDir(1,0);event.preventDefault()" onclick="inputDir(1,0)">►</button>
+        <div class="dpad-center"></div>
+      </div>
+      <div class="right-btns">
+        <button class="action-btn start-btn" ontouchstart="event.preventDefault();event.stopPropagation();if(state!=='playing')startGame();" onclick="if(state!=='playing')startGame();">START</button>
+        <button class="action-btn" ontouchstart="event.preventDefault();event.stopPropagation();togglePause();" onclick="togglePause()">PAUSE</button>
+      </div>
+    </div>
+    <!-- Mobile compact legend (shows below controls on small screens) -->
+    <div class="legend" style="flex-wrap:wrap;gap:6px 12px;padding-top:8px;">
+      <div class="legend-item"><div class="dot" style="background:#e8a838"></div>LP GOLD 10pts</div>
+      <div class="legend-item"><div class="dot" style="background:#e04040"></div>LP WET 15pts</div>
+      <div class="legend-item"><div class="dot" style="background:#4090e0"></div>KSH 20pts</div>
+      <div class="legend-item"><div class="dot" style="background:#50c060"></div>FRIES 30pts</div>
+      <div class="legend-item"><span style="font-size:9px">☠</span>&nbsp;POISON -3tail</div>
+      <div class="legend-item"><span style="font-size:9px">✂</span>&nbsp;SHRINK -3tail</div>
+      <div class="legend-item"><span style="font-size:9px;color:#ffe060">2x</span>&nbsp;DOUBLE 10s</div>
+    </div>
+  </div>
+
+  <!-- Desktop side legend -->
+  <div class="snake-legend">
+    <div class="lg-title">● GUIDE ●</div>
+
+    <div class="lg-section">Wings</div>
+    <div class="lg-row"><div class="lg-dot" style="background:#e8a838"></div><div><div class="lg-text">Lemon Pepper Gold</div><div class="lg-pts">10 pts</div></div></div>
+    <div class="lg-row"><div class="lg-dot" style="background:#e04040"></div><div><div class="lg-text">Lemon Pepper Wet</div><div class="lg-pts">15 pts</div></div></div>
+    <div class="lg-row"><div class="lg-dot" style="background:#4090e0"></div><div><div class="lg-text">Korean Sweet Heat</div><div class="lg-pts">20 pts</div></div></div>
+    <div class="lg-row"><div class="lg-dot" style="background:#50c060"></div><div><div class="lg-text">Bonus Fries</div><div class="lg-pts">30 pts</div></div></div>
+
+    <div class="lg-section">Special Items</div>
+    <div class="lg-row"><div class="lg-icon" style="background:rgba(224,64,251,0.2);color:#e040fb">☠</div><div><div class="lg-text">Poison Wing</div><div class="lg-pts">−3 tail (avoid!)</div></div></div>
+    <div class="lg-row"><div class="lg-icon" style="background:rgba(80,192,96,0.2);color:#50c060">✂</div><div><div class="lg-text">Shrink</div><div class="lg-pts">−3 tail (helpful)</div></div></div>
+    <div class="lg-row"><div class="lg-icon" style="background:rgba(255,224,80,0.15);color:#ffe060;font-size:7px;font-family:monospace;font-weight:900">2x</div><div><div class="lg-text">Double Points</div><div class="lg-pts">10 sec boost</div></div></div>
+
+    <div class="lg-section">Bonuses</div>
+    <div class="lg-row"><div class="lg-icon" style="background:rgba(232,168,56,0.15);color:#e8a838;font-size:7px">x6</div><div><div class="lg-text">Combo (eat fast)</div><div class="lg-pts">up to ×3 pts</div></div></div>
+    <div class="lg-row"><div class="lg-icon" style="background:rgba(144,202,249,0.15);color:#90caf9;font-size:8px">👻</div><div><div class="lg-text">Ghost (every 10🍗)</div><div class="lg-pts">pass thru tail 3s</div></div></div>
+    <div class="lg-row"><div class="lg-icon" style="background:rgba(255,224,80,0.15);color:#ffe060;font-size:8px">🔗</div><div><div class="lg-text">Same flavour streak</div><div class="lg-pts">up to +75% pts</div></div></div>
+
+    <div class="lg-section">Danger</div>
+    <div class="lg-row"><div class="lg-icon" style="background:rgba(224,64,64,0.15);color:#e04040;font-size:7px">⬛</div><div><div class="lg-text">Wall Mode (500pts)</div><div class="lg-pts">borders kill you</div></div></div>
+
+    <div class="lg-tip">Items vanish after 8s. Combo resets if you take too long or eat Fries.</div>
+  </div>
+</div>
+
+<script>
+// ===========================================================
+//  API LAYER — real server calls (shared with Wing Run game)
+// ===========================================================
+const API = {
+  token: null,
+  user: null,
+
+  async login(email, password) {
+    const res = await fetch('/api/game/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || 'Login failed');
+    this.token = data.token;
+    this.user = data.user;
+    return data;
+  },
+
+  async register(name, email, password) {
+    const res = await fetch('/api/game/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, email, password })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || 'Registration failed');
+    this.token = data.token;
+    this.user = data.user;
+    return data;
+  },
+
+  async getProgress() {
+    const res = await fetch('/api/game/progress?_=' + Date.now(), {
+      headers: { 'Authorization': `Bearer ${this.token}` },
+      cache: 'no-store'
+    });
+    if (!res.ok) throw new Error('Failed to load progress');
+    return await res.json();
+  },
+
+  async saveGame(score, wings, crowns) {
+    const res = await fetch('/api/game/save', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${this.token}`
+      },
+      body: JSON.stringify({ score, wings, crowns })
+    });
+    if (!res.ok) throw new Error('Failed to save');
+    return await res.json();
+  },
+
+  async claimCode(milestone) {
+    const res = await fetch('/api/game/claim-code', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${this.token}`
+      },
+      body: JSON.stringify({ milestone })
+    });
+    if (!res.ok) throw new Error('Failed to claim code');
+    return await res.json();
+  }
+};
+
+// ===========================================================
+//  MILESTONES
+// ===========================================================
+const MILESTONES = [
+  { target: 10000,  discount: '£2',  label: '10,000 PTS' },
+  { target: 100000, discount: '£4', label: '100,000 PTS' },
+];
+
+// ===========================================================
+//  AUTH UI
+// ===========================================================
+function showLogin() {
+  document.getElementById('loginForm').style.display = '';
+  document.getElementById('registerForm').style.display = 'none';
+  document.getElementById('authSubtitle').textContent = '● SIGN IN TO PLAY ●';
+  document.getElementById('authError').className = 'auth-error';
+}
+function showRegister() {
+  document.getElementById('loginForm').style.display = 'none';
+  document.getElementById('registerForm').style.display = '';
+  document.getElementById('authSubtitle').textContent = '● CREATE YOUR ACCOUNT ●';
+  document.getElementById('authError').className = 'auth-error';
+}
+function showAuthError(msg) {
+  const el = document.getElementById('authError');
+  el.textContent = msg;
+  el.className = 'auth-error show';
+}
+
+async function handleLogin() {
+  const email = document.getElementById('loginEmail').value.trim();
+  const pass = document.getElementById('loginPass').value;
+  if (!email || !pass) return showAuthError('FILL IN ALL FIELDS');
+  try {
+    document.getElementById('loginBtn').disabled = true;
+    await API.login(email, pass);
+    localStorage.setItem('cw_session', JSON.stringify({ token: API.token, user: API.user }));
+    await onLoggedIn();
+  } catch (e) {
+    showAuthError(e.message.toUpperCase());
+  } finally {
+    document.getElementById('loginBtn').disabled = false;
+  }
+}
+
+async function handleRegister() {
+  const name = document.getElementById('regName').value.trim();
+  const email = document.getElementById('regEmail').value.trim();
+  const pass = document.getElementById('regPass').value;
+  if (!name || !email || !pass) return showAuthError('FILL IN ALL FIELDS');
+  if (pass.length < 6) return showAuthError('PASSWORD MIN 6 CHARACTERS');
+  try {
+    document.getElementById('regBtn').disabled = true;
+    await API.register(name, email, pass);
+    localStorage.setItem('cw_session', JSON.stringify({ token: API.token, user: API.user }));
+    await onLoggedIn();
+  } catch (e) {
+    showAuthError(e.message.toUpperCase());
+  } finally {
+    document.getElementById('regBtn').disabled = false;
+  }
+}
+
+function handleLogout() {
+  localStorage.removeItem('cw_session');
+  API.token = null;
+  API.user = null;
+  playerProgress = null;
+  document.getElementById('authOverlay').classList.remove('hidden');
+  document.getElementById('headerBar').classList.add('hidden');
+  if (gameLoop) clearInterval(gameLoop);
+  if (deathLoop) clearInterval(deathLoop);
+  if (titleLoop) cancelAnimationFrame(titleLoop);
+  state = 'title';
+}
+
+let playerProgress = null;
+
+let leaderboard = null;
+async function onLoggedIn(preloadedProgress) {
+  document.getElementById('authOverlay').classList.add('hidden');
+  document.getElementById('headerBar').classList.remove('hidden');
+  document.getElementById('headerUser').textContent = API.user.name.toUpperCase();
+  playerProgress = preloadedProgress || await API.getProgress();
+  updateHeaderStats();
+  // Fetch leaderboard in background
+  fetch('/api/game/leaderboard').then(r=>r.ok?r.json():null).then(d=>{if(d)leaderboard=d;}).catch(()=>{});
+  state = 'title';
+  tick_count = 0;
+  startTitleAnim();
+}
+
+function updateHeaderStats() {
+  if (!playerProgress) return;
+  document.getElementById('headerTotal').textContent = playerProgress.totalScore.toLocaleString();
+  document.getElementById('headerBest').textContent = playerProgress.highScore.toLocaleString();
+}
+
+// Auto-login from saved session (shared with Wing Run)
+async function tryAutoLogin() {
+  try {
+    const session = JSON.parse(localStorage.getItem('cw_session') || 'null');
+    if (session && session.token) {
+      API.token = session.token;
+      API.user = session.user;
+      // Verify token is still valid by fetching progress
+      const progress = await API.getProgress();
+      await onLoggedIn(progress);
+      return;
+    }
+  } catch (e) {
+    // Token expired or invalid — clear and show login
+    localStorage.removeItem('cw_session');
+    API.token = null;
+    API.user = null;
+  }
+  // Show login
+  document.getElementById('authOverlay').classList.remove('hidden');
+}
+
+// ===========================================================
+//  CODES UI
+// ===========================================================
+function showCodes() {
+  if (!playerProgress) return;
+  if (state === 'playing') togglePause();
+  const el = document.getElementById('codesListEl');
+  const p = playerProgress;
+  el.innerHTML = '';
+  for (const m of MILESTONES) {
+    const unlocked = p.unlockedCodes && p.unlockedCodes[m.target];
+    const pct = Math.min(100, (p.totalScore / m.target) * 100);
+    const div = document.createElement('div');
+    div.className = `code-milestone ${unlocked ? 'unlocked' : 'locked'}`;
+    div.innerHTML = `
+      <div class="target">${m.label}</div>
+      <div class="reward">${m.discount} OFF YOUR ORDER</div>
+      ${unlocked
+        ? `<div class="code-val" onclick="copyCode(this)">${unlocked.code}</div>`
+        : `<div class="locked-msg">${pct.toFixed(0)}% — ${(m.target - p.totalScore).toLocaleString()} pts to go</div>
+           <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>`
+      }
+    `;
+    el.appendChild(div);
+  }
+  document.getElementById('codesOverlay').classList.remove('hidden');
+}
+function closeCodes() {
+  document.getElementById('codesOverlay').classList.add('hidden');
+}
+
+function copyCode(el) {
+  navigator.clipboard.writeText(el.textContent).then(() => {
+    const orig = el.textContent;
+    el.textContent = 'COPIED!';
+    setTimeout(() => el.textContent = orig, 1200);
+  });
+}
+
+async function checkAndShowMilestone(newUnlocks) {
+  for (const target of newUnlocks) {
+    const m = MILESTONES.find(x => x.target === target);
+    if (!m) continue;
+    const result = await API.claimCode(target);
+    // Refresh progress
+    playerProgress = await API.getProgress();
+    updateHeaderStats();
+    // Show popup
+    document.getElementById('milestoneTitle').textContent = `${m.label} UNLOCKED!`;
+    document.getElementById('milestoneDiscount').textContent = `${m.discount} OFF`;
+    document.getElementById('milestoneCode').textContent = result.code;
+    document.getElementById('milestonePopup').classList.remove('hidden');
+  }
+}
+function closeMilestone() {
+  document.getElementById('milestonePopup').classList.add('hidden');
+}
+
+// ===========================================================
+//  GAME ENGINE (same as before but with save hooks)
+// ===========================================================
+const canvas = document.getElementById('game');
+const ctx = canvas.getContext('2d');
+const COLS = 20, ROWS = 20, CELL = 16;
+const W = COLS * CELL, H = ROWS * CELL;
+
+const PAL = {
+  bg: '#111118', grid: '#181822',
+  gold: '#e8a838', goldDark: '#c47820', goldLight: '#ffe080',
+  red: '#e04040', redDark: '#a02020',
+  blue: '#4090e0', blueDark: '#2868b0',
+  green: '#50c060', greenDark: '#308838',
+  purple: '#8050d0',
+  crown: '#ffe060', crownDark: '#d4a020',
+  skin: '#e8b878', skinDark: '#c89050',
+  eye: '#222', white: '#fff',
+  hud: '#1a1a28', hudText: '#e8a838', hudTextDim: '#887040',
+};
+
+let snake, dir, nextDir, food, foodType, score, wingCount, speed, gameLoop, state, tick_count;
+let particles = [];
+let titleAnim = 0, titleLoop, deathLoop, deathTick = 0;
+// New mechanics
+let combo=0, comboTimer=0, streak=0, streakFlavour=-1;
+let ghostMode=false, ghostTimer=0;
+let wallMode=false;
+let doubleActive=false, doubleTimer=0;
+let poison=null; // {x,y} position of poison item
+let shrink=null; // {x,y} position of shrink item
+let extraItem=null; // tracks which special item is active: 'poison','shrink','double'
+let extraItemTimer=0; // how long it's been on board
+const EXTRA_ITEM_TTL=8; // seconds before it despawns
+const GHOST_EVERY=10; // wings before ghost triggers
+const WALL_MODE_SCORE=500;
+
+const FOOD = [
+  { name: 'Lemon Pepper Gold', pts: 10, col: PAL.gold, colDark: PAL.goldDark, glow: 'rgba(232,168,56,0.25)', shape: 'wing' },
+  { name: 'Lemon Pepper Wet', pts: 15, col: PAL.red, colDark: PAL.redDark, glow: 'rgba(224,64,64,0.25)', shape: 'wing' },
+  { name: 'Korean Sweet Heat', pts: 20, col: PAL.blue, colDark: PAL.blueDark, glow: 'rgba(64,144,224,0.25)', shape: 'wing' },
+  { name: 'Bonus Fries',       pts: 30, col: PAL.green, colDark: PAL.greenDark, glow: 'rgba(80,192,96,0.25)', shape: 'fries' },
+];
+
+function init() { state = 'title'; tick_count = 0; tryAutoLogin(); }
+
+// PARTICLES
+function addParticles(x, y, color, n) {
+  for (let i = 0; i < n; i++)
+    particles.push({ x: x*CELL+CELL/2, y: y*CELL+CELL/2, vx: (Math.random()-0.5)*3, vy: (Math.random()-0.5)*3, life: 20+Math.random()*15, maxLife: 35, color, size: 2+Math.random()*2 });
+}
+function updateParticles() { particles = particles.filter(p => { p.x+=p.vx; p.y+=p.vy; p.life--; return p.life>0; }); }
+function drawParticles() {
+  particles.forEach(p => { ctx.globalAlpha=p.life/p.maxLife; ctx.fillStyle=p.color; ctx.fillRect(p.x-p.size/2,p.y-p.size/2,p.size,p.size); });
+  ctx.globalAlpha=1;
+}
+
+function clear() {
+  ctx.fillStyle=PAL.bg; ctx.fillRect(0,0,W,H);
+  ctx.fillStyle=PAL.grid;
+  for(let x=0;x<COLS;x++) for(let y=1;y<ROWS;y++) ctx.fillRect(x*CELL,y*CELL,CELL-1,CELL-1);
+}
+function pixText(t,x,y,s,c,a) { ctx.fillStyle=c||PAL.white; ctx.font=`${s}px 'Press Start 2P',monospace`; ctx.textAlign=a||'center'; ctx.textBaseline='middle'; ctx.fillText(t,x,y); }
+function rr(x,y,w,h,r) { ctx.beginPath(); ctx.moveTo(x+r,y); ctx.lineTo(x+w-r,y); ctx.quadraticCurveTo(x+w,y,x+w,y+r); ctx.lineTo(x+w,y+h-r); ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h); ctx.lineTo(x+r,y+h); ctx.quadraticCurveTo(x,y+h,x,y+h-r); ctx.lineTo(x,y+r); ctx.quadraticCurveTo(x,y,x+r,y); ctx.fill(); }
+
+// KING HEAD
+function drawKingHead(x,y) {
+  const px=x*CELL,py=y*CELL,c=CELL;
+  ctx.fillStyle=PAL.skin; rr(px+1,py+4,c-2,c-4,3);
+  ctx.fillStyle=PAL.skinDark; ctx.fillRect(px+2,py+c-4,c-4,3);
+  ctx.fillStyle=PAL.gold; ctx.fillRect(px+1,py+1,c-2,5);
+  ctx.fillStyle=PAL.crown;
+  ctx.fillRect(px+2,py-1,3,3); ctx.fillRect(px+c/2-1,py-2,3,3); ctx.fillRect(px+c-5,py-1,3,3);
+  ctx.fillStyle=PAL.red; ctx.fillRect(px+c/2-1,py+2,2,2);
+  ctx.fillStyle=PAL.green; ctx.fillRect(px+3,py+2,2,2);
+  ctx.fillStyle=PAL.purple; ctx.fillRect(px+c-5,py+2,2,2);
+  let lex=px+4,ley=py+7,rex=px+c-6,rey=py+7;
+  if(dir.x===1){lex+=1;rex+=1}if(dir.x===-1){lex-=1;rex-=1}
+  if(dir.y===1){ley+=1;rey+=1}if(dir.y===-1){ley-=1;rey-=1}
+  ctx.fillStyle=PAL.white; ctx.fillRect(lex-1,ley-1,4,4); ctx.fillRect(rex-1,rey-1,4,4);
+  ctx.fillStyle=PAL.eye; ctx.fillRect(lex,ley,2,2); ctx.fillRect(rex,rey,2,2);
+  ctx.fillStyle=PAL.eye; ctx.fillRect(px+c/2-2,py+c-3,4,1);
+}
+
+function drawCrownSeg(x,y,i) {
+  const px=x*CELL,py=y*CELL,c=CELL;
+  ctx.globalAlpha=Math.max(0.45,1-i*0.012);
+  ctx.fillStyle=PAL.goldDark; rr(px+1,py+2,c-2,c-2,3);
+  ctx.fillStyle=PAL.gold; ctx.fillRect(px+3,py+1,c-6,3);
+  ctx.fillStyle=PAL.crown;
+  ctx.fillRect(px+3,py-1,2,3); ctx.fillRect(px+c/2-1,py-2,2,3); ctx.fillRect(px+c-5,py-1,2,3);
+  const jewels=[PAL.red,PAL.green,PAL.purple];
+  ctx.fillStyle=jewels[i%3]; ctx.fillRect(px+c/2-1,py+2,2,2);
+  ctx.globalAlpha=1;
+}
+
+function drawFood(x,y,type) {
+  const px=x*CELL+CELL/2,py=y*CELL+CELL/2,f=FOOD[type];
+  const bob=Math.sin(tick_count*0.15)*1.5;
+  ctx.fillStyle=f.glow; ctx.beginPath(); ctx.arc(px,py+bob,CELL*0.7,0,Math.PI*2); ctx.fill();
+  if(f.shape==='wing') {
+    ctx.fillStyle=f.col; ctx.beginPath(); ctx.ellipse(px,py-1+bob,5,6,0,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle=f.colDark; ctx.fillRect(px-1,py+4+bob,2.5,4);
+    ctx.fillStyle='rgba(255,255,255,0.35)'; ctx.fillRect(px-2,py-4+bob,2,2);
+    if(type>=1){ctx.fillStyle=f.col;ctx.globalAlpha=0.6;ctx.fillRect(px+2,py+1+bob,2,3);ctx.fillRect(px-3,py+bob,1.5,2);ctx.globalAlpha=1;}
+  } else {
+    ctx.fillStyle=f.col; rr(px-4,py-1+bob,8,7,1);
+    ctx.fillStyle='#ffe060';
+    ctx.fillRect(px-3,py-5+bob,2,5); ctx.fillRect(px-0.5,py-6+bob,2,6); ctx.fillRect(px+2,py-4+bob,2,4);
+  }
+}
+
+function drawHUD() {
+  ctx.fillStyle=PAL.hud; ctx.fillRect(0,0,W,CELL);
+  ctx.fillStyle=PAL.crown;
+  ctx.fillRect(4,3,8,4); ctx.fillRect(4,1,2,3); ctx.fillRect(7,0,2,3); ctx.fillRect(10,1,2,3);
+  pixText(`${snake.length-1}`,22,CELL/2,7,PAL.hudText,'left');
+  // Centre: show active status — ghost, double, wall, or wingcount
+  if(ghostMode){
+    if(Math.floor(tick_count/4)%2)pixText('GHOST!',W/2,CELL/2,6,'#90caf9','center');
+  } else if(doubleActive){
+    if(Math.floor(tick_count/4)%2)pixText('2X PTS!',W/2,CELL/2,6,PAL.crown,'center');
+  } else if(wallMode&&Math.floor(tick_count/8)%2===0){
+    pixText('WALL ON',W/2,CELL/2,5,'rgba(224,64,64,0.7)','center');
+  } else {
+    pixText(`${wingCount}W`,W/2,CELL/2,7,PAL.white,'center');
+  }
+  // Combo indicator to the left of score
+  const comboStr=combo>=2?`x${combo}`:null;
+  if(comboStr){const col=combo>=5?'#ff5722':combo>=3?'#ff9800':PAL.gold;pixText(comboStr,W-32,CELL/2,6,col,'right');}
+  pixText(`${score}`,comboStr?W-44:W-4,CELL/2,7,PAL.hudText,'right');
+}
+
+// TITLE
+function startTitleAnim() {
+  if(titleLoop) cancelAnimationFrame(titleLoop);
+  titleAnim=0;
+  (function frame(){if(state!=='title')return;titleAnim++;drawTitle();titleLoop=requestAnimationFrame(frame);})();
+}
+function drawTitle() {
+  ctx.fillStyle='#0d0d18'; ctx.fillRect(0,0,W,H);
+  ctx.globalAlpha=0.06;
+  for(let i=0;i<12;i++){const bx=((i*80+titleAnim*0.3)%(W+40))-20,by=30+(i%4)*80+Math.sin(titleAnim*0.02+i)*10;ctx.fillStyle=PAL.gold;ctx.fillRect(bx,by,20,10);ctx.fillRect(bx,by-4,5,6);ctx.fillRect(bx+8,by-6,5,8);ctx.fillRect(bx+16,by-4,5,6);}
+  ctx.globalAlpha=1;
+  const pulse=Math.sin(titleAnim*0.05)*2;
+  pixText("CHARLIE'S",W/2,60+pulse,13,PAL.gold);
+  pixText("WINGZ",W/2,82+pulse,16,PAL.goldLight);
+  const cy=125;
+  ctx.fillStyle=PAL.gold;ctx.fillRect(W/2-24,cy,48,16);
+  ctx.fillStyle=PAL.crown;ctx.fillRect(W/2-24,cy-8,10,12);ctx.fillRect(W/2-5,cy-12,10,16);ctx.fillRect(W/2+14,cy-8,10,12);
+  ctx.fillStyle=PAL.red;ctx.fillRect(W/2-3,cy+4,6,6);
+  pixText("SNAKE",W/2,170,12,PAL.white);
+  if(Math.floor(titleAnim/30)%2) pixText("PRESS START",W/2,210,7,PAL.gold);
+
+  // Show milestones progress on title
+  if(playerProgress) {
+    pixText(`TOTAL: ${playerProgress.totalScore.toLocaleString()} PTS`,W/2,248,5,'#889');
+    const codes=playerProgress.unlockedCodes||{};
+    const next=MILESTONES.find(m=>!codes[m.target]);
+    if(next) {
+      const pct=Math.min(100,(playerProgress.totalScore/next.target)*100);
+      pixText(`NEXT: ${next.discount} OFF AT ${next.label}`,W/2,264,5,'#667');
+      // progress bar
+      ctx.fillStyle='#1a1a30';ctx.fillRect(60,272,W-120,4);
+      ctx.fillStyle=PAL.gold;ctx.fillRect(60,272,(W-120)*(pct/100),4);
+    } else {
+      pixText("ALL CODES UNLOCKED!",W/2,264,5,PAL.green);
+    }
+  }
+
+  pixText("EAT WINGS. GET CROWNS.",W/2,290,5,'#556');
+  pixText("UNLOCK DISCOUNT CODES!",W/2,303,5,'#445');
+  // Leaderboard on title
+  if(leaderboard&&leaderboard.length>0){
+    pixText("TOP SCORES",W/2,318,5,PAL.goldDark,'center');
+    leaderboard.slice(0,3).forEach((e,i)=>{
+      const medals=['#fdd835','#b0bec5','#ff9800'];
+      pixText(`${i+1}. ${(e.name||'PLAYER').substring(0,8).toUpperCase()}`,W/2-10,330+i*11,4,medals[i],'center');
+      pixText(`${(e.highScore||0).toLocaleString()}`,W/2+50,330+i*11,4,medals[i],'left');
+    });
+  }
+}
+
+// DEATH
+function drawDeath() {
+  ctx.fillStyle='#0a0a16'; ctx.fillRect(0,0,W,H);
+  pixText("ORDER",W/2,32,14,PAL.red);
+  pixText("CLOSED!",W/2,52,14,PAL.red);
+
+  ctx.fillStyle='#161628'; rr(24,68,W-48,100,6);
+  ctx.strokeStyle=PAL.goldDark;ctx.lineWidth=1;ctx.strokeRect(24,68,W-48,100);
+
+  pixText(`${score}`,W/2,88,18,PAL.goldLight);
+  pixText("POINTS THIS RUN",W/2,107,5,PAL.hudTextDim);
+  pixText(`${wingCount} WINGS`,W/2,122,7,PAL.white);
+  pixText(`${snake?snake.length-1:0} CROWNS`,W/2,137,6,PAL.crown);
+  if(wallMode){pixText("WALL MODE SURVIVED",W/2,152,5,'#e04040');}
+
+  // Show total progress
+  if(playerProgress) {
+    pixText(`TOTAL: ${playerProgress.totalScore.toLocaleString()}`,W/2,184,7,PAL.gold);
+    const codes=playerProgress.unlockedCodes||{};
+    const next=MILESTONES.find(m=>!codes[m.target]);
+    if(next) {
+      const remaining=next.target-playerProgress.totalScore;
+      if(remaining>0) {
+        pixText(`${remaining.toLocaleString()} TO ${next.discount} CODE`,W/2,200,5,'#889');
+        const pct=Math.min(100,(playerProgress.totalScore/next.target)*100);
+        ctx.fillStyle='#1a1a30';ctx.fillRect(50,208,W-100,4);
+        ctx.fillStyle=PAL.gold;ctx.fillRect(50,208,(W-100)*(pct/100),4);
+      }
+    } else {
+      pixText("ALL CODES UNLOCKED!",W/2,200,5,PAL.green);
+    }
+    pixText(`BEST: ${playerProgress.highScore.toLocaleString()}`,W/2,228,6,'#667');
+  }
+
+  let stars=wingCount>=50?5:wingCount>=30?4:wingCount>=15?3:wingCount>=5?2:1;
+  let starStr='';for(let i=0;i<5;i++)starStr+=i<stars?'\u2605':'\u2606';
+  pixText(starStr,W/2,252,10,PAL.gold);
+  let rank=wingCount>=50?'WING KING':wingCount>=30?'FRY MASTER':wingCount>=15?'SAUCE BOSS':wingCount>=5?'TRAINEE':'FIRED';
+  pixText(rank,W/2,274,9,PAL.white);
+  if(Math.floor(deathTick/15)%2) pixText("PRESS START",W/2,305,6,PAL.gold);
+}
+
+// GAME LOGIC
+function startGame() {
+  if(state==='playing'||!API.user) return;
+  if(titleLoop) cancelAnimationFrame(titleLoop);
+  if(deathLoop) clearInterval(deathLoop);
+  snake=[{x:10,y:10},{x:9,y:10},{x:8,y:10}];
+  dir={x:1,y:0}; nextDir={x:1,y:0};
+  score=0; wingCount=0; speed=130; tick_count=0;
+  particles=[]; state='playing';
+  combo=0; comboTimer=0; streak=0; streakFlavour=-1;
+  ghostMode=false; ghostTimer=0; wallMode=false;
+  doubleActive=false; doubleTimer=0;
+  poison=null; shrink=null; extraItem=null; extraItemTimer=0;
+  spawnFood();
+  if(gameLoop) clearInterval(gameLoop);
+  gameLoop=setInterval(gameTick,speed);
+}
+
+function togglePause() {
+  if(state==='playing'){
+    state='paused';clearInterval(gameLoop);
+    ctx.fillStyle='rgba(10,10,20,0.75)';ctx.fillRect(0,0,W,H);
+    pixText("PAUSED",W/2,H/2-10,14,PAL.gold);
+    pixText("PRESS PAUSE",W/2,H/2+16,6,'#667');
+  } else if(state==='paused'){
+    state='playing';gameLoop=setInterval(gameTick,speed);
+  }
+}
+
+function spawnFood() {
+  let fx,fy,valid;
+  do{fx=Math.floor(Math.random()*COLS);fy=Math.floor(Math.random()*(ROWS-1))+1;valid=!snake.some(s=>s.x===fx&&s.y===fy);}while(!valid);
+  let r=Math.random();
+  foodType=r<0.40?0:r<0.65?1:r<0.85?2:3;
+  food={x:fx,y:fy};
+}
+
+function spawnExtraItem() {
+  let fx,fy,valid,attempts=0;
+  do{fx=Math.floor(Math.random()*COLS);fy=Math.floor(Math.random()*(ROWS-1))+1;
+    valid=!snake.some(s=>s.x===fx&&s.y===fy)&&!(food.x===fx&&food.y===fy);attempts++;}
+  while(!valid&&attempts<50);
+  if(!valid)return;
+  // After score 300: chance of poison; always has shrink/double
+  let type;
+  if(score>=300&&Math.random()<0.35){type='poison';}
+  else if(Math.random()<0.5){type='shrink';}
+  else{type='double';}
+  extraItem={x:fx,y:fy,type};
+  poison=type==='poison'?{x:fx,y:fy}:null;
+  shrink=type==='shrink'?{x:fx,y:fy}:null;
+  extraItemTimer=EXTRA_ITEM_TTL;
+}
+function gameTick() {
+  if(state!=='playing')return;
+  tick_count++;
+  // Timers (speed is in ms, ~7-8 ticks/sec at 130ms)
+  const dt=speed/1000;
+  if(comboTimer>0){comboTimer-=dt;if(comboTimer<=0){combo=0;comboTimer=0;}}
+  if(ghostMode){ghostTimer-=dt;if(ghostTimer<=0){ghostMode=false;ghostTimer=0;}}
+  if(doubleActive){doubleTimer-=dt;if(doubleTimer<=0){doubleActive=false;doubleTimer=0;}}
+  if(extraItem){extraItemTimer-=dt;if(extraItemTimer<=0){extraItem=null;poison=null;shrink=null;}}
+  dir={...nextDir};
+  let head={x:snake[0].x+dir.x,y:snake[0].y+dir.y};
+  // Wall mode: solid borders kill you; normal: wrap
+  if(wallMode){
+    if(head.x<0||head.x>=COLS||head.y<1||head.y>=ROWS){die();return;}
+  } else {
+    if(head.x<0)head.x=COLS-1; if(head.x>=COLS)head.x=0;
+    if(head.y<1)head.y=ROWS-1; if(head.y>=ROWS)head.y=1;
+  }
+  // Collision with self — ghost mode lets you pass through
+  if(!ghostMode&&snake.some(s=>s.x===head.x&&s.y===head.y)){die();return;}
+  snake.unshift(head);
+  // Check food
+  if(head.x===food.x&&head.y===food.y){
+    const f=FOOD[foodType];
+    // Streak bonus: same flavour consecutively (wings only, not fries)
+    if(foodType!==3&&foodType===streakFlavour){streak++;}
+    else{streak=foodType===3?0:1; streakFlavour=foodType===3?-1:foodType;}
+    const streakMult=foodType===3?1:Math.min(streak,4);
+    // Combo: eating quickly builds multiplier
+    combo=Math.min(combo+1,6);comboTimer=3;
+    const comboMult=combo>=5?3:combo>=3?2:1;
+    const basePts=doubleActive?f.pts*2:f.pts;
+    const pts=Math.floor(basePts*comboMult*(streakMult>=3?1+(streakMult-2)*0.25:1));
+    score+=pts;
+    wingCount+=foodType===3?0:foodType===2?2:1;
+    addParticles(food.x,food.y,f.col,8);
+    spawnFood();
+    if(speed>65){speed-=2;clearInterval(gameLoop);gameLoop=setInterval(gameTick,speed);}
+    // Wall mode kicks in at 500 score
+    if(score>=WALL_MODE_SCORE&&!wallMode){wallMode=true;}
+    // Ghost mode every GHOST_EVERY wings
+    if(wingCount>0&&wingCount%GHOST_EVERY===0&&!ghostMode){ghostMode=true;ghostTimer=3;}
+    // Occasionally spawn a special item
+    if(!extraItem&&Math.random()<0.25){spawnExtraItem();}
+  } else {
+    snake.pop();
+    // Check special items
+    if(extraItem&&head.x===extraItem.x&&head.y===extraItem.y){
+      if(extraItem.type==='poison'){
+        // Lose 3 segments
+        const cut=Math.min(3,snake.length-3);
+        for(let i=0;i<cut;i++)snake.pop();
+        addParticles(head.x,head.y,'#e040fb',12);
+      } else if(extraItem.type==='shrink'){
+        // Shrink by 3 — helpful
+        const cut=Math.min(3,snake.length-3);
+        for(let i=0;i<cut;i++)snake.pop();
+        addParticles(head.x,head.y,PAL.green,12);
+      } else if(extraItem.type==='double'){
+        doubleActive=true;doubleTimer=10;
+        addParticles(head.x,head.y,PAL.crown,12);
+      }
+      extraItem=null;poison=null;shrink=null;
+    }
+  }
+  updateParticles();
+  drawGame();
+}
+
+async function die() {
+  state='dead'; clearInterval(gameLoop);
+  // Show death screen immediately - don't wait for API save
+  deathTick=0;
+  deathLoop=setInterval(()=>{deathTick++;drawDeath();},300);
+  drawDeath();
+  // Save to backend in background
+  const crowns=snake.length-1;
+  try {
+    const result = await API.saveGame(score, wingCount, crowns);
+    playerProgress = result;
+    updateHeaderStats();
+    if(result.newUnlocks && result.newUnlocks.length > 0) {
+      await checkAndShowMilestone(result.newUnlocks);
+    }
+  } catch(e) { console.error('Save failed:', e); }
+}
+
+function drawGame() {
+  clear();
+  // Wall mode: highlight borders red
+  if(wallMode){
+    ctx.fillStyle='rgba(224,64,64,0.18)';
+    ctx.fillRect(0,CELL,2,H-CELL);ctx.fillRect(W-2,CELL,2,H-CELL);
+    ctx.fillRect(0,H-2,W,2);ctx.fillRect(0,CELL,W,2);
+  }
+  drawFood(food.x,food.y,foodType);
+  // Draw special items
+  if(extraItem){drawSpecialItem(extraItem);}
+  drawParticles();
+  // Ghost mode: snake is translucent
+  if(ghostMode){ctx.globalAlpha=0.45+Math.sin(tick_count*0.3)*0.15;}
+  for(let i=snake.length-1;i>=1;i--) drawCrownSeg(snake[i].x,snake[i].y,i);
+  drawKingHead(snake[0].x,snake[0].y);
+  if(ghostMode){ctx.globalAlpha=1;}
+  drawHUD();
+}
+
+function drawSpecialItem(item) {
+  const px=item.x*CELL+CELL/2, py=item.y*CELL+CELL/2;
+  const pulse=1+Math.sin(tick_count*0.2)*0.12;
+  if(item.type==='poison'){
+    ctx.fillStyle='rgba(224,64,251,0.2)';ctx.beginPath();ctx.arc(px,py,CELL*0.55*pulse,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='#e040fb';ctx.font=`${Math.floor(CELL*0.7)}px sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.fillText('☠',px,py+1);
+  } else if(item.type==='shrink'){
+    ctx.fillStyle='rgba(80,192,96,0.2)';ctx.beginPath();ctx.arc(px,py,CELL*0.55*pulse,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle=PAL.green;ctx.font=`${Math.floor(CELL*0.7)}px sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.fillText('✂',px,py+1);
+  } else if(item.type==='double'){
+    ctx.fillStyle='rgba(255,224,80,0.2)';ctx.beginPath();ctx.arc(px,py,CELL*0.55*pulse,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle=PAL.crown;ctx.font=`${Math.floor(CELL*0.55)}px sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.fillText('2x',px,py+1);
+  }
+}
+
+function inputDir(dx,dy) {
+  if(state==='title'||state==='dead'){startGame();return;}
+  if(state==='paused'){togglePause();return;}
+  if(dir.x===-dx&&dir.y===-dy)return;
+  if(dx!==0||dy!==0) nextDir={x:dx,y:dy};
+}
+
+document.addEventListener('keydown',e=>{
+  const k=e.key;
+  if(['ArrowUp','w','W'].includes(k)){e.preventDefault();inputDir(0,-1);}
+  else if(['ArrowDown','s','S'].includes(k)){e.preventDefault();inputDir(0,1);}
+  else if(['ArrowLeft','a','A'].includes(k)){e.preventDefault();inputDir(-1,0);}
+  else if(['ArrowRight','d','D'].includes(k)){e.preventDefault();inputDir(1,0);}
+  else if(k==='Enter'||k===' '){e.preventDefault();if(state==='title'||state==='dead')startGame();else togglePause();}
+});
+
+let tx=0,ty=0,swipeFired=false;
+document.addEventListener('touchstart',e=>{
+  // Don't interfere with auth inputs — keyboard won't open if we preventDefault
+  const authVisible = !document.getElementById('authOverlay').classList.contains('hidden');
+  if(authVisible) return;
+  tx=e.touches[0].clientX;ty=e.touches[0].clientY;swipeFired=false;
+  e.preventDefault();
+},{passive:false});
+document.addEventListener('touchmove',e=>{
+  const authVisible = !document.getElementById('authOverlay').classList.contains('hidden');
+  if(authVisible) return;
+  e.preventDefault();
+  if(state!=='playing') return;
+  const dx=e.touches[0].clientX-tx,dy=e.touches[0].clientY-ty;
+  if(!swipeFired&&Math.max(Math.abs(dx),Math.abs(dy))>8){
+    swipeFired=true;
+    if(Math.abs(dx)>Math.abs(dy))inputDir(dx>0?1:-1,0);else inputDir(0,dy>0?1:-1);
+    tx=e.touches[0].clientX;ty=e.touches[0].clientY;
+    swipeFired=false;
+  }
+},{passive:false});
+document.addEventListener('touchend',e=>{
+  const authVisible = !document.getElementById('authOverlay').classList.contains('hidden');
+  if(authVisible) return;
+  const dx=e.changedTouches[0].clientX-tx,dy=e.changedTouches[0].clientY-ty;
+  const dist=Math.max(Math.abs(dx),Math.abs(dy));
+  if(dist<20){
+    if(state==='title'||state==='dead'){startGame();return;}
+    if(state==='paused'){togglePause();return;}
+  }
+  if(!swipeFired&&dist>=8&&state==='playing'){
+    if(Math.abs(dx)>Math.abs(dy))inputDir(dx>0?1:-1,0);else inputDir(0,dy>0?1:-1);
+  }
+},{passive:false});
+
+// Enter key on auth inputs
+document.querySelectorAll('.auth-box input').forEach(inp => {
+  inp.addEventListener('keydown', e => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      const form = inp.closest('#loginForm') ? 'login' : 'register';
+      if (form === 'login') handleLogin();
+      else handleRegister();
+    }
+  });
+});
+
+init();
+</script>
+</body>
+</html>

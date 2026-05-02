@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Allergen Information — Charlie's Wingz</title>
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Playfair+Display:wght@400;600&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --black: #0d0d0d;
+            --dark: #1a1a1a;
+            --mid: #2a2a2a;
+            --gold: #d4af37;
+            --gold-dim: rgba(212,175,55,0.15);
+            --cream: #f5f0e8;
+            --burgundy: #8b1a1a;
+            --red: #c0392b;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background: var(--black);
+            color: var(--cream);
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+            line-height: 1.6;
+        }
+
+        /* ── Header ── */
+        .header {
+            background: var(--dark);
+            border-bottom: 1px solid rgba(212,175,55,0.3);
+            padding: 1.25rem 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-brand {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            text-decoration: none;
+        }
+
+        .header-brand img {
+            width: 36px;
+            height: 36px;
+            object-fit: contain;
+        }
+
+        .header-brand span {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 1.4rem;
+            color: var(--gold);
+            letter-spacing: 0.1em;
+        }
+
+        .back-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            color: var(--gold);
+            text-decoration: none;
+            font-size: 0.85rem;
+            letter-spacing: 0.05em;
+            border: 1px solid rgba(212,175,55,0.4);
+            padding: 0.4rem 0.9rem;
+            border-radius: 4px;
+            transition: all 0.2s;
+        }
+
+        .back-btn:hover { background: var(--gold-dim); }
+
+        /* ── Hero ── */
+        .page-hero {
+            background: linear-gradient(180deg, rgba(139,26,26,0.25) 0%, transparent 100%);
+            padding: 3rem 2rem 2rem;
+            text-align: center;
+            border-bottom: 1px solid rgba(212,175,55,0.15);
+        }
+
+        .page-hero h1 {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: clamp(2rem, 6vw, 3.5rem);
+            color: var(--gold);
+            letter-spacing: 0.12em;
+            margin-bottom: 0.5rem;
+        }
+
+        .page-hero p {
+            color: #aaa;
+            font-size: 0.9rem;
+            max-width: 560px;
+            margin: 0 auto 1.5rem;
+        }
+
+        /* ── Warning box ── */
+        .warning-box {
+            background: rgba(192,57,43,0.12);
+            border: 1px solid rgba(192,57,43,0.4);
+            border-radius: 8px;
+            padding: 1rem 1.5rem;
+            max-width: 720px;
+            margin: 0 auto;
+            display: flex;
+            gap: 0.75rem;
+            align-items: flex-start;
+            font-size: 0.85rem;
+            color: #e8c4c0;
+            text-align: left;
+        }
+
+        .warning-box .icon { font-size: 1.1rem; flex-shrink: 0; margin-top: 0.1rem; }
+
+        /* ── Allergen icons legend ── */
+        .legend {
+            max-width: 900px;
+            margin: 2rem auto;
+            padding: 0 1.5rem;
+        }
+
+        .legend h2 {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 1.3rem;
+            color: var(--gold);
+            letter-spacing: 0.1em;
+            margin-bottom: 1rem;
+        }
+
+        .legend-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: var(--dark);
+            border: 1px solid #333;
+            border-radius: 6px;
+            padding: 0.5rem 0.9rem;
+            font-size: 0.82rem;
+            color: #ccc;
+        }
+
+        .allergen-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+            flex-shrink: 0;
+        }
+
+        /* Allergen colours */
+        .a-gluten   { background: #c0392b; }
+        .a-egg      { background: #e67e22; }
+        .a-milk     { background: #3498db; }
+        .a-soya     { background: #27ae60; }
+        .a-sesame   { background: #8e44ad; }
+        .a-celery   { background: #16a085; }
+        .a-mustard  { background: #f39c12; }
+        .a-sulphite { background: #7f8c8d; }
+
+        /* ── Product cards ── */
+        .section {
+            max-width: 900px;
+            margin: 0 auto 3rem;
+            padding: 0 1.5rem;
+        }
+
+        .section-title {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 1.6rem;
+            color: var(--gold);
+            letter-spacing: 0.12em;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid rgba(212,175,55,0.2);
+        }
+
+        .product-card {
+            background: var(--dark);
+            border: 1px solid #2a2a2a;
+            border-radius: 10px;
+            padding: 1.25rem 1.5rem;
+            margin-bottom: 1rem;
+            transition: border-color 0.2s;
+        }
+
+        .product-card:hover { border-color: rgba(212,175,55,0.3); }
+
+        .product-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 0.75rem;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .product-name {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--cream);
+        }
+
+        .product-desc {
+            font-size: 0.8rem;
+            color: #888;
+            margin-top: 0.2rem;
+        }
+
+        .allergen-badges {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.4rem;
+        }
+
+        .badge {
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+            padding: 0.25rem 0.6rem;
+            border-radius: 4px;
+            font-size: 0.72rem;
+            font-weight: 600;
+            letter-spacing: 0.04em;
+            color: #fff;
+            white-space: nowrap;
+        }
+
+        .badge .badge-icon { font-size: 0.85rem; }
+
+        .contains-label {
+            font-size: 0.75rem;
+            color: #666;
+            margin-bottom: 0.4rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+        }
+
+        .may-contain {
+            font-size: 0.78rem;
+            color: #888;
+            margin-top: 0.6rem;
+            padding-top: 0.6rem;
+            border-top: 1px solid #333;
+        }
+
+        .may-contain strong { color: #aaa; }
+
+        /* ── Note ── */
+        .kitchen-note {
+            max-width: 900px;
+            margin: 0 auto 3rem;
+            padding: 0 1.5rem;
+        }
+
+        .kitchen-note-box {
+            background: var(--gold-dim);
+            border: 1px solid rgba(212,175,55,0.3);
+            border-radius: 8px;
+            padding: 1.25rem 1.5rem;
+            font-size: 0.85rem;
+            color: #ccc;
+            line-height: 1.7;
+        }
+
+        .kitchen-note-box strong { color: var(--gold); }
+
+        /* ── Footer ── */
+        footer {
+            text-align: center;
+            padding: 2rem;
+            color: #444;
+            font-size: 0.8rem;
+            border-top: 1px solid #1a1a1a;
+        }
+
+        @media (max-width: 600px) {
+            .header { padding: 1rem; }
+            .page-hero { padding: 2rem 1rem 1.5rem; }
+            .product-header { flex-direction: column; }
+        }
+    </style>
+</head>
+<body>
+
+<header class="header">
+    <a href="/" class="header-brand">
+        <img src="logo.png" alt="Charlie's Wingz">
+        <span>Charlie's Wingz</span>
+    </a>
+    <a href="/" class="back-btn">← Back to Menu</a>
+</header>
+
+<div class="page-hero">
+    <h1>Allergen Information</h1>
+    <p>Full allergen breakdown for every product we serve. If you have a severe allergy, please contact us before ordering.</p>
+    <div class="warning-box">
+        <span class="icon">⚠️</span>
+        <span>All our products are prepared in a kitchen that handles <strong>gluten, eggs, dairy, soya, sesame and mustard</strong>. Cross-contamination cannot be fully excluded. If you have a life-threatening allergy, please call us before ordering.</span>
+    </div>
+</div>
+
+<!-- Legend -->
+<div class="legend">
+    <h2>Allergen Key</h2>
+    <div class="legend-grid">
+        <div class="legend-item"><div class="allergen-icon a-gluten">🌾</div> Gluten (Wheat)</div>
+        <div class="legend-item"><div class="allergen-icon a-egg">🥚</div> Eggs</div>
+        <div class="legend-item"><div class="allergen-icon a-milk">🥛</div> Milk / Dairy</div>
+        <div class="legend-item"><div class="allergen-icon a-soya">🫘</div> Soya</div>
+        <div class="legend-item"><div class="allergen-icon a-sesame">⚪</div> Sesame</div>
+        <div class="legend-item"><div class="allergen-icon a-mustard">🌿</div> Mustard</div>
+        <div class="legend-item"><div class="allergen-icon a-sulphite">🍷</div> Sulphites</div>
+        <div class="legend-item"><div class="allergen-icon a-celery">🌱</div> Celery</div>
+    </div>
+</div>
+
+<!-- WINGS -->
+<div class="section">
+    <div class="section-title">Wings</div>
+
+    <!-- Korean BBQ -->
+    <div class="product-card">
+        <div class="product-header">
+            <div>
+                <div class="product-name">Korean Sweet Heat Wings</div>
+                <div class="product-desc">Double-fried wings in gochujang glaze, finished with sesame seeds</div>
+            </div>
+            <div>
+                <div class="contains-label">Contains</div>
+                <div class="allergen-badges">
+                    <span class="badge a-gluten"><span class="badge-icon">🌾</span>Gluten</span>
+                    <span class="badge a-egg"><span class="badge-icon">🥚</span>Eggs</span>
+                    <span class="badge a-soya"><span class="badge-icon">🫘</span>Soya</span>
+                    <span class="badge a-sesame"><span class="badge-icon">⚪</span>Sesame</span>
+                </div>
+            </div>
+        </div>
+        <div class="may-contain"><strong>Why:</strong> Flour &amp; cornflour coating (gluten), egg in marinade, soy sauce &amp; gochujang (soya), sesame seed garnish. <strong>May also contain:</strong> milk (butter used in sauce base).</div>
+    </div>
+
+    <!-- Lemon Pepper -->
+    <div class="product-card">
+        <div class="product-header">
+            <div>
+                <div class="product-name">Lemon Pepper Gold Wings</div>
+                <div class="product-desc">Double-fried wings with lemon pepper seasoned flour and hot sauce glaze</div>
+            </div>
+            <div>
+                <div class="contains-label">Contains</div>
+                <div class="allergen-badges">
+                    <span class="badge a-gluten"><span class="badge-icon">🌾</span>Gluten</span>
+                    <span class="badge a-egg"><span class="badge-icon">🥚</span>Eggs</span>
+                </div>
+            </div>
+        </div>
+        <div class="may-contain"><strong>Why:</strong> Flour &amp; cornflour coating (gluten), egg in marinade. <strong>May also contain:</strong> soya, sesame, mustard (shared kitchen).</div>
+    </div>
+
+    <!-- Lemon Pepper Wet -->
+    <div class="product-card">
+        <div class="product-header">
+            <div>
+                <div class="product-name">Royal Lemon Pepper Wet Wings</div>
+                <div class="product-desc">Double-fried wings tossed in buttery lemon pepper wet sauce</div>
+            </div>
+            <div>
+                <div class="contains-label">Contains</div>
+                <div class="allergen-badges">
+                    <span class="badge a-gluten"><span class="badge-icon">🌾</span>Gluten</span>
+                    <span class="badge a-egg"><span class="badge-icon">🥚</span>Eggs</span>
+                    <span class="badge a-milk"><span class="badge-icon">🥛</span>Milk</span>
+                </div>
+            </div>
+        </div>
+        <div class="may-contain"><strong>Why:</strong> Flour &amp; cornflour coating (gluten), egg in marinade, butter in wet sauce (milk/dairy). <strong>May also contain:</strong> soya, sesame (shared kitchen).</div>
+    </div>
+</div>
+
+<!-- DIPPING SAUCES -->
+<div class="section">
+    <div class="section-title">Dipping Sauces</div>
+
+    <!-- BBQ -->
+    <div class="product-card">
+        <div class="product-header">
+            <div>
+                <div class="product-name">BBQ Dip</div>
+                <div class="product-desc">Smoky tomato-based BBQ sauce with treacle and Worcestershire</div>
+            </div>
+            <div>
+                <div class="contains-label">Contains</div>
+                <div class="allergen-badges">
+                    <span class="badge a-celery"><span class="badge-icon">🌱</span>Celery</span>
+                    <span class="badge a-sulphite"><span class="badge-icon">🍷</span>Sulphites</span>
+                    <span class="badge a-mustard"><span class="badge-icon">🌿</span>Mustard</span>
+                    <span class="badge a-soya"><span class="badge-icon">🫘</span>Soya</span>
+                </div>
+            </div>
+        </div>
+        <div class="may-contain"><strong>Why:</strong> Worcestershire sauce (contains celery, sulphites, soya), mustard powder, white wine vinegar (sulphites).</div>
+    </div>
+
+    <!-- Ranch -->
+    <div class="product-card">
+        <div class="product-header">
+            <div>
+                <div class="product-name">Ranch Dip</div>
+                <div class="product-desc">Creamy herb dressing with mayonnaise, Greek yoghurt and kefir</div>
+            </div>
+            <div>
+                <div class="contains-label">Contains</div>
+                <div class="allergen-badges">
+                    <span class="badge a-egg"><span class="badge-icon">🥚</span>Eggs</span>
+                    <span class="badge a-milk"><span class="badge-icon">🥛</span>Milk</span>
+                    <span class="badge a-mustard"><span class="badge-icon">🌿</span>Mustard</span>
+                </div>
+            </div>
+        </div>
+        <div class="may-contain"><strong>Why:</strong> Mayonnaise (eggs, mustard), Greek yoghurt &amp; kefir (milk/dairy).</div>
+    </div>
+
+    <!-- Honey Mustard -->
+    <div class="product-card">
+        <div class="product-header">
+            <div>
+                <div class="product-name">Honey Mustard Dip</div>
+                <div class="product-desc">Sweet and tangy honey mustard with a smoky kick</div>
+            </div>
+            <div>
+                <div class="contains-label">Contains</div>
+                <div class="allergen-badges">
+                    <span class="badge a-egg"><span class="badge-icon">🥚</span>Eggs</span>
+                    <span class="badge a-mustard"><span class="badge-icon">🌿</span>Mustard</span>
+                </div>
+            </div>
+        </div>
+        <div class="may-contain"><strong>Why:</strong> Mayonnaise (eggs, mustard), Dijon mustard, yellow mustard.</div>
+    </div>
+</div>
+
+<!-- SIDES -->
+<div class="section">
+    <div class="section-title">Sides</div>
+
+    <div class="product-card">
+        <div class="product-header">
+            <div>
+                <div class="product-name">Fries</div>
+                <div class="product-desc">Seasoned crispy fries</div>
+            </div>
+            <div>
+                <div class="contains-label">Contains</div>
+                <div class="allergen-badges">
+                    <span class="badge" style="background:#555">None of the 14</span>
+                </div>
+            </div>
+        </div>
+        <div class="may-contain"><strong>May contain:</strong> gluten, soya (shared fryer oil / kitchen environment).</div>
+    </div>
+
+    <div class="product-card">
+        <div class="product-header">
+            <div>
+                <div class="product-name">Loaded Fries</div>
+                <div class="product-desc">Fries loaded with sauce and toppings</div>
+            </div>
+            <div>
+                <div class="contains-label">Contains</div>
+                <div class="allergen-badges">
+                    <span class="badge a-egg"><span class="badge-icon">🥚</span>Eggs</span>
+                    <span class="badge a-milk"><span class="badge-icon">🥛</span>Milk</span>
+                    <span class="badge a-mustard"><span class="badge-icon">🌿</span>Mustard</span>
+                </div>
+            </div>
+        </div>
+        <div class="may-contain"><strong>Why:</strong> Loaded with sauce — allergens vary by sauce choice. <strong>May contain:</strong> gluten, soya (shared kitchen).</div>
+    </div>
+</div>
+
+<!-- Kitchen note -->
+<div class="kitchen-note">
+    <div class="kitchen-note-box">
+        <strong>⚠️ Important Notice</strong><br><br>
+        Charlie's Wingz is prepared in a kitchen that handles all major allergens including <strong>gluten, eggs, dairy, soya, sesame, mustard, celery and sulphites</strong>. While we take care to minimise cross-contamination, we cannot guarantee that any product is completely free from traces of these allergens.<br><br>
+        <strong>If you have a severe or life-threatening allergy, please do not rely solely on this information.</strong> Contact us directly before placing your order so we can advise you properly.<br><br>
+        Allergen information is correct at the time of publication and based on current recipes. Recipes may change — please check back regularly or contact us if you are unsure.
+    </div>
+</div>
+
+<footer>
+    &copy; 2026 Charlie's Wingz &nbsp;·&nbsp; Fit for Royalty 👑 &nbsp;·&nbsp; Allergen info last updated April 2026
+</footer>
+
+</body>
+</html>

@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Charlie's Wingz — Menu Layout Test</title>
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root { --black: #0a0a0a; --gold: #d4af37; --cream: #f5f0e8; --dark: #1a1a1a; }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--black);
+            color: var(--cream);
+            padding: 1rem;
+            border-left: 4px solid var(--gold);
+            border-right: 4px solid var(--gold);
+        }
+
+        h1 {
+            font-family: 'Bebas Neue', sans-serif;
+            color: var(--gold);
+            text-align: center;
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+            letter-spacing: 0.05em;
+        }
+        .subtitle {
+            text-align: center;
+            color: #666;
+            font-size: 0.8rem;
+            margin-bottom: 2rem;
+        }
+
+        .category-tabs {
+            display: flex;
+            gap: 0.5rem;
+            justify-content: center;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+        }
+        .cat-tab {
+            padding: 0.5rem 1.2rem;
+            background: rgba(212,175,55,0.08);
+            border: 1px solid rgba(212,175,55,0.25);
+            border-radius: 20px;
+            color: #aaa;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .cat-tab.active {
+            background: var(--gold);
+            color: var(--black);
+            border-color: var(--gold);
+        }
+
+        .category-section { display: none; }
+        .category-section.active { display: block; }
+
+        .category-title {
+            font-family: 'Bebas Neue', sans-serif;
+            color: var(--gold);
+            font-size: 1.3rem;
+            letter-spacing: 0.05em;
+            margin-bottom: 1rem;
+            text-align: center;
+        }
+
+        .menu-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 1rem;
+            max-width: 900px;
+            margin: 0 auto 2rem;
+        }
+
+        .menu-card {
+            background: var(--dark);
+            border: 1px solid rgba(212,175,55,0.15);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .card-image {
+            width: 100%;
+            height: 180px;
+            background: #222;
+            border-bottom: 1px solid rgba(212,175,55,0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #555;
+            font-size: 0.8rem;
+            position: relative;
+        }
+        .card-image .placeholder-icon {
+            font-size: 2.5rem;
+            opacity: 0.3;
+        }
+        .card-image .placeholder-label {
+            position: absolute;
+            bottom: 8px;
+            right: 10px;
+            font-size: 0.65rem;
+            color: #444;
+            background: rgba(0,0,0,0.5);
+            padding: 2px 6px;
+            border-radius: 3px;
+        }
+
+        .card-body {
+            padding: 1rem;
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 0.3rem;
+        }
+        .card-header h3 {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--cream);
+        }
+        .card-price {
+            font-family: 'Bebas Neue', sans-serif;
+            color: var(--gold);
+            font-size: 1.2rem;
+        }
+
+        .card-includes {
+            font-size: 0.75rem;
+            color: #888;
+            margin-bottom: 0.5rem;
+        }
+
+        .card-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 0.75rem;
+            padding-top: 0.75rem;
+            border-top: 1px solid rgba(212,175,55,0.1);
+        }
+        .card-btn {
+            padding: 0.4rem 1rem;
+            background: var(--gold);
+            color: #000;
+            border: none;
+            border-radius: 6px;
+            font-weight: 700;
+            font-size: 0.8rem;
+            cursor: pointer;
+        }
+        .card-note {
+            font-size: 0.7rem;
+            color: #666;
+        }
+
+        /* Layout options */
+        .layout-toggle {
+            text-align: center;
+            margin-bottom: 1.5rem;
+        }
+        .layout-toggle button {
+            padding: 0.4rem 1rem;
+            background: transparent;
+            border: 1px solid #444;
+            color: #aaa;
+            border-radius: 6px;
+            cursor: pointer;
+            margin: 0 0.25rem;
+            font-size: 0.8rem;
+        }
+        .layout-toggle button.active {
+            border-color: var(--gold);
+            color: var(--gold);
+        }
+
+        /* Image position variants */
+        .layout-top .card-image { 
+            height: 0;
+            padding-bottom: 65%;
+        }
+
+        .layout-side .menu-card {
+            display: grid;
+            grid-template-columns: 160px 1fr;
+        }
+        .layout-side .card-image {
+            height: 100%;
+            min-height: 160px;
+            padding-bottom: 0;
+            border-bottom: none;
+            border-right: 1px solid rgba(212,175,55,0.1);
+        }
+
+        .layout-none .card-image { display: none; }
+
+        @media (max-width: 480px) {
+            .layout-side .menu-card {
+                grid-template-columns: 1fr;
+            }
+            .layout-side .card-image {
+                height: 160px;
+                border-right: none;
+                border-bottom: 1px solid rgba(212,175,55,0.1);
+            }
+        }
+    </style>
+</head>
+<body>
+
+<h1>👑 Menu Layout Test</h1>
+<p class="subtitle">Testing image placement — swap between layouts to see what works best</p>
+
+<div class="category-tabs" id="cat-tabs"></div>
+<div id="menu-content"></div>
+
+<script>
+    const MENU = {
+        wings: {
+            'w6':  { name: '6 Wings', price: 1075, category: 'Wings' },
+            'w10': { name: '10 Wings', price: 1795, category: 'Wings', wingCount: 10 },
+            'w20': { name: '20 Wings', price: 3145, category: 'Wings', wingCount: 20 },
+            'w30': { name: '30 Wings', price: 4495, category: 'Wings', wingCount: 30 },
+            'w50': { name: '50 Wings', price: 7195, category: 'Wings', wingCount: 50 }
+        },
+        meals: {
+            'm6':  { name: '6 Wing Meal', price: 1345, category: 'Meals', includes: 'Wings + Fries + Drink' },
+            'm10': { name: '10 Wing Meal', price: 2065, category: 'Meals', includes: 'Wings + Fries + Drink', wingCount: 10 },
+            'm20': { name: '20 Wing Meal', price: 3415, category: 'Meals', includes: 'Wings + Fries + Drink', wingCount: 20 },
+            'm30': { name: '30 Wing Meal', price: 4945, category: 'Meals', includes: 'Wings + Fries + Drink', wingCount: 30 }
+        },
+        bundles: {
+            'b-taster18': { name: 'Taster Box', price: 2995, category: 'Bundles', includes: '18 wings — 6 of each flavour + 3 dips' },
+            'b-taster30': { name: 'Taster Feast', price: 4500, category: 'Bundles', includes: '30 wings — 10 of each flavour + 3 dips' },
+            'b-duo':    { name: 'Duo Bundle', price: 3795, category: 'Bundles', includes: '20 wings + 2 fries + 2 drinks' },
+            'b-family': { name: 'Family Bundle', price: 5295, category: 'Bundles', includes: '30 wings + 3 fries + 3 drinks' },
+            'b-party':  { name: 'Party Bundle', price: 8495, category: 'Bundles', includes: '50 wings + 4 fries + 4 drinks' }
+        },
+        sides: {
+            's-fries':  { name: 'Fries', price: 395, category: 'Sides' },
+            's-loaded': { name: 'Loaded Fries', price: 595, category: 'Sides' },
+            's-dip':    { name: 'Extra Dip', price: 100, category: 'Sides' },
+            's-drink':  { name: 'Drink', price: 200, category: 'Sides' }
+        }
+    };
+
+    const IMAGE_HINTS = {
+        'w6': '6 wings photo', 'w10': '10 wings photo', 'w20': '20 wings photo',
+        'w30': '30 wings photo', 'w50': '50 wings photo',
+        'm6': '6 wing meal photo', 'm10': '10 wing meal photo',
+        'm20': '20 wing meal photo', 'm30': '30 wing meal photo',
+        'b-taster18': 'Taster box photo', 'b-taster30': 'Taster feast photo',
+        'b-duo': 'Duo bundle photo', 'b-family': 'Family bundle photo', 'b-party': 'Party bundle photo',
+        's-fries': 'Fries photo', 's-loaded': 'Loaded fries photo',
+        's-dip': 'Dip pot photo', 's-drink': 'Drink photo'
+    };
+
+    const FLAVOURS = ['Lemon Pepper', 'Lemon Pepper Wet', 'Korean BBQ'];
+    const FLAVOUR_COLORS = {
+        'Lemon Pepper': '#c8b03a',
+        'Lemon Pepper Wet': '#8a6d1b',
+        'Korean BBQ': '#8b1a1a'
+    };
+
+    const categories = [
+        { key: 'wings', title: 'WINGS', icon: '🍗' },
+        { key: 'meals', title: 'MEALS', icon: '🍽' },
+        { key: 'bundles', title: 'BUNDLES', icon: '👑' },
+        { key: 'sides', title: 'SIDES', icon: '🍟' }
+    ];
+
+    let activeCat = 'wings';
+    let currentLayout = 'top';
+
+    function needsFlavourSelector(id) {
+        return id.startsWith('w') || id.startsWith('m') || id === 'b-duo' || id === 'b-family' || id === 'b-party';
+    }
+
+    function render() {
+        // Tabs
+        const tabsEl = document.getElementById('cat-tabs');
+        tabsEl.innerHTML = categories.map(c =>
+            `<button class="cat-tab ${c.key === activeCat ? 'active' : ''}" onclick="switchCat('${c.key}')">${c.icon} ${c.title}</button>`
+        ).join('');
+
+        // Content
+        const contentEl = document.getElementById('menu-content');
+        contentEl.innerHTML = categories.map(c => {
+            const items = MENU[c.key];
+            const cards = Object.entries(items).map(([id, item]) => {
+                const hasFlavour = needsFlavourSelector(id);
+                const flavourSelector = hasFlavour ? `
+                    <div style="display:flex;gap:4px;margin-top:8px;flex-wrap:wrap">
+                        ${FLAVOURS.map((f, i) => `
+                            <button onclick="switchImage('${id}', '${f}', this)" 
+                                style="flex:1;min-width:0;padding:5px 4px;border-radius:4px;font-size:0.65rem;font-weight:600;cursor:pointer;border:1px solid ${FLAVOUR_COLORS[f]};
+                                ${i === 0 ? `background:${FLAVOUR_COLORS[f]};color:#fff` : `background:transparent;color:${FLAVOUR_COLORS[f]}`}">
+                                ${f}
+                            </button>
+                        `).join('')}
+                    </div>
+                ` : '';
+
+                return `
+                <div class="menu-card">
+                    <div class="card-image" id="img-${id}" style="${hasFlavour ? `border-bottom:3px solid ${FLAVOUR_COLORS['Lemon Pepper']}` : ''}">
+                        <span class="placeholder-icon">📷</span>
+                        <span class="placeholder-label" id="label-${id}">${hasFlavour ? 'Lemon Pepper' : (IMAGE_HINTS[id] || id)}</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="card-header">
+                            <h3>${item.name}</h3>
+                            <span class="card-price">£${(item.price / 100).toFixed(2)}</span>
+                        </div>
+                        ${item.includes ? `<p class="card-includes">${item.includes}</p>` : ''}
+                        ${flavourSelector}
+                        <div class="card-footer">
+                            <span class="card-note">${item.wingCount ? item.wingCount + ' wings' : item.category}</span>
+                            <button class="card-btn">ADD TO ORDER</button>
+                        </div>
+                    </div>
+                </div>
+            `}).join('');
+
+            return `
+                <div class="category-section ${c.key === activeCat ? 'active' : ''}" id="sec-${c.key}">
+                    <h2 class="category-title">${c.title}</h2>
+                    <div class="menu-grid layout-${currentLayout}">${cards}</div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    function switchImage(id, flavour, btn) {
+        // Update image placeholder
+        const imgEl = document.getElementById('img-' + id);
+        const labelEl = document.getElementById('label-' + id);
+        if (imgEl) {
+            imgEl.style.borderBottomColor = FLAVOUR_COLORS[flavour];
+            // When real images exist, this would be:
+            // imgEl.querySelector('img').src = `/images/${id}-${flavour.toLowerCase().replace(/ /g,'-')}.jpg`;
+        }
+        if (labelEl) labelEl.textContent = flavour;
+
+        // Update button styles
+        const parent = btn.parentElement;
+        parent.querySelectorAll('button').forEach(b => {
+            const f = b.textContent.trim();
+            b.style.background = 'transparent';
+            b.style.color = FLAVOUR_COLORS[f] || '#aaa';
+        });
+        btn.style.background = FLAVOUR_COLORS[flavour];
+        btn.style.color = '#fff';
+    }
+
+    function switchCat(key) {
+        activeCat = key;
+        render();
+    }
+
+    function setLayout(layout, btn) {
+        currentLayout = layout;
+        document.querySelectorAll('.layout-toggle button').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        render();
+    }
+
+    render();
+</script>
+</body>
+</html>

@@ -1,0 +1,13 @@
+# DO NOT REMOVE. CLOUDLINUX PASSENGER CONFIGURATION BEGIN
+PassengerAppRoot "/home/charlies/public_html/app"
+PassengerBaseURI "/"
+PassengerNodejs "/home/charlies/nodevenv/public_html/app/22/bin/node"
+PassengerAppType node
+PassengerStartupFile server.js
+# DO NOT REMOVE. CLOUDLINUX PASSENGER CONFIGURATION END
+PassengerAppType node
+PassengerStartupFile app.js
+<IfModule mod_headers.c>
+    Header always unset Content-Security-Policy
+    Header always unset X-Content-Security-Policy
+</IfModule>
