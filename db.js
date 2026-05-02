@@ -299,7 +299,7 @@ const stmts = {
     getOrderById: db.prepare('SELECT * FROM orders WHERE id = ?'),
     getOrderByDriverToken: db.prepare('SELECT * FROM orders WHERE driver_token = ?'),
     getAllOrders: db.prepare('SELECT * FROM orders ORDER BY created_at DESC'),
-    getOrdersByEmail: db.prepare('SELECT * FROM orders WHERE customer_email = ? ORDER BY created_at DESC'),
+    getOrdersByEmail: db.prepare('SELECT * FROM orders WHERE LOWER(customer_email) = ? ORDER BY created_at DESC'),
 
     insertOptin: db.prepare('INSERT INTO optins (name, email, phone, source, created_at) VALUES (?, ?, ?, ?, ?)'),
     getAllOptins: db.prepare('SELECT * FROM optins ORDER BY id DESC'),
