@@ -1479,6 +1479,7 @@ function saveStreamConfig({ isLive, streamUrl, streamTitle, nextStreamAt, discou
 // ── Customer order history ────────────────────────────────────────────────────
 
 function getOrdersByEmail(email) {
+    if (!email) return [];
     const rows = stmts.getOrdersByEmail.all(email.toLowerCase());
     return rows.map(row => ({
         id:          row.id,
