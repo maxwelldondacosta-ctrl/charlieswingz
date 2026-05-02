@@ -720,6 +720,13 @@ app.get('/api/stream', (req, res) => {
     res.json(db.getStreamConfig());
 });
 
+// ── Order items (public — used by reorder flow) ──────────────────────────────
+app.get('/api/orders/:id/items', (req, res) => {
+    const order = db.getOrderById(req.params.id);
+    if (!order) return res.status(404).json({ error: 'Order not found' });
+    res.json({ items: JSON.parse(order.items_json || '[]') });
+});
+
 // Business contact details (for driver page + customer help)
 app.get('/api/contact', (req, res) => {
     const phone = process.env.BUSINESS_PHONE || process.env.OWNER_PHONE || '';
@@ -2390,6 +2397,12 @@ app.get('/api/loyalty/progress', requireGameAuth, (req, res) => {
     const progress = db.getLoyaltyProgress(req.playerEmail);
     if (!progress) return res.status(404).json({ message: 'No loyalty account found' });
     res.json(progress);
+});
+
+// ── Customer order history (authenticated) ──────────────────────────────────
+app.get('/api/account/orders', requireGameAuth, (req, res) => {
+    const orders = db.getOrdersByEmail(req.playerEmail);
+    res.json(orders);
 });
 
 // ── Account profile (authenticated) ────────────────────────────────────────
