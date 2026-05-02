@@ -191,6 +191,7 @@
         <button class="tab-btn" onclick="switchTab('optins')">Opt-ins</button>
         <button class="tab-btn" onclick="switchTab('customers')">Customers</button>
         <button class="tab-btn" onclick="switchTab('phonebank')">Phone / Bank</button>
+        <button class="tab-btn" onclick="switchTab('livestream')">📺 Livestream</button>
     </div>
 
     <div id="tab-orders" class="tab-content active">
@@ -385,6 +386,67 @@
             <div id="bt-result" style="display:none;background:#0d1b2a;border:1px solid #4caf50;border-radius:6px;padding:12px;margin-top:10px">
                 <div style="color:#4caf50;font-weight:700;margin-bottom:6px" id="bt-result-msg"></div>
             </div>
+        </div>
+    </div>
+
+    <div id="tab-livestream" class="tab-content">
+        <div style="background:var(--dark);border:1px solid #333;border-radius:10px;padding:1.25rem;margin-bottom:1rem">
+            <h2 style="color:var(--gold);font-size:1.1rem;margin-bottom:1.25rem">📺 Livestream Settings</h2>
+
+            <div style="display:grid;gap:1rem">
+                <div style="display:flex;align-items:center;justify-content:space-between;background:#111;border:1px solid #333;border-radius:8px;padding:0.75rem 1rem">
+                    <div>
+                        <div style="font-weight:700;color:var(--cream);margin-bottom:0.2rem">Go Live</div>
+                        <div style="font-size:0.8rem;color:#888">Switches /live to the live stream layout for all visitors within 30 seconds</div>
+                    </div>
+                    <label style="position:relative;display:inline-block;width:48px;height:26px;cursor:pointer;flex-shrink:0">
+                        <input type="checkbox" id="ls-is-live" style="opacity:0;width:0;height:0">
+                        <span id="ls-toggle-track" style="position:absolute;inset:0;background:#333;border-radius:13px;transition:background 0.2s"></span>
+                        <span id="ls-toggle-thumb" style="position:absolute;left:3px;top:3px;width:20px;height:20px;background:#fff;border-radius:50%;transition:left 0.2s"></span>
+                    </label>
+                </div>
+
+                <div>
+                    <label style="font-size:0.75rem;color:var(--gold);display:block;margin-bottom:0.3rem;letter-spacing:0.05em">YOUTUBE LIVE URL</label>
+                    <input type="url" id="ls-stream-url" placeholder="https://youtube.com/live/xxxx" style="width:100%;padding:0.6rem 0.75rem;background:#111;border:1px solid #333;border-radius:6px;color:var(--cream);font-family:inherit;font-size:0.9rem">
+                </div>
+
+                <div>
+                    <label style="font-size:0.75rem;color:var(--gold);display:block;margin-bottom:0.3rem;letter-spacing:0.05em">YOUTUBE CHANNEL ID <span style="color:#666;font-size:0.7rem">(UCxxxxxxx — used for replay auto-embed. Find in YouTube Studio → Customisation → Basic info)</span></label>
+                    <input type="text" id="ls-channel-id" placeholder="UCxxxxxxxxxxxxxxxxxx" style="width:100%;padding:0.6rem 0.75rem;background:#111;border:1px solid #333;border-radius:6px;color:var(--cream);font-family:inherit;font-size:0.9rem">
+                </div>
+
+                <div>
+                    <label style="font-size:0.75rem;color:var(--gold);display:block;margin-bottom:0.3rem;letter-spacing:0.05em">STREAM TITLE</label>
+                    <input type="text" id="ls-stream-title" placeholder="e.g. Sauce Review Night" style="width:100%;padding:0.6rem 0.75rem;background:#111;border:1px solid #333;border-radius:6px;color:var(--cream);font-family:inherit;font-size:0.9rem">
+                </div>
+
+                <div>
+                    <label style="font-size:0.75rem;color:var(--gold);display:block;margin-bottom:0.3rem;letter-spacing:0.05em">NEXT STREAM DATE &amp; TIME</label>
+                    <input type="datetime-local" id="ls-next-stream" style="width:100%;padding:0.6rem 0.75rem;background:#111;border:1px solid #333;border-radius:6px;color:var(--cream);font-family:inherit;font-size:0.9rem">
+                </div>
+
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem">
+                    <div>
+                        <label style="font-size:0.75rem;color:var(--gold);display:block;margin-bottom:0.3rem;letter-spacing:0.05em">TONIGHT'S DISCOUNT CODE</label>
+                        <input type="text" id="ls-discount-code" placeholder="e.g. LIVE25" style="width:100%;padding:0.6rem 0.75rem;background:#111;border:1px solid #333;border-radius:6px;color:var(--cream);font-family:inherit;font-size:0.9rem;text-transform:uppercase">
+                    </div>
+                    <div>
+                        <label style="font-size:0.75rem;color:var(--gold);display:block;margin-bottom:0.3rem;letter-spacing:0.05em">CODE DESCRIPTION</label>
+                        <input type="text" id="ls-code-desc" placeholder="e.g. 25% off — tonight only" style="width:100%;padding:0.6rem 0.75rem;background:#111;border:1px solid #333;border-radius:6px;color:var(--cream);font-family:inherit;font-size:0.9rem">
+                    </div>
+                </div>
+            </div>
+
+            <button onclick="saveStreamConfig()" style="margin-top:1.25rem;width:100%;padding:0.8rem;background:var(--gold);color:var(--black);border:none;border-radius:6px;font-size:1rem;font-weight:700;cursor:pointer;letter-spacing:0.05em">Save Stream Settings</button>
+            <div id="ls-msg" style="margin-top:0.75rem;font-size:0.85rem;text-align:center;display:none"></div>
+        </div>
+
+        <div style="background:var(--dark);border:1px solid #333;border-radius:10px;padding:1rem">
+            <p style="color:#888;font-size:0.8rem;line-height:1.7">
+                <strong style="color:var(--gold)">How it works:</strong> Configure your settings before going live. Toggle <em>Go Live</em> when your stream starts — the /live page switches to the live layout for all visitors within 30 seconds. Toggle it off when you finish.<br><br>
+                <strong style="color:var(--gold)">Discount code:</strong> The code must already exist in your discounts system. It will display in the order panel on the live page during your stream.
+            </p>
         </div>
     </div>
 </div>
@@ -733,6 +795,7 @@
         if (tab === 'catering') loadCatering();
         if (tab === 'history') loadHistory();
         if (tab === 'customers') { loadLotteryStats(); loadCustomers(); }
+        if (tab === 'livestream') loadStreamConfig();
     }
 
     // ── Catering Requests ─────────────────────────────────────────────────────
@@ -2711,6 +2774,73 @@
             list.innerHTML = '<p style="color:#d32f2f;font-size:0.8rem">Could not load.</p>';
         }
     }
+
+    // ── Livestream tab ────────────────────────────────────────────────────────
+    (function () {
+        const lsToggle = document.getElementById('ls-is-live');
+        const lsTrack  = document.getElementById('ls-toggle-track');
+        const lsThumb  = document.getElementById('ls-toggle-thumb');
+
+        function updateToggleUI(checked) {
+            lsTrack.style.background = checked ? '#d4af37' : '#333';
+            lsThumb.style.left = checked ? '25px' : '3px';
+        }
+
+        lsToggle.addEventListener('change', () => updateToggleUI(lsToggle.checked));
+
+        window.loadStreamConfig = async function () {
+            try {
+                const res = await fetch('/admin/api/stream', {
+                    headers: { Authorization: 'Bearer ' + sessionToken }
+                });
+                if (!res.ok) return;
+                const cfg = await res.json();
+                lsToggle.checked = !!cfg.isLive;
+                updateToggleUI(!!cfg.isLive);
+                document.getElementById('ls-stream-url').value    = cfg.streamUrl        || '';
+                document.getElementById('ls-channel-id').value    = cfg.channelId        || '';
+                document.getElementById('ls-stream-title').value  = cfg.streamTitle      || '';
+                document.getElementById('ls-discount-code').value = cfg.discountCode     || '';
+                document.getElementById('ls-code-desc').value     = cfg.codeDescription  || '';
+                if (cfg.nextStreamAt) {
+                    const d = new Date(cfg.nextStreamAt);
+                    const local = new Date(d.getTime() - d.getTimezoneOffset() * 60000)
+                        .toISOString().slice(0, 16);
+                    document.getElementById('ls-next-stream').value = local;
+                }
+            } catch (e) { console.error('loadStreamConfig', e); }
+        };
+
+        window.saveStreamConfig = async function () {
+            const msg     = document.getElementById('ls-msg');
+            const nextRaw = document.getElementById('ls-next-stream').value;
+            const body = {
+                isLive:          lsToggle.checked,
+                streamUrl:       document.getElementById('ls-stream-url').value.trim(),
+                channelId:       document.getElementById('ls-channel-id').value.trim(),
+                streamTitle:     document.getElementById('ls-stream-title').value.trim(),
+                nextStreamAt:    nextRaw ? new Date(nextRaw).toISOString() : null,
+                discountCode:    document.getElementById('ls-discount-code').value.trim().toUpperCase(),
+                codeDescription: document.getElementById('ls-code-desc').value.trim()
+            };
+            try {
+                const res = await fetch('/admin/api/stream', {
+                    method:  'POST',
+                    headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + sessionToken },
+                    body:    JSON.stringify(body)
+                });
+                if (!res.ok) throw new Error(await res.text());
+                msg.style.color   = '#4caf50';
+                msg.textContent   = '✓ Saved';
+                msg.style.display = 'block';
+                setTimeout(() => { msg.style.display = 'none'; }, 3000);
+            } catch (e) {
+                msg.style.color   = '#ff6b6b';
+                msg.textContent   = '✗ Save failed — ' + e.message;
+                msg.style.display = 'block';
+            }
+        };
+    })();
 </script>
     <script>
         // PWA — register admin service worker
