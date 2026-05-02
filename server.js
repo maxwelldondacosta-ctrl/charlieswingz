@@ -720,11 +720,13 @@ app.get('/api/stream', (req, res) => {
     res.json(db.getStreamConfig());
 });
 
-// ── Order items (public — used by reorder flow) ──────────────────────────────
+// ── Order items (public — used by reorder flow in index.html) ────────────────
 app.get('/api/orders/:id/items', (req, res) => {
     const order = db.getOrderById(req.params.id);
     if (!order) return res.status(404).json({ error: 'Order not found' });
-    res.json({ items: JSON.parse(order.items_json || '[]') });
+    let items;
+    try { items = JSON.parse(order.items_json || '[]'); } catch { items = []; }
+    res.json({ items });
 });
 
 // Business contact details (for driver page + customer help)
