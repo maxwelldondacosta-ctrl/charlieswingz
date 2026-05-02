@@ -299,6 +299,7 @@ const stmts = {
     getOrderById: db.prepare('SELECT * FROM orders WHERE id = ?'),
     getOrderByDriverToken: db.prepare('SELECT * FROM orders WHERE driver_token = ?'),
     getAllOrders: db.prepare('SELECT * FROM orders ORDER BY created_at DESC'),
+    getOrdersByEmail: db.prepare('SELECT * FROM orders WHERE customer_email = ? ORDER BY created_at DESC'),
 
     insertOptin: db.prepare('INSERT INTO optins (name, email, phone, source, created_at) VALUES (?, ?, ?, ?, ?)'),
     getAllOptins: db.prepare('SELECT * FROM optins ORDER BY id DESC'),
@@ -1475,6 +1476,20 @@ function saveStreamConfig({ isLive, streamUrl, streamTitle, nextStreamAt, discou
     return getStreamConfig();
 }
 
+// ── Customer order history ────────────────────────────────────────────────────
+
+function getOrdersByEmail(email) {
+    const rows = stmts.getOrdersByEmail.all(email.toLowerCase());
+    return rows.map(row => ({
+        id:          row.id,
+        createdAt:   row.created_at,
+        status:      row.status,
+        orderType:   row.order_type,
+        totalPence:  row.total_pence,
+        items:       JSON.parse(row.items_json || '[]')
+    }));
+}
+
 // ── Compat helpers (JSON db used load/save — expose as no-ops) ──────────────
 function load() { return {}; }
 function save() { }
@@ -1513,7 +1528,7 @@ module.exports = {
     load, save,
     nukeTestData,
     insertOrder, updateOrderStatus, updateOrderPayment, updateOrderPaymentStatus, deleteOrder, setDriverToken,
-    getOrderById, getOrderByDriverToken, getTodaysOrders, getAllOrders,
+    getOrderById, getOrderByDriverToken, getTodaysOrders, getAllOrders, getOrdersByEmail,
     insertOptin, getAllOptins, deleteOptin,
     insertCateringRequest, getAllCateringRequests, updateCateringStatus, deleteCateringRequest,
     createDiscountCode, validateDiscountCode, markDiscountUsed, updateDiscountToFixed,
