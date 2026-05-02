@@ -203,6 +203,7 @@ db.exec(`
         next_stream_at TEXT,
         discount_code TEXT,
         code_description TEXT,
+        replay_url TEXT,
         updated_at TEXT
     );
 `);
@@ -223,6 +224,7 @@ const migrations = [
     ['orders', 'payment_method', "TEXT DEFAULT 'stripe'"], // 'stripe' | 'cash' | 'bank_transfer' | 'manual'
     ['orders', 'source', "TEXT DEFAULT 'web'"],            // 'web' | 'whatsapp' | 'walkin' | 'phone'
     ['orders', 'customer_id', 'TEXT'],                      // FK to customers.id, nullable
+    ['stream_config', 'replay_url', 'TEXT'],
 ];
 for (const [table, col, type] of migrations) {
     try {
@@ -407,16 +409,16 @@ const stmts = {
 
     getStreamConfig: db.prepare('SELECT * FROM stream_config WHERE id = 1'),
     upsertStreamConfig: db.prepare(`INSERT INTO stream_config
-        (id, is_live, stream_url, channel_id, stream_title, next_stream_at, discount_code, code_description, updated_at)
-        VALUES (1, @is_live, @stream_url, @channel_id, @stream_title, @next_stream_at, @discount_code, @code_description, @updated_at)
+        (id, is_live, stream_url, stream_title, next_stream_at, discount_code, code_description, replay_url, updated_at)
+        VALUES (1, @is_live, @stream_url, @stream_title, @next_stream_at, @discount_code, @code_description, @replay_url, @updated_at)
         ON CONFLICT(id) DO UPDATE SET
             is_live          = excluded.is_live,
             stream_url       = excluded.stream_url,
-            channel_id       = excluded.channel_id,
             stream_title     = excluded.stream_title,
             next_stream_at   = excluded.next_stream_at,
             discount_code    = excluded.discount_code,
             code_description = excluded.code_description,
+            replay_url       = excluded.replay_url,
             updated_at       = excluded.updated_at`),
 };
 
@@ -1447,27 +1449,27 @@ function getAllAdminCredentials() {
 
 function getStreamConfig() {
     const row = stmts.getStreamConfig.get();
-    if (!row) return { isLive: false, streamUrl: null, channelId: null, streamTitle: null, nextStreamAt: null, discountCode: null, codeDescription: null };
+    if (!row) return { isLive: false, streamUrl: null, streamTitle: null, nextStreamAt: null, discountCode: null, codeDescription: null, replayUrl: null };
     return {
         isLive:          !!row.is_live,
         streamUrl:       row.stream_url,
-        channelId:       row.channel_id,
         streamTitle:     row.stream_title,
         nextStreamAt:    row.next_stream_at,
         discountCode:    row.discount_code,
-        codeDescription: row.code_description
+        codeDescription: row.code_description,
+        replayUrl:       row.replay_url
     };
 }
 
-function saveStreamConfig({ isLive, streamUrl, channelId, streamTitle, nextStreamAt, discountCode, codeDescription }) {
+function saveStreamConfig({ isLive, streamUrl, streamTitle, nextStreamAt, discountCode, codeDescription, replayUrl }) {
     stmts.upsertStreamConfig.run({
         is_live:          isLive ? 1 : 0,
         stream_url:       streamUrl       || null,
-        channel_id:       channelId       || null,
         stream_title:     streamTitle     || null,
         next_stream_at:   nextStreamAt    || null,
         discount_code:    discountCode    || null,
         code_description: codeDescription || null,
+        replay_url:       replayUrl       || null,
         updated_at:       new Date().toISOString()
     });
     return getStreamConfig();

@@ -1177,8 +1177,8 @@ app.get('/admin/api/stream', requireAdmin, (req, res) => {
 
 app.post('/admin/api/stream', requireAdmin, (req, res) => {
     try {
-        const { isLive, streamUrl, channelId, streamTitle, nextStreamAt, discountCode, codeDescription } = req.body;
-        const config = db.saveStreamConfig({ isLive, streamUrl, channelId, streamTitle, nextStreamAt, discountCode, codeDescription });
+        const { isLive, streamUrl, streamTitle, nextStreamAt, discountCode, codeDescription, replayUrl } = req.body;
+        const config = db.saveStreamConfig({ isLive, streamUrl, streamTitle, nextStreamAt, discountCode, codeDescription, replayUrl });
         res.json(config);
     } catch (e) {
         res.status(500).json({ error: e.message });

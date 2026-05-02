@@ -371,25 +371,6 @@
             color: #777;
         }
 
-        .notify-btn {
-            display: inline-block;
-            margin-top: 1.5rem;
-            padding: 0.7rem 2rem;
-            background: transparent;
-            border: 1px solid var(--gold);
-            color: var(--gold);
-            font-family: 'Bebas Neue', sans-serif;
-            font-size: 0.9rem;
-            letter-spacing: 0.12em;
-            border-radius: 4px;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .notify-btn:hover {
-            background: rgba(212,168,75,0.1);
-        }
-
         /* Replay section */
         .replay-section {
             margin-top: 0.5rem;
@@ -550,8 +531,6 @@
             </div>
 
             <div class="offline-date" id="offline-date"></div>
-
-            <button class="notify-btn" id="notify-btn" onclick="requestNotify()">🔔 Notify Me</button>
         </div>
 
         <!-- Latest replay -->
@@ -651,9 +630,8 @@
                 document.getElementById('offline-subtitle').textContent = 'No date set yet — check back soon.';
             }
 
-            if (cfg.channelId) {
-                const replayUrl = 'https://www.youtube.com/embed?listType=user_uploads&list=' + cfg.channelId + '&index=1';
-                document.getElementById('replay-iframe').src = replayUrl;
+            if (cfg.replayUrl) {
+                document.getElementById('replay-iframe').src = youtubeEmbedUrl(cfg.replayUrl);
                 document.getElementById('replay-section').style.display = 'block';
             } else {
                 document.getElementById('replay-section').style.display = 'none';
@@ -686,32 +664,12 @@
             // Already an embed URL
             if (u.pathname.startsWith('/embed/')) return url;
         } catch (e) {}
-        return url;
-    }
-
-    // ── Push notification opt-in ──────────────────────────────────────────────
-    async function requestNotify() {
-        const btn = document.getElementById('notify-btn');
-        if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
-            btn.textContent = '⚠ Not supported in this browser';
-            return;
-        }
-        try {
-            const permission = await Notification.requestPermission();
-            if (permission !== 'granted') {
-                btn.textContent = '🔕 Permission denied';
-                return;
-            }
-            btn.textContent = '✓ You\'ll be notified!';
-            btn.disabled = true;
-        } catch (e) {
-            btn.textContent = '⚠ Could not enable notifications';
-        }
+        return '';
     }
 
     function stateKey(cfg) {
         if (cfg.isLive && cfg.streamUrl) return 'live';
-        if (!cfg.isLive && (cfg.nextStreamAt || cfg.channelId || cfg.streamTitle)) return 'offline';
+        if (!cfg.isLive && (cfg.nextStreamAt || cfg.replayUrl || cfg.streamTitle)) return 'offline';
         return 'none';
     }
 

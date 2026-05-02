@@ -412,8 +412,8 @@
                 </div>
 
                 <div>
-                    <label style="font-size:0.75rem;color:var(--gold);display:block;margin-bottom:0.3rem;letter-spacing:0.05em">YOUTUBE CHANNEL ID <span style="color:#666;font-size:0.7rem">(UCxxxxxxx — used for replay auto-embed. Find in YouTube Studio → Customisation → Basic info)</span></label>
-                    <input type="text" id="ls-channel-id" placeholder="UCxxxxxxxxxxxxxxxxxx" style="width:100%;padding:0.6rem 0.75rem;background:#111;border:1px solid #333;border-radius:6px;color:var(--cream);font-family:inherit;font-size:0.9rem">
+                    <label style="font-size:0.75rem;color:var(--gold);display:block;margin-bottom:0.3rem;letter-spacing:0.05em">LATEST REPLAY URL <span style="color:#666;font-size:0.7rem">(YouTube URL of your most recent stream — shown on the page when you're offline)</span></label>
+                    <input type="url" id="ls-replay-url" placeholder="https://youtube.com/watch?v=xxxx or /live/xxxx" style="width:100%;padding:0.6rem 0.75rem;background:#111;border:1px solid #333;border-radius:6px;color:var(--cream);font-family:inherit;font-size:0.9rem">
                 </div>
 
                 <div>
@@ -2804,7 +2804,7 @@
                 lsToggle.checked = !!cfg.isLive;
                 updateToggleUI(!!cfg.isLive);
                 document.getElementById('ls-stream-url').value    = cfg.streamUrl        || '';
-                document.getElementById('ls-channel-id').value    = cfg.channelId        || '';
+                document.getElementById('ls-replay-url').value    = cfg.replayUrl        || '';
                 document.getElementById('ls-stream-title').value  = cfg.streamTitle      || '';
                 document.getElementById('ls-discount-code').value = cfg.discountCode     || '';
                 document.getElementById('ls-code-desc').value     = cfg.codeDescription  || '';
@@ -2827,7 +2827,7 @@
             const body = {
                 isLive:          lsToggle.checked,
                 streamUrl:       document.getElementById('ls-stream-url').value.trim(),
-                channelId:       document.getElementById('ls-channel-id').value.trim(),
+                replayUrl:       document.getElementById('ls-replay-url').value.trim(),
                 streamTitle:     document.getElementById('ls-stream-title').value.trim(),
                 nextStreamAt:    nextRaw ? new Date(nextRaw).toISOString() : null,
                 discountCode:    document.getElementById('ls-discount-code').value.trim().toUpperCase(),
