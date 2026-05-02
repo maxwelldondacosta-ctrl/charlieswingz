@@ -2789,11 +2789,17 @@
         lsToggle.addEventListener('change', () => updateToggleUI(lsToggle.checked));
 
         window.loadStreamConfig = async function () {
+            const msg = document.getElementById('ls-msg');
             try {
                 const res = await fetch('/admin/api/stream', {
                     headers: { Authorization: 'Bearer ' + sessionToken }
                 });
-                if (!res.ok) return;
+                if (!res.ok) {
+                    msg.style.color   = '#ff6b6b';
+                    msg.textContent   = '✗ Could not load stream config (' + res.status + ')';
+                    msg.style.display = 'block';
+                    return;
+                }
                 const cfg = await res.json();
                 lsToggle.checked = !!cfg.isLive;
                 updateToggleUI(!!cfg.isLive);
@@ -2804,11 +2810,15 @@
                 document.getElementById('ls-code-desc').value     = cfg.codeDescription  || '';
                 if (cfg.nextStreamAt) {
                     const d = new Date(cfg.nextStreamAt);
-                    const local = new Date(d.getTime() - d.getTimezoneOffset() * 60000)
-                        .toISOString().slice(0, 16);
-                    document.getElementById('ls-next-stream').value = local;
+                    document.getElementById('ls-next-stream').value = new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+                } else {
+                    document.getElementById('ls-next-stream').value = '';
                 }
-            } catch (e) { console.error('loadStreamConfig', e); }
+            } catch (e) {
+                msg.style.color   = '#ff6b6b';
+                msg.textContent   = '✗ Could not load stream config';
+                msg.style.display = 'block';
+            }
         };
 
         window.saveStreamConfig = async function () {

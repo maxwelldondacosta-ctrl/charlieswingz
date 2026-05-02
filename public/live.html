@@ -568,7 +568,7 @@
     </div>
 
     <!-- ── NO CONFIG STATE ────────────────────────────────────────────────── -->
-    <div id="state-none" class="no-stream">
+    <div id="state-none" class="no-stream" style="display:none">
         <h2>Coming Soon</h2>
         <p>Charlie's Wingz Live is on its way. Stay tuned.</p>
         <a href="/" class="menu-cta" style="max-width:260px">Order Now →</a>
@@ -611,6 +611,7 @@
 
     // ── Render state ──────────────────────────────────────────────────────────
     function renderState(cfg) {
+        if (countdownInterval) { clearInterval(countdownInterval); countdownInterval = null; }
         document.getElementById('state-live').style.display    = 'none';
         document.getElementById('state-offline').style.display = 'none';
         document.getElementById('state-none').style.display    = 'none';
@@ -733,6 +734,7 @@
     (async function init() {
         try {
             const res = await fetch('/api/stream');
+            if (!res.ok) throw new Error(res.status);
             const cfg = await res.json();
             currentState = stateKey(cfg);
             renderState(cfg);
