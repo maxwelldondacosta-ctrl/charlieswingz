@@ -715,6 +715,11 @@ app.get('/api/health', (req, res) => {
     res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
+// ── Stream config (public) ───────────────────────────────────────────────────
+app.get('/api/stream', (req, res) => {
+    res.json(db.getStreamConfig());
+});
+
 // Business contact details (for driver page + customer help)
 app.get('/api/contact', (req, res) => {
     const phone = process.env.BUSINESS_PHONE || process.env.OWNER_PHONE || '';
@@ -1163,6 +1168,20 @@ app.post('/admin/api/pause', requireAdmin, (req, res) => {
 
 app.get('/admin/api/pause-status', requireAdmin, (req, res) => {
     res.json({ paused: ordersPaused });
+});
+
+app.get('/admin/api/stream', requireAdmin, (req, res) => {
+    res.json(db.getStreamConfig());
+});
+
+app.post('/admin/api/stream', requireAdmin, (req, res) => {
+    try {
+        const { isLive, streamUrl, channelId, streamTitle, nextStreamAt, discountCode, codeDescription } = req.body;
+        const config = db.saveStreamConfig({ isLive, streamUrl, channelId, streamTitle, nextStreamAt, discountCode, codeDescription });
+        res.json(config);
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
 });
 
 // ── Admin: Push notifications ───────────────────────────────────────────────
