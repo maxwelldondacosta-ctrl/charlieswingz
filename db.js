@@ -225,6 +225,10 @@ const migrations = [
     ['orders', 'source', "TEXT DEFAULT 'web'"],            // 'web' | 'whatsapp' | 'walkin' | 'phone'
     ['orders', 'customer_id', 'TEXT'],                      // FK to customers.id, nullable
     ['stream_config', 'replay_url', 'TEXT'],
+    ['game_players', 'referral_code',     'TEXT'],
+    ['game_players', 'referred_by',       'TEXT'],
+    ['game_players', 'referral_rewarded', 'INTEGER DEFAULT 0'],
+    ['game_players', 'referral_count',    'INTEGER DEFAULT 0'],
 ];
 for (const [table, col, type] of migrations) {
     try {
@@ -300,6 +304,13 @@ const stmts = {
     getOrderByDriverToken: db.prepare('SELECT * FROM orders WHERE driver_token = ?'),
     getAllOrders: db.prepare('SELECT * FROM orders ORDER BY created_at DESC'),
     getOrdersByEmail: db.prepare('SELECT * FROM orders WHERE LOWER(customer_email) = ? ORDER BY created_at DESC'),
+    getPlayerByReferralCode: db.prepare('SELECT email, name FROM game_players WHERE referral_code = ?'),
+    setReferralCode:         db.prepare('UPDATE game_players SET referral_code = ? WHERE email = ?'),
+    setReferredBy:           db.prepare('UPDATE game_players SET referred_by = ? WHERE email = ?'),
+    getPlayerReferralState:  db.prepare('SELECT referred_by, referral_rewarded FROM game_players WHERE email = ?'),
+    setReferralRewarded:     db.prepare('UPDATE game_players SET referral_rewarded = 1 WHERE email = ?'),
+    incrementReferralCount:  db.prepare('UPDATE game_players SET referral_count = referral_count + 1 WHERE email = ?'),
+    getReferralCount:        db.prepare('SELECT referral_count FROM game_players WHERE email = ?'),
 
     insertOptin: db.prepare('INSERT INTO optins (name, email, phone, source, created_at) VALUES (?, ?, ?, ?, ?)'),
     getAllOptins: db.prepare('SELECT * FROM optins ORDER BY id DESC'),
@@ -1476,6 +1487,77 @@ function saveStreamConfig({ isLive, streamUrl, streamTitle, nextStreamAt, discou
     return getStreamConfig();
 }
 
+// ── Referral system ───────────────────────────────────────────────────────────
+
+function getOrCreateReferralCode(email) {
+    if (!email) return null;
+    const e = email.toLowerCase();
+    const row = stmts.getGamePlayer.get(e);
+    if (!row) return null;
+    if (row.referral_code) return row.referral_code;
+    let code, attempts = 0;
+    do {
+        code = 'CWREF-' + Math.random().toString(36).substring(2, 8).toUpperCase();
+        try {
+            stmts.setReferralCode.run(code, e);
+            return code;
+        } catch {
+            attempts++;
+        }
+    } while (attempts < 10);
+    return null;
+}
+
+function getPlayerByReferralCode(code) {
+    if (!code) return null;
+    return stmts.getPlayerByReferralCode.get(code.toUpperCase()) || null;
+}
+
+function setReferredBy(email, referrerEmail) {
+    if (!email || !referrerEmail) return;
+    stmts.setReferredBy.run(referrerEmail.toLowerCase(), email.toLowerCase());
+}
+
+function getPlayerReferralState(email) {
+    if (!email) return null;
+    return stmts.getPlayerReferralState.get(email.toLowerCase()) || null;
+}
+
+function setReferralRewarded(email) {
+    if (!email) return;
+    stmts.setReferralRewarded.run(email.toLowerCase());
+}
+
+function incrementReferralCount(email) {
+    if (!email) return 0;
+    const e = email.toLowerCase();
+    stmts.incrementReferralCount.run(e);
+    const row = stmts.getReferralCount.get(e);
+    return row ? (row.referral_count || 0) : 0;
+}
+
+function getReferralCount(email) {
+    if (!email) return 0;
+    const row = stmts.getReferralCount.get(email.toLowerCase());
+    return row ? (row.referral_count || 0) : 0;
+}
+
+function insertReferralDiscount({ code, email, percent, source, description }) {
+    stmts.insertDiscount.run({
+        code,
+        email:         email.toLowerCase(),
+        type:          'percent',
+        percent,
+        amount_pence:  0,
+        fixed_amount:  0,
+        source,
+        description,
+        milestone:     null,
+        customer_name: null,
+        created_at:    new Date().toISOString()
+    });
+}
+
 // ── Customer order history ────────────────────────────────────────────────────
 
 function getOrdersByEmail(email) {
@@ -1558,5 +1640,9 @@ module.exports = {
     updateCredentialCounter, updateCredentialLabel, deleteAdminCredential,
     getAllAdminCredentials,
     // Stream config
-    getStreamConfig, saveStreamConfig
+    getStreamConfig, saveStreamConfig,
+    // Referral system
+    getOrCreateReferralCode, getPlayerByReferralCode, setReferredBy,
+    getPlayerReferralState, setReferralRewarded, incrementReferralCount,
+    getReferralCount, insertReferralDiscount,
 };
