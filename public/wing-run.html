@@ -101,101 +101,37 @@ function closeOverlay() {
   if (gameInstance) gameInstance.scene.getAt(0).startGame();
 }
 
-function removeBackground(img){
-  const canvas=document.createElement('canvas');
-  const ctx=canvas.getContext('2d');
-  canvas.width=img.width; canvas.height=img.height;
-  ctx.drawImage(img,0,0);
-
-  const data=ctx.getImageData(0,0,canvas.width,canvas.height);
-  const pixels=data.data;
-  const rRef=pixels[0], gRef=pixels[1], bRef=pixels[2];
-
-  for(let i=0; i<pixels.length; i+=4){
-    const r=pixels[i], g=pixels[i+1], b=pixels[2];
-    const dr=Math.abs(r-rRef), dg=Math.abs(g-gRef), db=Math.abs(b-bRef);
-    if(dr < 60 && dg < 60 && db < 60) pixels[i+3]=0;
-  }
-  ctx.putImageData(data,0,0);
-  const newImg=new Image();
-  newImg.src=canvas.toDataURL();
-  return newImg;
-}
-
-
-function loadImgWithTransparentBg(scene, key, src) {
-  const img = new Image();
-  img.crossOrigin = "Anonymous";
-  img.onload = () => {
-    if (key.startsWith('bg')) {
-        scene.textures.addImage(key, img);
-        if (scene.onAssetLoaded) scene.onAssetLoaded();
-    } else {
-        const transparentImg = removeBackground(img);
-        transparentImg.onload = () => {
-            scene.textures.addImage(key, transparentImg);
-            if (scene.onAssetLoaded) scene.onAssetLoaded();
-        };
-    }
-  };
-  img.src = src;
-}
-
 // ── Phaser Engine ─────────────────────────────────────────────────────────────
 class WingRun extends Phaser.Scene {
   constructor() { super('WingRun'); }
 
   preload() {
-    this.assetsToLoad = 7;
-    this.assetsLoaded = 0;
-    this.onAssetLoaded = () => {
-      this.assetsLoaded++;
-      if (this.assetsLoaded === this.assetsToLoad) {
-        this.assetsReady = true;
-      }
-    };
+    this.load.image('bg-road', '/game-assets/shooter/bg-tile.png');
+    this.load.svg('bike', '/game-assets/vector/scooter.svg', { width: 64, height: 64 });
+    this.load.svg('car1', '/game-assets/vector/car.svg', { width: 64, height: 64 });
+    this.load.svg('car2', '/game-assets/vector/truck.svg', { width: 64, height: 64 });
+    this.load.svg('shop', '/game-assets/vector/shop.svg', { width: 128, height: 128 });
+    this.load.svg('house', '/game-assets/vector/house.svg', { width: 128, height: 128 });
     
-    // Load SFX
+    // SFX
     this.load.audio('deliver', '/sfx/wr-deliver.mp3');
     this.load.audio('crash', '/sfx/wr-crash.mp3');
     this.load.audio('hop', '/sfx/wr-hop.mp3');
-    
-    // Load visual assets via custom transparent loader
-    loadImgWithTransparentBg(this, 'bg-road', '/game-assets/wingrun/bg-road.png');
-    loadImgWithTransparentBg(this, 'bg-grass', '/game-assets/wingrun/bg-grass.png');
-    loadImgWithTransparentBg(this, 'bike', '/game-assets/wingrun/player-bike.png');
-    loadImgWithTransparentBg(this, 'car1', '/game-assets/wingrun/enemy-car-1.png');
-    loadImgWithTransparentBg(this, 'car2', '/game-assets/wingrun/enemy-car-2.png');
-    loadImgWithTransparentBg(this, 'shop', '/game-assets/wingrun/building-shop.png');
-    loadImgWithTransparentBg(this, 'house', '/game-assets/wingrun/building-house.png');
   }
 
   create() {
     this.W = 400;
     this.H = 700;
-    
-    this.waitForAssets = this.time.addEvent({
-      delay: 100,
-      loop: true,
-      callback: () => {
-        if (this.assetsReady) {
-          this.waitForAssets.destroy();
-          this.initGame();
-        }
-      }
-    });
+    this.initGame();
   }
 
   initGame() {
     // Parallax scrolling backgrounds
-    this.grassLeft = this.add.tileSprite(50, 350, 100, 700, 'bg-grass');
-    this.road = this.add.tileSprite(200, 350, 200, 700, 'bg-road');
-    this.grassRight = this.add.tileSprite(350, 350, 100, 700, 'bg-grass');
+    this.road = this.add.tileSprite(200, 350, 400, 700, 'bg-road');
 
     // Player
     this.player = this.physics.add.sprite(200, 600, 'bike').setCollideWorldBounds(true);
-    this.player.setScale(0.12).setDepth(20);
-    this.player.body.setSize(this.player.width * 0.4, this.player.height * 0.8);
+    this.player.setDepth(20);
 
     // Groups
     this.cars = this.physics.add.group();
@@ -207,7 +143,7 @@ class WingRun extends Phaser.Scene {
     this.deliveries = 0;
     this.coins = 0;
     this.gameActive = false;
-    this.speed = 300;
+    this.speed = 400;
     this.hopping = false;
     this.heat = 100;
 
@@ -232,21 +168,21 @@ class WingRun extends Phaser.Scene {
     this.physics.add.overlap(this.player, this.dropZones, this.makeDelivery, null, this);
 
     // Spawners
-    this.time.addEvent({ delay: 1500, callback: this.spawnCar, callbackScope: this, loop: true });
-    this.time.addEvent({ delay: 2500, callback: this.spawnHouse, callbackScope: this, loop: true });
+    this.carTimer = this.time.addEvent({ delay: 1000, callback: this.spawnCar, callbackScope: this, loop: true, paused: true });
+    this.houseTimer = this.time.addEvent({ delay: 2000, callback: this.spawnHouse, callbackScope: this, loop: true, paused: true });
   }
 
   startGame() {
-    if (!this.assetsReady) return;
     this.gameActive = true;
     this.score = 0;
     this.deliveries = 0;
     this.coins = 0;
-    this.speed = 300;
+    this.speed = 400;
     this.heat = 100;
     this.hopping = false;
     this.player.setPosition(200, 600);
     this.player.setAlpha(1);
+    this.player.clearTint();
     
     this.cars.clear(true, true);
     this.houses.clear(true, true);
@@ -254,30 +190,31 @@ class WingRun extends Phaser.Scene {
     
     this.scoreText.setText('SCORE: 0');
     this.delText.setText('DELIVERIES: 0');
+    this.carTimer.paused = false;
+    this.houseTimer.paused = false;
+    this.physics.resume();
   }
 
   update(time, delta) {
-    if (!this.gameActive || !this.assetsReady) return;
+    if (!this.gameActive) return;
 
     // Scrolling
-    this.grassLeft.tilePositionY -= (this.speed * 0.001) * delta;
     this.road.tilePositionY -= (this.speed * 0.001) * delta;
-    this.grassRight.tilePositionY -= (this.speed * 0.001) * delta;
 
     // Movement
     if (this.cursors.left.isDown) {
-        this.player.setVelocityX(-250);
+        this.player.setVelocityX(-350);
         this.player.setAngle(-15);
     } else if (this.cursors.right.isDown) {
-        this.player.setVelocityX(250);
+        this.player.setVelocityX(350);
         this.player.setAngle(15);
     } else {
         this.player.setVelocityX(0);
         this.player.setAngle(0);
     }
 
-    if (this.cursors.up.isDown) this.player.setVelocityY(-200);
-    else if (this.cursors.down.isDown) this.player.setVelocityY(200);
+    if (this.cursors.up.isDown) this.player.setVelocityY(-250);
+    else if (this.cursors.down.isDown) this.player.setVelocityY(250);
     else this.player.setVelocityY(0);
 
     // Hop mechanics
@@ -287,7 +224,7 @@ class WingRun extends Phaser.Scene {
         this.sound.play('hop', { volume: 0.5 });
         this.tweens.add({
             targets: this.player,
-            scale: 0.18,
+            scale: 1.5,
             duration: 250,
             yoyo: true,
             onComplete: () => { this.hopping = false; }
@@ -295,7 +232,7 @@ class WingRun extends Phaser.Scene {
     }
 
     // Heat
-    this.heat -= delta * 0.005;
+    this.heat -= delta * 0.01;
     if (this.heat <= 0) this.gameOver();
     
     this.drawHeatBar();
@@ -318,40 +255,33 @@ class WingRun extends Phaser.Scene {
 
   spawnCar() {
     if (!this.gameActive) return;
-    // Spawn mostly on the road (x: 100 to 300)
-    const laneX = [140, 200, 260][Phaser.Math.Between(0, 2)];
+    const laneX = [100, 200, 300][Phaser.Math.Between(0, 2)];
     const type = Phaser.Math.Between(1, 2);
-    const car = this.cars.create(laneX, -50, `car${type}`);
-    car.setScale(0.15).setDepth(15);
-    car.body.setSize(car.width * 0.5, car.height * 0.8);
-    // Cars move slower than the road to simulate traffic
-    car.setVelocityY(this.speed * 0.5);
+    const car = this.cars.create(laneX, -100, `car${type}`);
+    car.setDepth(15);
+    car.setVelocityY(this.speed * 0.4);
   }
 
   spawnHouse() {
     if (!this.gameActive) return;
     const isLeft = Math.random() > 0.5;
-    const x = isLeft ? 50 : 350;
-    
-    // Sometimes spawn a shop instead of a house
-    const isShop = Math.random() > 0.8;
-    const type = isShop ? 'shop' : 'house';
-    
-    const h = this.houses.create(x, -100, type);
-    h.setScale(0.2).setDepth(10);
+    const x = isLeft ? 40 : 360;
+    const type = Math.random() > 0.8 ? 'shop' : 'house';
+    const h = this.houses.create(x, -150, type);
+    h.setDepth(10);
     h.setVelocityY(this.speed);
 
-    // Glowing drop zone for deliveries
+    // Drop zone
     const zoneX = isLeft ? 120 : 280;
-    const zone = this.dropZones.create(zoneX, -100, null);
-    zone.setSize(60, 60);
+    const zone = this.dropZones.create(zoneX, -150, null);
+    zone.setSize(80, 80);
     this.physics.world.enable(zone);
     zone.body.allowGravity = false;
     zone.setVelocityY(this.speed);
 
     const graphics = this.add.graphics().setDepth(5);
     graphics.lineStyle(4, 0x4caf50, 0.8);
-    graphics.strokeCircle(0, 0, 30);
+    graphics.strokeCircle(0, 0, 40);
     zone.graphics = graphics;
     
     zone.update = function() {
@@ -382,7 +312,7 @@ class WingRun extends Phaser.Scene {
   }
 
   hitCar(player, car) {
-    if (this.hopping) return; // Immune while hopping
+    if (this.hopping) return;
 
     this.gameActive = false;
     this.physics.pause();
@@ -395,6 +325,8 @@ class WingRun extends Phaser.Scene {
 
   gameOver() {
     this.gameActive = false;
+    this.carTimer.paused = true;
+    this.houseTimer.paused = true;
     
     document.getElementById('overlay').classList.remove('hidden');
     document.getElementById('pLogin').classList.add('hidden');

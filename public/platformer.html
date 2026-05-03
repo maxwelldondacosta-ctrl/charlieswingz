@@ -105,13 +105,12 @@ class WingKing extends Phaser.Scene {
   constructor() { super('WingKing'); }
 
   preload() {
-    this.load.image('bg', '/game-assets/platformer/bg-city.png');
+    this.load.image('bg', '/game-assets/shooter/bg-tile.png');
     this.load.image('platform', '/game-assets/platformer/platform-tile.png');
-    // SDXL generates a 1024x1024 grid, so 2x2 frames are 512x512
-    this.load.spritesheet('player', '/game-assets/platformer/player-sheet.png', { frameWidth: 512, frameHeight: 512 });
-    this.load.image('bin', '/game-assets/platformer/enemy-bin.png');
-    this.load.image('inspector', '/game-assets/platformer/enemy-inspector.png');
-    this.load.image('wing', '/game-assets/platformer/collectible-wing.png');
+    this.load.svg('player', '/game-assets/vector/rooster.svg', { width: 128, height: 128 });
+    this.load.svg('bin', '/game-assets/vector/bin.svg', { width: 64, height: 64 });
+    this.load.svg('inspector', '/game-assets/vector/inspector.svg', { width: 64, height: 64 });
+    this.load.svg('wing', '/game-assets/vector/wing.svg', { width: 64, height: 64 });
     
     // SFX
     this.load.audio('jump', '/sfx/wr-hop.mp3');
@@ -122,40 +121,18 @@ class WingKing extends Phaser.Scene {
   create() {
     const W = 800, H = 400;
     
-    // Background Removal on Spritesheet
-    this.textures.get('player').getSourceImage().onload = () => {
-        // Post-process the texture to remove white background
-        // (Simplified for now as Phaser textures are trickier to modify mid-stream)
-    };
-
     // Parallax Backgrounds
-    this.bg1 = this.add.tileSprite(400, 200, 800, 400, 'bg').setScrollFactor(0);
+    this.bg1 = this.add.tileSprite(400, 200, 800, 400, 'bg').setAlpha(0.3).setScrollFactor(0);
     
     // Ground
     this.ground = this.add.tileSprite(400, 370, 800, 60, 'platform');
     this.physics.add.existing(this.ground, true);
 
-    // Player Animations
-    this.anims.create({
-      key: 'run',
-      frames: this.anims.generateFrameNumbers('player', { start: 0, end: 2 }), // Top 3 variants
-      frameRate: 8,
-      repeat: -1
-    });
-    this.anims.create({
-      key: 'idle',
-      frames: [{ key: 'player', frame: 0 }]
-    });
-    this.anims.create({
-      key: 'jump',
-      frames: [{ key: 'player', frame: 3 }]
-    });
-
     // Player
     this.player = this.physics.add.sprite(150, 200, 'player');
     this.player.setCollideWorldBounds(true);
-    this.player.setScale(0.25).setDepth(10); // Adjusted scale for 512px frames
-    this.player.body.setSize(180, 400).setOffset(166, 56); 
+    this.player.setScale(0.6).setDepth(10);
+    this.player.body.setSize(80, 110).setOffset(24, 18);
     this.physics.add.collider(this.player, this.ground);
 
     // Groups
@@ -183,8 +160,8 @@ class WingKing extends Phaser.Scene {
     this.input.keyboard.on('keydown-UP', () => this.doJump());
 
     // Auto-spawn
-    this.time.addEvent({ delay: 1500, callback: this.spawnObstacle, callbackScope: this, loop: true });
-    this.time.addEvent({ delay: 1000, callback: this.spawnWing, callbackScope: this, loop: true });
+    this.obsTimer = this.time.addEvent({ delay: 1500, callback: this.spawnObstacle, callbackScope: this, loop: true, paused: true });
+    this.wingTimer = this.time.addEvent({ delay: 1000, callback: this.spawnWing, callbackScope: this, loop: true, paused: true });
   }
 
   startGame() {
@@ -193,8 +170,12 @@ class WingKing extends Phaser.Scene {
     this.wings = 0;
     this.speed = 400;
     this.player.setPosition(150, 200);
+    this.player.setAlpha(1);
+    this.player.clearTint();
     this.obstacles.clear(true, true);
     this.wingsGroup.clear(true, true);
+    this.obsTimer.paused = false;
+    this.wingTimer.paused = false;
     this.physics.resume();
   }
 
@@ -208,14 +189,7 @@ class WingKing extends Phaser.Scene {
     this.scoreText.setText('SCORE: ' + Math.floor(this.score));
 
     // Ramp speed
-    this.speed += delta * 0.005;
-
-    // Animations
-    if (!this.player.body.touching.down) {
-      this.player.play('jump', true);
-    } else {
-      this.player.play('run', true);
-    }
+    this.speed += delta * 0.01; // Faster ramping
 
     // Ground reset jump
     if (this.player.body.touching.down) {
@@ -230,7 +204,7 @@ class WingKing extends Phaser.Scene {
   doJump() {
     if (!this.gameActive) return;
     if (this.jumps < 2) {
-      this.player.setVelocityY(-600);
+      this.player.setVelocityY(-650);
       this.jumps++;
       this.sound.play('jump', { volume: 0.5 });
     }
@@ -240,15 +214,15 @@ class WingKing extends Phaser.Scene {
     if (!this.gameActive) return;
     const type = Math.random() > 0.5 ? 'bin' : 'inspector';
     const o = this.obstacles.create(850, 320, type);
-    o.setScale(0.2).setOrigin(0.5, 1);
+    o.setScale(0.8).setOrigin(0.5, 1);
     o.body.allowGravity = false;
     o.setVelocityX(-this.speed);
   }
 
   spawnWing() {
     if (!this.gameActive) return;
-    const w = this.wingsGroup.create(850, Phaser.Math.Between(150, 280), 'wing');
-    w.setScale(0.15);
+    const w = this.wingsGroup.create(850, Phaser.Math.Between(100, 280), 'wing');
+    w.setScale(0.8);
     w.body.allowGravity = false;
     w.setVelocityX(-this.speed);
     // Bobbing tween
@@ -268,6 +242,8 @@ class WingKing extends Phaser.Scene {
     this.player.setTint(0xff0000);
     this.sound.play('die', { volume: 0.6 });
     this.cameras.main.shake(300, 0.03);
+    this.obsTimer.paused = true;
+    this.wingTimer.paused = true;
     
     setTimeout(() => {
       document.getElementById('overlay').classList.remove('hidden');
@@ -281,7 +257,7 @@ const config = {
   width: 800,
   height: 400,
   parent: 'game-container',
-  physics: { default: 'arcade', arcade: { gravity: { y: 1500 }, debug: false } },
+  physics: { default: 'arcade', arcade: { gravity: { y: 2000 }, debug: false } },
   scene: WingKing,
   antialias: true
 };
