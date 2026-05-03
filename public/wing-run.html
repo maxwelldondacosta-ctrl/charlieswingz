@@ -293,8 +293,9 @@ function HM2({u,p,onPlay,onOut}){
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,textAlign:"center"}}>
           {[["Plays",p?.plays||0],["Deliveries",p?.totalDeliveries||0],["Best",p?.highScore||0]].map(([l,v])=>(<div key={l}><div style={{fontSize:22,fontWeight:900,color:"#fdd835"}}>{v}</div><div style={{fontSize:10,color:"#7f8c9a",textTransform:"uppercase"}}>{l}</div></div>))}</div></div>
       <LB/>
-      {(p?.rewards||[]).length>0&&<div style={{...cs,marginTop:14}}><div style={{fontSize:11,color:"#7f8c9a",letterSpacing:2,textTransform:"uppercase",marginBottom:10}}>Rewards</div>
-        {p.rewards.map((r,i)=>(<div key={i} style={{display:"flex",justifyContent:"space-between",padding:"6px 0",borderBottom:i<p.rewards.length-1?"1px solid #233554":"none",fontSize:14}}><span>{r.icon} {r.label}</span><span style={{fontSize:12,color:"#ff9800",fontFamily:"monospace"}}>{r.code}</span></div>))}</div>}
+      {(p?.totalScore||0)>0&&<div style={{...cs,marginTop:14}}><div style={{fontSize:11,color:"#7f8c9a",letterSpacing:2,textTransform:"uppercase",marginBottom:6}}>Wing Shop Balance</div>
+        <div style={{fontSize:24,fontWeight:900,color:"#ff9800",marginBottom:4}}>{(p.totalScore||0).toLocaleString()} pts</div>
+        <a href="/profile" style={{fontSize:11,color:"#7f8c9a",textDecoration:"none"}}>Spend in Wing Shop → profile</a></div>}
     </div></div>);
 }
 
