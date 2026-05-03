@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+<title>Wing King</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { background: #0d0d1a; display: flex; align-items: center; justify-content: center; min-height: 100vh; touch-action: manipulation; }
+canvas { display: block; border: 2px solid #ff9800; max-width: 100vw; }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<script>
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+const W = 800, H = 400;
+canvas.width = W; canvas.height = H;
+
+const GROUND  = H - 60;
+const PLX     = 110;
+const GRAVITY = 0.75;
+const JUMP_VY = -15.5;
+
+// ── State ─────────────────────────────────────────────────────────────────────
+let gState = 'start';
+let score, wings, dist, speed, tick;
+let obstacles, items, spawnCD, wingCD, bgX, gndX;
+let player;
+let hiScore = 0;
+
+function resetPlayer() {
+  player = { x:PLX, y:GROUND-72, w:58, h:72, vy:0, onGround:true, frame:0, ftick:0, jumps:0 };
+}
+
+function newGame() {
+  resetPlayer();
+  score=0; wings=0; dist=0; speed=5; tick=0;
+  obstacles=[]; items=[];
+  spawnCD=80; wingCD=100;
+  bgX=0; gndX=0;
+  gState='play';
+}
+
+// ── Input ─────────────────────────────────────────────────────────────────────
+function onJump() {
+  if (gState==='start') { newGame(); return; }
+  if (gState==='dead')  { gState='start'; return; }
+  if (player.jumps < 2) {
+    player.vy = player.jumps===0 ? JUMP_VY : JUMP_VY*0.78;
+    player.onGround = false;
+    player.jumps++;
+  }
+}
+document.addEventListener('keydown', e => {
+  if (e.code==='Space'||e.code==='ArrowUp') { e.preventDefault(); onJump(); }
+});
+canvas.addEventListener('pointerdown', e => { e.preventDefault(); onJump(); });
+
+// ── Collision ─────────────────────────────────────────────────────────────────
+function hits(a, b, pad=10) {
+  return a.x+pad < b.x+b.w-pad && a.x+a.w-pad > b.x+pad &&
+         a.y+pad < b.y+b.h-pad && a.y+a.h-pad > b.y+pad;
+}
+
+// ── Update ────────────────────────────────────────────────────────────────────
+function update() {
+  if (gState !== 'play') return;
+
+  tick++;
+  if (tick % 300 === 0) speed = Math.min(speed + 0.6, 16);
+
+  bgX  = (bgX  - speed*0.35) % W;
+  gndX = (gndX - speed) % 64;
+  dist += speed * 0.05;
+  score = Math.floor(wings*500 + dist);
+
+  // Physics
+  player.vy += GRAVITY;
+  player.y  += player.vy;
+  if (player.y >= GROUND - player.h) {
+    player.y = GROUND - player.h;
+    player.vy = 0; player.onGround = true; player.jumps = 0;
+  }
+
+  // Frame
+  if (++player.ftick >= 8) {
+    player.ftick = 0;
+    player.frame = player.onGround ? (player.frame+1)%4 : 3;
+  }
+
+  // Spawn obstacles
+  spawnCD--;
+  if (spawnCD <= 0) {
+    const bin = Math.random()<0.55;
+    const h = bin?68:80, w = bin?54:50;
+    obstacles.push({x:W+30, y:GROUND-h, w, h, type:bin?'bin':'ins'});
+    spawnCD = Math.max(40, Math.floor(70 + Math.random()*80 - speed*3));
+  }
+
+  // Move + collide obstacles
+  for (let i=obstacles.length-1; i>=0; i--) {
+    obstacles[i].x -= speed;
+    if (obstacles[i].x + obstacles[i].w < 0) { obstacles.splice(i,1); continue; }
+    if (hits(player, obstacles[i])) {
+      hiScore = Math.max(hiScore, score);
+      gState = 'dead';
+      return;
+    }
+  }
+
+  // Spawn wings
+  wingCD--;
+  if (wingCD <= 0) {
+    items.push({x:W+30, y:GROUND-105-Math.random()*50, w:40, h:40, alive:true});
+    wingCD = Math.floor(80+Math.random()*60);
+  }
+
+  // Move + collect wings
+  for (let i=items.length-1; i>=0; i--) {
+    items[i].x -= speed;
+    if (items[i].x+40 < 0) { items.splice(i,1); continue; }
+    if (items[i].alive && hits(player, items[i], 6)) {
+      items[i].alive = false; wings++;
+    }
+  }
+}
+
+// ── Draw helpers ──────────────────────────────────────────────────────────────
+function drawBg() {
+  // Sky gradient
+  const g = ctx.createLinearGradient(0,0,0,H);
+  g.addColorStop(0,'#090920'); g.addColorStop(1,'#1a1035');
+  ctx.fillStyle = g; ctx.fillRect(0,0,W,H);
+
+  // Stars
+  ctx.fillStyle = 'rgba(255,255,255,0.7)';
+  for (let i=0;i<70;i++) {
+    const sx = ((i*173 - bgX*0.15*i)%W + W)%W;
+    const sy = (i*61)%(H*0.55);
+    ctx.fillRect(sx,sy,i%3===0?2:1,i%3===0?2:1);
+  }
+
+  // Buildings (parallax)
+  const bColours = ['#0e0e2a','#111128','#0d0d20'];
+  const accentC  = ['#ff007f','#00e5ff','#ff9800','#7c4dff','#00ff88'];
+  for (let i=0;i<7;i++) {
+    const bx  = ((i*143 + bgX*0.45 + 500)%( W+160)+W+160)%(W+160) - 80;
+    const bh  = 70 + (i*53)%100;
+    const bw  = 60 + (i*17)%40;
+    ctx.fillStyle = bColours[i%3];
+    ctx.fillRect(bx, GROUND-bh, bw, bh);
+    // Neon sign
+    ctx.fillStyle = accentC[i%5]+'88';
+    ctx.fillRect(bx+4, GROUND-bh+8, bw-8, 16);
+    // Windows
+    ctx.fillStyle = '#ffe08244';
+    for (let wy=GROUND-bh+30; wy<GROUND-10; wy+=18) {
+      for (let wx=bx+6; wx<bx+bw-6; wx+=14) {
+        if ((wx+wy)%3!==0) ctx.fillRect(wx, wy, 8, 10);
+      }
+    }
+  }
+}
+
+function drawGround() {
+  // Platform base
+  ctx.fillStyle = '#1c1008';
+  ctx.fillRect(0, GROUND, W, H-GROUND);
+
+  // Brick tiles
+  const tw=64, th=60;
+  for (let x=(gndX%tw+W)%tw - tw; x<W+tw; x+=tw) {
+    // Tile bg
+    ctx.fillStyle = '#2a2010';
+    ctx.fillRect(x, GROUND, tw-2, th-2);
+    // Gold mortar lines
+    ctx.fillStyle = '#c8901844';
+    ctx.fillRect(x, GROUND, tw, 2);
+    ctx.fillRect(x, GROUND, 2, th);
+    // Brick highlight
+    ctx.fillStyle = '#ffffff08';
+    ctx.fillRect(x+3, GROUND+3, tw-8, 6);
+  }
+}
+
+function drawChicken(px, py, pw, ph, frame) {
+  const legPhase = Math.floor(frame/2);
+
+  // Shadow
+  ctx.fillStyle = 'rgba(0,0,0,0.3)';
+  ctx.beginPath();
+  ctx.ellipse(px+pw/2, py+ph+2, pw*0.4, 5, 0, 0, Math.PI*2);
+  ctx.fill();
+
+  // Body (round white chicken)
+  ctx.fillStyle = '#f0f0f0';
+  ctx.beginPath();
+  ctx.ellipse(px+pw/2, py+ph*0.65, pw*0.42, ph*0.38, 0, 0, Math.PI*2);
+  ctx.fill();
+
+  // Wing (folded on body)
+  ctx.fillStyle = '#ddd';
+  ctx.beginPath();
+  ctx.ellipse(px+pw*0.6, py+ph*0.6, pw*0.22, ph*0.2, 0.3, 0, Math.PI*2);
+  ctx.fill();
+
+  // Head
+  ctx.fillStyle = '#f0f0f0';
+  ctx.beginPath();
+  ctx.arc(px+pw*0.68, py+ph*0.28, pw*0.22, 0, Math.PI*2);
+  ctx.fill();
+
+  // Red comb
+  ctx.fillStyle = '#e53935';
+  ctx.beginPath();
+  ctx.arc(px+pw*0.62, py+ph*0.1, 7, 0, Math.PI*2); ctx.fill();
+  ctx.beginPath();
+  ctx.arc(px+pw*0.7, py+ph*0.07, 6, 0, Math.PI*2); ctx.fill();
+  ctx.beginPath();
+  ctx.arc(px+pw*0.78, py+ph*0.1, 5, 0, Math.PI*2); ctx.fill();
+
+  // Gold crown
+  ctx.fillStyle = '#ffd700';
+  ctx.fillRect(px+pw*0.5, py+ph*0.08, pw*0.36, 10);
+  // Crown points
+  ctx.beginPath();
+  ctx.moveTo(px+pw*0.5, py+ph*0.08);
+  ctx.lineTo(px+pw*0.54, py);
+  ctx.lineTo(px+pw*0.58, py+ph*0.08);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(px+pw*0.64, py+ph*0.08);
+  ctx.lineTo(px+pw*0.68, py-3);
+  ctx.lineTo(px+pw*0.72, py+ph*0.08);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(px+pw*0.78, py+ph*0.08);
+  ctx.lineTo(px+pw*0.82, py);
+  ctx.lineTo(px+pw*0.86, py+ph*0.08);
+  ctx.fill();
+
+  // Eye
+  ctx.fillStyle = '#1a1a1a';
+  ctx.beginPath();
+  ctx.arc(px+pw*0.76, py+ph*0.27, 4, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = '#fff';
+  ctx.beginPath();
+  ctx.arc(px+pw*0.77, py+ph*0.26, 1.5, 0, Math.PI*2); ctx.fill();
+
+  // Beak
+  ctx.fillStyle = '#ffa000';
+  ctx.beginPath();
+  ctx.moveTo(px+pw*0.88, py+ph*0.28);
+  ctx.lineTo(px+pw*1.0,  py+ph*0.32);
+  ctx.lineTo(px+pw*0.88, py+ph*0.36);
+  ctx.closePath(); ctx.fill();
+
+  // Wattle
+  ctx.fillStyle = '#e53935';
+  ctx.beginPath();
+  ctx.arc(px+pw*0.88, py+ph*0.37, 5, 0, Math.PI*2); ctx.fill();
+
+  // Bow tie
+  ctx.fillStyle = '#e53935';
+  ctx.beginPath();
+  ctx.moveTo(px+pw*0.5, py+ph*0.47);
+  ctx.lineTo(px+pw*0.4, py+ph*0.42);
+  ctx.lineTo(px+pw*0.4, py+ph*0.52);
+  ctx.closePath(); ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(px+pw*0.5, py+ph*0.47);
+  ctx.lineTo(px+pw*0.62, py+ph*0.42);
+  ctx.lineTo(px+pw*0.62, py+ph*0.52);
+  ctx.closePath(); ctx.fill();
+  ctx.fillStyle = '#ff1744';
+  ctx.beginPath();
+  ctx.arc(px+pw*0.5, py+ph*0.47, 4, 0, Math.PI*2); ctx.fill();
+
+  // Feet / legs
+  ctx.strokeStyle = '#ffa000';
+  ctx.lineWidth = 4;
+  ctx.lineCap = 'round';
+  const legY = py+ph;
+  if (frame === 3) {
+    // Jump: legs tucked
+    ctx.beginPath(); ctx.moveTo(px+pw*0.4, legY-8); ctx.lineTo(px+pw*0.32, legY-4); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(px+pw*0.62, legY-8); ctx.lineTo(px+pw*0.7, legY-4); ctx.stroke();
+  } else {
+    const l1 = legPhase===0 ? 14 : 6;
+    const l2 = legPhase===0 ? 6  : 14;
+    ctx.beginPath(); ctx.moveTo(px+pw*0.38, legY-4); ctx.lineTo(px+pw*0.35, legY+l1); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(px+pw*0.58, legY-4); ctx.lineTo(px+pw*0.62, legY+l2); ctx.stroke();
+    // Toes
+    ctx.beginPath(); ctx.moveTo(px+pw*0.22, legY+l1); ctx.lineTo(px+pw*0.35+4, legY+l1); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(px+pw*0.5, legY+l2);  ctx.lineTo(px+pw*0.75,  legY+l2); ctx.stroke();
+  }
+}
+
+function drawBin(o) {
+  const {x,y,w,h} = o;
+  // Body
+  ctx.fillStyle = '#1565c0';
+  ctx.fillRect(x, y+14, w, h-14);
+  // Lid
+  ctx.fillStyle = '#0d47a1';
+  ctx.fillRect(x-3, y, w+6, 16);
+  // Handle
+  ctx.fillStyle = '#333';
+  ctx.fillRect(x+w/2-10, y-6, 20, 8);
+  // Angry eyes
+  ctx.fillStyle = '#ef5350';
+  ctx.fillRect(x+7,    y+22, 12, 12);
+  ctx.fillRect(x+w-19, y+22, 12, 12);
+  ctx.fillStyle = '#fff';
+  ctx.fillRect(x+10,    y+25, 5, 5);
+  ctx.fillRect(x+w-16,  y+25, 5, 5);
+  ctx.fillStyle = '#111';
+  ctx.fillRect(x+11,    y+26, 3, 3);
+  ctx.fillRect(x+w-15,  y+26, 3, 3);
+  // Eyebrows (angry)
+  ctx.fillStyle = '#0d47a1';
+  ctx.fillRect(x+5,    y+19, 16, 4);
+  ctx.fillRect(x+w-21, y+19, 16, 4);
+  // Mouth
+  ctx.fillStyle = '#0a2a6e';
+  ctx.fillRect(x+8, y+38, w-16, 6);
+  // Teeth
+  ctx.fillStyle = '#fff';
+  for (let tx=x+9; tx<x+w-9; tx+=7) ctx.fillRect(tx, y+38, 5, 5);
+  // Bin lines
+  ctx.fillStyle = '#1976d288';
+  ctx.fillRect(x+8, y+52, w-16, 3);
+  ctx.fillRect(x+8, y+60, w-16, 3);
+}
+
+function drawInspector(o) {
+  const {x,y,w,h} = o;
+  // Legs
+  ctx.fillStyle = '#37474f';
+  ctx.fillRect(x+8,  y+h-24, 14, 24);
+  ctx.fillRect(x+w-22, y+h-24, 14, 24);
+  // Shoes
+  ctx.fillStyle = '#111';
+  ctx.fillRect(x+4,    y+h-8, 20, 8);
+  ctx.fillRect(x+w-24, y+h-8, 20, 8);
+  // Suit body
+  ctx.fillStyle = '#546e7a';
+  ctx.fillRect(x+4, y+28, w-8, h-52);
+  // White shirt
+  ctx.fillStyle = '#eceff1';
+  ctx.fillRect(x+w/2-6, y+28, 12, h-52);
+  // Red tie
+  ctx.fillStyle = '#e53935';
+  ctx.fillRect(x+w/2-3, y+32, 7, 26);
+  ctx.beginPath();
+  ctx.moveTo(x+w/2-3, y+58);
+  ctx.lineTo(x+w/2+4, y+58);
+  ctx.lineTo(x+w/2+1, y+66);
+  ctx.closePath(); ctx.fill();
+  // Head
+  ctx.fillStyle = '#ffccbc';
+  ctx.beginPath();
+  ctx.arc(x+w/2, y+16, 14, 0, Math.PI*2); ctx.fill();
+  // Hair
+  ctx.fillStyle = '#333';
+  ctx.fillRect(x+w/2-14, y+4, 28, 8);
+  // Angry eyebrows
+  ctx.fillStyle = '#5d4037';
+  ctx.fillRect(x+w/2-11, y+10, 9, 3);
+  ctx.fillRect(x+w/2+2,  y+10, 9, 3);
+  // Eyes
+  ctx.fillStyle = '#1a1a1a';
+  ctx.fillRect(x+w/2-9, y+14, 6, 5);
+  ctx.fillRect(x+w/2+3, y+14, 6, 5);
+  // Frown
+  ctx.fillStyle = '#bf360c';
+  ctx.beginPath();
+  ctx.arc(x+w/2, y+24, 5, 0.2, Math.PI-0.2); ctx.stroke();
+  // Clipboard
+  ctx.fillStyle = '#f5f5dc';
+  ctx.fillRect(x+w-16, y+36, 14, 20);
+  ctx.fillStyle = '#555';
+  ctx.fillRect(x+w-15, y+40, 12, 2);
+  ctx.fillRect(x+w-15, y+44, 12, 2);
+  ctx.fillRect(x+w-15, y+48, 8, 2);
+}
+
+function drawWingItem(c) {
+  if (!c.alive) return;
+  const bob = Math.sin(Date.now()*0.003)*5;
+  const cx = c.x + c.w/2, cy = c.y + c.h/2 + bob;
+
+  // Glow
+  ctx.save();
+  ctx.shadowColor = '#ff9800';
+  ctx.shadowBlur = 18;
+
+  // Crispy fried wing shape
+  ctx.fillStyle = '#e65100';
+  ctx.beginPath();
+  ctx.ellipse(cx-4, cy+2, 18, 11, -0.3, 0, Math.PI*2); ctx.fill();
+
+  ctx.fillStyle = '#ff8f00';
+  ctx.beginPath();
+  ctx.ellipse(cx-2, cy, 15, 9, -0.3, 0, Math.PI*2); ctx.fill();
+
+  ctx.fillStyle = '#ffca28';
+  ctx.beginPath();
+  ctx.ellipse(cx, cy-1, 8, 5, -0.3, 0, Math.PI*2); ctx.fill();
+
+  // Bone tip
+  ctx.fillStyle = '#f5f5f5';
+  ctx.beginPath();
+  ctx.arc(cx+12, cy-5, 5, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = '#eee';
+  ctx.fillRect(cx+6, cy-7, 7, 5);
+
+  ctx.restore();
+
+  // Sparkle
+  const t = Date.now()*0.004;
+  ctx.fillStyle = '#fff8';
+  ctx.beginPath();
+  ctx.arc(cx+Math.cos(t)*12, cy+Math.sin(t)*8-bob, 2, 0, Math.PI*2); ctx.fill();
+}
+
+function drawPlayer() {
+  drawChicken(player.x, player.y, player.w, player.h, player.frame);
+}
+
+function drawHUD() {
+  ctx.fillStyle = 'rgba(0,0,0,0.55)';
+  ctx.fillRect(0, 0, W, 42);
+  ctx.fillStyle = '#ff9800';
+  ctx.font = 'bold 18px "Courier New"';
+  ctx.textAlign = 'left';
+  ctx.fillText('WINGS: ' + wings, 12, 27);
+  ctx.textAlign = 'center';
+  ctx.fillText('SCORE  ' + score, W/2, 27);
+  ctx.textAlign = 'right';
+  ctx.fillStyle = '#888';
+  ctx.font = '13px "Courier New"';
+  ctx.fillText('x'+( speed/5).toFixed(1)+' speed', W-10, 27);
+  ctx.textAlign = 'left';
+}
+
+function drawStartScreen() {
+  ctx.fillStyle = 'rgba(0,0,0,0.6)';
+  ctx.fillRect(0, 0, W, H);
+  ctx.textAlign = 'center';
+
+  ctx.fillStyle = '#ff9800';
+  ctx.font = 'bold 52px "Courier New"';
+  ctx.fillText('WING KING', W/2, H/2-70);
+
+  ctx.fillStyle = '#fff';
+  ctx.font = '17px "Courier New"';
+  ctx.fillText("Collect wings. Dodge bins & inspectors.", W/2, H/2-20);
+  ctx.fillText('SPACE / TAP to jump   ·   double jump!', W/2, H/2+10);
+
+  if (hiScore > 0) {
+    ctx.fillStyle = '#ff9800';
+    ctx.font = '14px "Courier New"';
+    ctx.fillText('best: ' + hiScore, W/2, H/2+38);
+  }
+
+  if (Math.floor(Date.now()/550)%2) {
+    ctx.fillStyle = '#ff9800';
+    ctx.font = 'bold 22px "Courier New"';
+    ctx.fillText('▶  TAP TO START  ◀', W/2, H/2+78);
+  }
+  ctx.textAlign = 'left';
+}
+
+function drawDeadScreen() {
+  ctx.fillStyle = 'rgba(0,0,0,0.65)';
+  ctx.fillRect(0, 0, W, H);
+  ctx.textAlign = 'center';
+
+  ctx.fillStyle = '#ff5252';
+  ctx.font = 'bold 46px "Courier New"';
+  ctx.fillText('GAME OVER', W/2, H/2-60);
+
+  ctx.fillStyle = '#fff';
+  ctx.font = '20px "Courier New"';
+  ctx.fillText('Wings: ' + wings + '   Score: ' + score, W/2, H/2-10);
+  if (score >= hiScore && score > 0) {
+    ctx.fillStyle = '#ffd700';
+    ctx.font = 'bold 18px "Courier New"';
+    ctx.fillText('🏆 NEW BEST!', W/2, H/2+20);
+  }
+
+  if (Math.floor(Date.now()/600)%2) {
+    ctx.fillStyle = '#ff9800';
+    ctx.font = 'bold 20px "Courier New"';
+    ctx.fillText('TAP to play again', W/2, H/2+70);
+  }
+  ctx.textAlign = 'left';
+}
+
+// ── Loop ──────────────────────────────────────────────────────────────────────
+function loop() {
+  update();
+  ctx.clearRect(0, 0, W, H);
+  drawBg();
+  drawGround();
+  obstacles.forEach(o => o.type==='bin' ? drawBin(o) : drawInspector(o));
+  items.forEach(drawWingItem);
+  if (gState !== 'start') drawPlayer();
+  if (gState === 'play')  drawHUD();
+  if (gState === 'start') drawStartScreen();
+  if (gState === 'dead')  drawDeadScreen();
+  requestAnimationFrame(loop);
+}
+
+resetPlayer();
+loop();
+</script>
+</body>
+</html>

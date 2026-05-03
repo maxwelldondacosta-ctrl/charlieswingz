@@ -1303,6 +1303,85 @@
                 width: 200px;
             }
         }
+
+        /* ── Live Order Tracker ─────────────────────────────────── */
+        #tracker-wrap {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #0d0d0d;
+            padding: 20px;
+        }
+        .tracker-card {
+            max-width: 520px;
+            width: 100%;
+            text-align: center;
+            font-family: sans-serif;
+            color: #f5f0e8;
+        }
+        .tracker-card h1 { color: #d4af37; font-size: 2rem; margin: 0 0 4px; }
+        .tracker-card .tracker-subtitle { color: #aaa; margin: 0 0 28px; font-size: 0.95rem; }
+        .tracker-steps {
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            gap: 0;
+            margin-bottom: 24px;
+        }
+        .tracker-step {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            flex: 1;
+            position: relative;
+        }
+        .tracker-step:not(:last-child)::after {
+            content: '';
+            position: absolute;
+            top: 12px;
+            left: 50%;
+            width: 100%;
+            height: 2px;
+            background: rgba(212,175,55,0.2);
+        }
+        .tracker-step.done::after { background: #d4af37; }
+        .tracker-dot {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            border: 2px solid rgba(212,175,55,0.3);
+            background: #0d0d0d;
+            position: relative;
+            z-index: 1;
+            margin-bottom: 8px;
+            transition: background 0.3s, border-color 0.3s;
+        }
+        .tracker-step.done .tracker-dot { background: #d4af37; border-color: #d4af37; }
+        .tracker-step.active .tracker-dot { border-color: #d4af37; box-shadow: 0 0 8px rgba(212,175,55,0.5); }
+        .tracker-label { font-size: 0.7rem; color: #888; line-height: 1.2; max-width: 60px; }
+        .tracker-step.done .tracker-label, .tracker-step.active .tracker-label { color: #d4af37; }
+        .tracker-message {
+            background: #1a1a1a;
+            border: 1px solid rgba(212,175,55,0.3);
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 20px;
+            font-size: 0.95rem;
+            min-height: 48px;
+        }
+        .tracker-actions { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+        .tracker-actions a {
+            padding: 10px 24px;
+            border-radius: 4px;
+            font-weight: bold;
+            text-decoration: none;
+            font-size: 0.9rem;
+        }
+        .tracker-btn-primary { background: #d4af37; color: #0d0d0d; }
+        .tracker-btn-secondary { border: 1px solid rgba(212,175,55,0.4); color: #d4af37; }
+        .tracker-btn-secondary:hover { background: rgba(212,175,55,0.1); }
+        .tracker-error { color: #e05555; font-size: 0.85rem; margin-top: 12px; }
     </style>
 </head>
 <body>
@@ -3309,6 +3388,121 @@
             }
         });
 
+        // ── Live Order Tracker ────────────────────────────────────────────────────
+        function getStatusStep(status, orderType) {
+            // Returns 0–3. Steps: 0=received, 1=preparing, 2=ready/out_for_delivery, 3=terminal
+            const map = {
+                pending_payment: 0,
+                received:        0,
+                preparing:       1,
+                ready:           orderType === 'delivery' ? 1 : 2,
+                out_for_delivery: 2,
+                delivered:       3,
+                collected:       3,
+            };
+            return map[status] ?? 0;
+        }
+
+        function getStatusMessage(status, orderType) {
+            const messages = {
+                pending_payment:  "We've received your order and are confirming payment.",
+                received:         "We've got your order and will start preparing it shortly.",
+                preparing:        "Your order is being prepared now. Shouldn't be long! 🍗",
+                ready:            orderType === 'delivery'
+                                    ? "Your order is ready and waiting for a driver."
+                                    : "Your order is ready! Come collect it. 👑",
+                out_for_delivery: "Your driver is on the way! 🛵",
+                delivered:        "Your order has been delivered. Enjoy! 👑",
+                collected:        "Order collected. Enjoy your wings! 👑",
+            };
+            return messages[status] || "Your order is in progress.";
+        }
+
+        function updateTrackerUI(data) {
+            const steps = data.orderType === 'delivery'
+                ? ['Received', 'Preparing', 'On the Way', 'Delivered ✓']
+                : ['Received', 'Preparing', 'Ready', 'Collected ✓'];
+
+            const currentStep = getStatusStep(data.status, data.orderType);
+
+            const stepsHtml = steps.map((label, i) => {
+                const cls = i < currentStep ? 'done' : i === currentStep ? 'active' : '';
+                return `<div class="tracker-step ${cls}">
+                    <div class="tracker-dot"></div>
+                    <div class="tracker-label">${label}</div>
+                </div>`;
+            }).join('');
+
+            const stepsEl = document.getElementById('tracker-steps');
+            if (stepsEl) stepsEl.innerHTML = stepsHtml;
+
+            const msgEl = document.getElementById('tracker-message');
+            if (msgEl) msgEl.textContent = getStatusMessage(data.status, data.orderType);
+
+            const subtitleEl = document.getElementById('tracker-subtitle');
+            if (subtitleEl) {
+                const typeLabel = data.orderType === 'delivery' ? 'delivery' : 'collection';
+                subtitleEl.textContent = `Order #${data.shortId} · ${typeLabel}`;
+            }
+
+            const reorderEl = document.getElementById('tracker-reorder');
+            if (reorderEl && data.reorderId) {
+                reorderEl.href = '/?reorder=' + encodeURIComponent(data.reorderId);
+            }
+        }
+
+        function startOrderTracker(token) {
+            document.body.innerHTML = `
+                <div id="tracker-wrap">
+                    <div class="tracker-card">
+                        <div style="font-size:3rem;margin-bottom:12px">👑</div>
+                        <h1>Order Confirmed!</h1>
+                        <p class="tracker-subtitle" id="tracker-subtitle">Loading your order…</p>
+                        <div class="tracker-steps" id="tracker-steps"></div>
+                        <div class="tracker-message" id="tracker-message">Checking your order status…</div>
+                        <div class="tracker-actions">
+                            <a id="tracker-reorder" class="tracker-btn-secondary" href="/">Reorder</a>
+                            <a class="tracker-btn-primary" href="/">Back to Menu</a>
+                        </div>
+                        <div class="tracker-error" id="tracker-error"></div>
+                        <p style="color:#555;font-size:0.7rem;margin-top:20px">order.charlieswingz.com · Fit for Royalty 👑</p>
+                    </div>
+                </div>
+            `;
+
+            let consecutiveFailures = 0;
+            const TERMINAL = new Set(['delivered', 'collected']);
+
+            function poll() {
+                fetch('/api/orders/track/' + encodeURIComponent(token))
+                    .then(r => r.ok ? r.json() : Promise.reject(r.status))
+                    .then(data => {
+                        consecutiveFailures = 0;
+                        const errEl = document.getElementById('tracker-error');
+                        if (errEl) errEl.textContent = '';
+                        updateTrackerUI(data);
+                        if (TERMINAL.has(data.status)) clearInterval(intervalId);
+                    })
+                    .catch(status => {
+                        consecutiveFailures++;
+                        if (status === 404) {
+                            clearInterval(intervalId);
+                            const errEl = document.getElementById('tracker-error');
+                            if (errEl) errEl.textContent = 'Order not found — please contact us if you placed an order.';
+                            return;
+                        }
+                        if (consecutiveFailures >= 5) {
+                            clearInterval(intervalId);
+                            const errEl = document.getElementById('tracker-error');
+                            if (errEl) errEl.textContent = "Having trouble connecting — we'll send you an update via your chosen contact method.";
+                        }
+                    });
+            }
+
+            poll(); // immediate first poll
+            const intervalId = setInterval(poll, 10000);
+        }
+
         // Handle return from Stripe Checkout
         (function handleCheckoutReturn() {
             const params = new URLSearchParams(window.location.search);
@@ -3323,7 +3517,14 @@
                 const sidebar = document.getElementById('cart-sidebar');
                 if (sidebar) sidebar.classList.remove('open');
 
-                // Show success screen
+                const trackToken = params.get('track');
+                if (trackToken && /^[0-9a-f]{12}$/.test(trackToken)) {
+                    window.history.replaceState({}, '', '/');
+                    startOrderTracker(trackToken);
+                    return;
+                }
+
+                // Fallback success screen
                 document.body.innerHTML = `
                     <div style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:#0d0d0d;padding:20px">
                         <div style="max-width:500px;width:100%;text-align:center;font-family:sans-serif;color:#f5f0e8">

@@ -493,6 +493,31 @@
             margin-top: 0.25rem;
         }
 
+        /* Wing Shop & Daily Drops */
+        .shop-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 12px; }
+        .shop-card { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 12px; padding: 16px; display: flex; flex-direction: column; transition: border-color 0.2s; }
+        .shop-card.affordable { border-color: var(--gold); box-shadow: 0 0 10px rgba(232, 168, 56, 0.1); }
+        .shop-card.dimmed { opacity: 0.7; }
+        .shop-name { font-weight: 700; font-size: 0.95rem; color: var(--gold); margin-bottom: 4px; }
+        .shop-points { font-size: 0.8rem; color: var(--cream-dim); margin-bottom: 12px; font-family: monospace; }
+        .shop-btn { width: 100%; padding: 8px; font-size: 0.8rem; font-weight: 800; border-radius: 6px; border: none; cursor: pointer; transition: transform 0.1s; }
+        .shop-btn.primary { background: var(--gold); color: #1a0800; }
+        .shop-btn:disabled { background: #333; color: #666; cursor: default; }
+        .shop-btn:active:not(:disabled) { transform: scale(0.96); }
+
+        .daily-card { margin-bottom: 16px; border: 1px solid var(--border-color); border-radius: 12px; overflow: hidden; }
+        .daily-header { background: #1a1a3a; padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); }
+        .daily-title { font-weight: 800; font-size: 0.85rem; color: var(--gold); text-transform: uppercase; letter-spacing: 1px; }
+        .daily-content { padding: 16px; background: var(--card-bg); }
+        .daily-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; font-size: 0.9rem; }
+        .daily-row:last-child { margin-bottom: 0; }
+        .challenge-label { display: flex; align-items: center; gap: 8px; }
+        .challenge-done { color: #4caf50; }
+        .challenge-pending { color: var(--cream-dim); }
+        .challenge-pts { font-family: monospace; color: var(--gold); font-weight: 700; }
+        .challenge-completed-text { text-decoration: line-through; color: var(--cream-dim); }
+        .daily-footer { background: #0f0f1f; padding: 8px 16px; font-size: 0.75rem; color: var(--cream-dim); text-align: center; }
+
                 /* ── Mobile ───────────────────────────────────────────────────────── */
         @media (max-width: 768px) {
             .site-nav { padding: 0.6rem 1rem; }
@@ -567,6 +592,9 @@
 
         <!-- Tab: Loyalty -->
         <div id="tab-loyalty" class="tab-content active">
+            <!-- Daily Drops -->
+            <div id="daily-drops-wrap"></div>
+
             <div class="card">
                 <div class="stamp-count" id="stamp-count">— / — stamps</div>
                 <div class="stamp-circles" id="stamp-circles"></div>
@@ -594,7 +622,16 @@
 
         <!-- Tab: Game -->
         <div id="tab-game" class="tab-content">
+            <div class="card" style="text-align:center;margin-bottom:16px;">
+                <div style="font-size:0.7rem;color:var(--cream-dim);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">Your Points</div>
+                <div style="font-size:1.8rem;font-weight:900;color:var(--gold);font-family:monospace;" id="points-balance">0</div>
+            </div>
             <div class="stats-grid" id="stats-grid"></div>
+
+            <div class="section-title">Wing Shop</div>
+            <p style="font-size:0.85rem;color:var(--cream-dim);margin:-0.5rem 0 1rem;">Spend your points on real rewards. 1,000 pts ≈ 1p.</p>
+            <div id="shop-grid" class="shop-grid"></div>
+
             <div class="section-title">Game Rewards</div>
             <div id="game-rewards"><p class="empty-msg">Loading…</p></div>
         </div>
@@ -748,7 +785,7 @@
         document.querySelector(`.tab-btn[data-tab="${tab}"]`).classList.add('active');
         document.getElementById('tab-' + tab).classList.add('active');
 
-        if (tab === 'loyalty') loadLoyalty();
+        if (tab === 'loyalty') { loadLoyalty(); loadDailyDrops(); }
         if (tab === 'orders')  loadOrders();
         if (tab === 'game')    loadGame();
         if (tab === 'account') loadAccount();
@@ -771,6 +808,88 @@
                     loadReferralCard(data.referralCode, data.referralCount);
                 }
             } catch (e) { /* server offline */ }
+        }
+    }
+
+    async function loadDailyDrops() {
+        const wrap = document.getElementById('daily-drops-wrap');
+        try {
+            const res = await fetch('/api/game/daily-status', { headers: authHeaders() });
+            if (!res.ok) return;
+            const data = await res.json();
+            renderDailyDrops(data);
+        } catch (e) {}
+    }
+
+    function renderDailyDrops(data) {
+        const wrap = document.getElementById('daily-drops-wrap');
+        const { claimed, streak, nextBonus, nextClaimAt, challenges } = data;
+
+        const timeRemaining = (target) => {
+            const ms = new Date(target) - new Date();
+            if (ms <= 0) return '0h 0m';
+            const h = Math.floor(ms / 3600000);
+            const m = Math.floor((ms % 3600000) / 60000);
+            return `${h}h ${m}m`;
+        };
+
+        let html = `
+            <div class="daily-card">
+                <div class="daily-header">
+                    <div class="daily-title">🔥 Daily Check-In</div>
+                    <div style="font-size:0.75rem;color:var(--gold);font-weight:700;">Streak: ${streak} days</div>
+                </div>
+                <div class="daily-content">
+                    <p style="font-size:0.85rem;color:var(--cream-dim);margin-bottom:12px;">Claim your daily bonus! Streak resets at day 7.</p>
+                    <button class="shop-btn primary" id="daily-claim-btn" onclick="claimDaily()" ${claimed ? 'disabled' : ''}>
+                        ${claimed ? '✓ Claimed' : `Claim ${nextBonus.toLocaleString()} pts`}
+                    </button>
+                </div>
+                <div class="daily-footer">
+                    ${claimed ? `Next claim available in ${timeRemaining(nextClaimAt)}` : 'Claim today to keep your streak!'}
+                </div>
+            </div>
+
+            <div class="daily-card">
+                <div class="daily-header">
+                    <div class="daily-title">📋 Daily Challenges</div>
+                </div>
+                <div class="daily-content">
+                    ${challenges.map(c => `
+                        <div class="daily-row">
+                            <div class="challenge-label">
+                                <span class="${c.completed ? 'challenge-done' : 'challenge-pending'}">${c.completed ? '✓' : '☐'}</span>
+                                <span class="${c.completed ? 'challenge-completed-text' : ''}">${escapeHtml(c.label)}</span>
+                            </div>
+                            <div class="challenge-pts">+${c.points.toLocaleString()}</div>
+                        </div>
+                    `).join('')}
+                </div>
+                <div class="daily-footer">
+                    Challenges reset in ${timeRemaining(nextClaimAt)}
+                </div>
+            </div>
+        `;
+        wrap.innerHTML = html;
+    }
+
+    async function claimDaily() {
+        const btn = document.getElementById('daily-claim-btn');
+        btn.disabled = true;
+        btn.textContent = 'Claiming…';
+        try {
+            const res = await fetch('/api/game/daily-claim', { method: 'POST', headers: authHeaders() });
+            if (!res.ok) {
+                const data = await res.json();
+                alert(data.message || 'Could not claim bonus.');
+                loadDailyDrops();
+                return;
+            }
+            loadDailyDrops();
+            // Also refresh game tab if we're on it, but we're on loyalty tab
+        } catch (e) {
+            btn.disabled = false;
+            btn.textContent = 'Retry Claim';
         }
     }
 
@@ -874,14 +993,16 @@
             const res = await fetch('/api/game/progress', { headers: authHeaders() });
             if (res.status === 401) { logout(); return; }
             if (!res.ok) return;
-            renderGame(await res.json());
+            const data = await res.json();
+            renderGame(data);
+            loadShop(data.totalScore);
         } catch (e) { /* server offline — leave Loading… in place */ }
     }
 
     function renderGame(data) {
+        document.getElementById('points-balance').textContent = (data.totalScore || 0).toLocaleString();
         const stats = [
             { label: 'High Score',  value: (data.highScore || 0).toLocaleString() },
-            { label: 'Total Score', value: (data.totalScore || 0).toLocaleString() },
             { label: 'Wings Eaten', value: data.wingCount || 0 },
             { label: 'Crowns',      value: data.crowns || 0 },
             { label: 'Coins',       value: data.coins || 0 },
@@ -899,7 +1020,7 @@
         const rewardsEl = document.getElementById('game-rewards');
         const rewards = data.rewards || [];
         if (rewards.length === 0) {
-            rewardsEl.innerHTML = '<p class="empty-msg">No game rewards yet — reach 10,000 points to unlock your first code.</p>';
+            rewardsEl.innerHTML = '<p class="empty-msg">No game rewards yet — spend your points in the shop above!</p>';
             return;
         }
         rewardsEl.innerHTML = rewards.map(r => `
@@ -912,6 +1033,61 @@
         rewardsEl.querySelectorAll('.reward-card').forEach(card => {
             card.addEventListener('click', () => copyCode(card.dataset.code, card));
         });
+    }
+
+    async function loadShop(playerScore) {
+        const grid = document.getElementById('shop-grid');
+        try {
+            const res = await fetch('/api/game/shop');
+            const catalogue = await res.json();
+            grid.innerHTML = catalogue.map(item => {
+                const canAfford = playerScore >= item.points;
+                return `
+                    <div class="shop-card ${canAfford ? 'affordable' : 'dimmed'}" id="shop-item-${item.id}">
+                        <div class="shop-name">${escapeHtml(item.name)}</div>
+                        <div class="shop-points">${item.points.toLocaleString()} pts</div>
+                        <button class="shop-btn primary" ${canAfford ? '' : 'disabled'} onclick="redeemShopItem('${item.id}')">
+                            Redeem
+                        </button>
+                    </div>
+                `;
+            }).join('');
+        } catch (e) {}
+    }
+
+    async function redeemShopItem(itemId) {
+        const card = document.getElementById(`shop-item-${itemId}`);
+        const btn = card.querySelector('button');
+        const oldHtml = card.innerHTML;
+        btn.disabled = true;
+        btn.textContent = '…';
+
+        try {
+            const res = await fetch('/api/game/shop/redeem', {
+                method: 'POST',
+                headers: authHeaders(),
+                body: JSON.stringify({ itemId })
+            });
+            const data = await res.json();
+            if (!res.ok) {
+                alert(data.message || 'Redemption failed');
+                loadGame();
+                return;
+            }
+            // Success! Replace card content with the code
+            card.innerHTML = `
+                <div class="shop-name">CLAIMED!</div>
+                <div class="reward-card-code" style="margin:8px 0;font-size:1rem;color:#fff;">${data.code}</div>
+                <div style="font-size:0.7rem;color:#4caf50;font-weight:700;">Added to your rewards</div>
+            `;
+            // Update balance
+            document.getElementById('points-balance').textContent = (data.newBalance || 0).toLocaleString();
+            // Re-render rest of shop to update affordabilities
+            setTimeout(() => loadGame(), 2000);
+        } catch (e) {
+            alert('Connection error');
+            card.innerHTML = oldHtml;
+        }
     }
 
     // ── Account tab ───────────────────────────────────────────────────────────

@@ -610,13 +610,14 @@ app.post('/api/create-checkout-session', async (req, res) => {
     try {
         // Generate order ID upfront so we can pass it through
         const localOrderId = generateIdempotencyKey();
+        const trackToken = crypto.randomBytes(6).toString('hex');
 
         // Build Stripe Checkout Session
         const sessionParams = {
             payment_method_types: ['card'],
             line_items: lineItems,
             mode: 'payment',
-            success_url: `https://order.charlieswingz.com/?order_success=1&session_id={CHECKOUT_SESSION_ID}`,
+            success_url: `https://order.charlieswingz.com/?order_success=1&track=${trackToken}`,
             cancel_url: `https://order.charlieswingz.com/?order_cancelled=1`,
             customer_email: customerDetails.email || undefined,
             metadata: {
@@ -670,7 +671,8 @@ app.post('/api/create-checkout-session', async (req, res) => {
             lat: customerDetails.lat || null,
             lng: customerDetails.lng || null,
             deliveryNotes: customerDetails.deliveryNotes || null,
-            orderNotes: customerDetails.notes || null
+            orderNotes: customerDetails.notes || null,
+            trackToken: trackToken
         };
         await db.insertOrder(dbOrder);
 
@@ -718,6 +720,26 @@ app.get('/api/health', (req, res) => {
 // ── Stream config (public) ───────────────────────────────────────────────────
 app.get('/api/stream', (req, res) => {
     res.json(db.getStreamConfig());
+});
+
+// ── Public order tracker (token-authenticated) ────────────────────────────
+app.get('/api/orders/track/:token', (req, res) => {
+    const { token } = req.params;
+    if (!token || !/^[0-9a-f]{12}$/.test(token)) {
+        return res.status(400).json({ error: 'Invalid token' });
+    }
+    const order = db.getOrderByTrackToken(token);
+    if (!order) return res.status(404).json({ error: 'Order not found' });
+
+    const firstName = (order.customer_name || '').split(' ')[0] || 'there';
+    return res.json({
+        shortId:      order.id.slice(-6).toUpperCase(),
+        status:       order.status || 'received',
+        orderType:    order.order_type || 'collection',
+        customerName: firstName,
+        reorderId:    order.id,
+        estimatedAt:  null,
+    });
 });
 
 // ── Order items (public — used by reorder flow in index.html) ────────────────
@@ -2153,7 +2175,53 @@ app.get('/wing-run', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'wing-run.html'));
 });
 
+app.get('/platformer', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'platformer.html'));
+});
+
+app.get('/shooter', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'shooter.html'));
+});
+
 // ── Snake Game API ───────────────────────────────────────────────────────────
+const WING_SHOP = [
+    { id: 'pop',     name: 'Free Can of Pop', points: 80000,   amountPence: 80,   type: 'fixed'   },
+    { id: 'side',    name: 'Free Side',        points: 200000,  amountPence: 250,  type: 'fixed'   },
+    { id: 'three',   name: '£3 Off',           points: 300000,  amountPence: 300,  type: 'fixed'   },
+    { id: 'ten',     name: '10% Off',          points: 400000,  percent: 10,       type: 'percent' },
+    { id: 'wings6',  name: 'Free 6 Wings',     points: 750000,  amountPence: 850,  type: 'fixed'   },
+    { id: 'twenty',  name: '20% Off',          points: 1000000, percent: 20,       type: 'percent' },
+    { id: 'wings20', name: 'Free 20 Wings',    points: 10000000,amountPence: 2600, type: 'fixed'   },
+];
+
+const DAILY_STREAK_BONUSES = { 1: 1000, 2: 1500, 3: 2000, 4: 3000, 5: 4000, 6: 5000, 7: 10000 };
+const DAILY_CHALLENGE_POOL = [
+    { id: 'play_game',     label: 'Play a game today',          points: 2000,  trigger: 'game_save'  },
+    { id: 'score_1k',      label: 'Score 1,000+ in one game',   points: 5000,  trigger: 'game_save'  },
+    { id: 'score_5k',      label: 'Score 5,000+ in one game',   points: 15000, trigger: 'game_save'  },
+    { id: 'place_order',   label: 'Place an order today',       points: 10000, trigger: 'order'      },
+    { id: 'streak_3',      label: 'Log in 3 days in a row',     points: 8000,  trigger: 'daily_claim' },
+];
+
+function getDailyChallenges(dateStr) {
+    const seed = dateStr.replace(/-/g, '');
+    const n = parseInt(seed, 10) % DAILY_CHALLENGE_POOL.length;
+    return [0, 1, 2].map(i => DAILY_CHALLENGE_POOL[(n + i) % DAILY_CHALLENGE_POOL.length]);
+}
+
+async function completeChallengeIfNew(email, challengeId, dateStr) {
+    const dailySet = getDailyChallenges(dateStr);
+    const challenge = dailySet.find(c => c.id === challengeId);
+    if (!challenge) return false; // Not one of today's challenges
+
+    const isNew = db.insertDailyCompletion(email, challengeId, dateStr);
+    if (isNew) {
+        db.addPoints(email, challenge.points);
+        return true;
+    }
+    return false;
+}
+
 const GAME_MILESTONES = [
     { target: 10000,  discount: '£2',  percent: 0, fixedAmount: 200 },
     { target: 100000, discount: '£4', percent: 0, fixedAmount: 400 }
@@ -2310,23 +2378,13 @@ app.post('/api/game/save', requireGameAuth, (req, res) => {
     player.deliveries = (player.deliveries || 0) + (deliveries || 0);
     player.plays = (player.plays || 0) + 1;
 
-    // Check for new milestone unlocks using escalating tier system
-    const newUnlocks = [];
-    if (!player.unlockedCodes) player.unlockedCodes = {};
-    if (!player.milestoneTier) player.milestoneTier = 0;
-    const tier = player.milestoneTier;
-    const baseTargets = [10000, 100000];
-    const escalation = [140000, 150000];
-    const currentTargets = baseTargets.map((base, i) => base + (tier * escalation[i]));
-    for (let i = 0; i < currentTargets.length; i++) {
-        const t = currentTargets[i];
-        const milestoneKey = 'tier' + tier + '_' + t;
-        if (player.totalScore >= t && !player.unlockedCodes[milestoneKey]) {
-            newUnlocks.push(t);
-        }
-    }
-
     savePlayer(player);
+
+    // ── Challenge triggers ──
+    const today = new Date().toISOString().slice(0, 10);
+    completeChallengeIfNew(player.email, 'play_game', today);
+    if ((score || 0) >= 1000) completeChallengeIfNew(player.email, 'score_1k', today);
+    if ((score || 0) >= 5000) completeChallengeIfNew(player.email, 'score_5k', today);
 
     const rewards = (player.redeemedCodes || []).map(r => ({
         icon: '🎁',
@@ -2334,11 +2392,107 @@ app.post('/api/game/save', requireGameAuth, (req, res) => {
         code: r.code
     }));
 
-    res.json({ totalScore: player.totalScore, highScore: player.highScore, coins: player.coins, deliveries: player.deliveries, totalDeliveries: player.deliveries, plays: player.plays, wingCount: player.wingCount, crowns: player.crowns, unlockedCodes: player.unlockedCodes || {}, redeemedCodes: player.redeemedCodes || [], rewards, newUnlocks, milestoneTier: player.milestoneTier || 0 });
+    res.json({ totalScore: player.totalScore, highScore: player.highScore, coins: player.coins, deliveries: player.deliveries, totalDeliveries: player.deliveries, plays: player.plays, wingCount: player.wingCount, crowns: player.crowns, unlockedCodes: player.unlockedCodes || {}, redeemedCodes: player.redeemedCodes || [], rewards, milestoneTier: player.milestoneTier || 0 });
 });
 
 // Wing Run coin-to-points conversion: each coin earned = 10 points toward milestones
 const WING_RUN_COIN_MULTIPLIER = 10;
+
+app.get('/api/game/shop', (req, res) => {
+    res.json(WING_SHOP.map(item => ({ id: item.id, name: item.name, points: item.points })));
+});
+
+app.post('/api/game/shop/redeem', requireGameAuth, (req, res) => {
+    const { itemId } = req.body;
+    const item = WING_SHOP.find(i => i.id === itemId);
+    if (!item) return res.status(400).json({ message: 'Item not found' });
+
+    const player = getPlayer(req.playerEmail);
+    if (!player || player.totalScore < item.points) {
+        return res.status(400).json({ message: 'Not enough points' });
+    }
+
+    const success = db.spendPoints(player.email, item.points);
+    if (!success) return res.status(400).json({ message: 'Not enough points' });
+
+    const code = 'WING-' + crypto.randomBytes(4).toString('hex').toUpperCase();
+    db.insertDiscount({
+        code,
+        email: player.email,
+        type: item.type,
+        percent: item.percent || 0,
+        amount_pence: item.amountPence || 0,
+        fixed_amount: item.amountPence || 0,
+        source: 'wing-shop',
+        description: item.name,
+        created_at: new Date().toISOString()
+    });
+
+    res.json({ code, newBalance: (player.totalScore || 0) - item.points });
+});
+
+app.post('/api/game/daily-claim', requireGameAuth, (req, res) => {
+    const email = req.playerEmail;
+    const today = new Date().toISOString().slice(0, 10);
+    const state = db.getDailyClaimState(email);
+
+    if (state && state.lastDailyClaim === today) {
+        return res.status(400).json({ message: 'Already claimed today' });
+    }
+
+    const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+    let newStreak = 1;
+    if (state && state.lastDailyClaim === yesterday) {
+        newStreak = (state.dailyStreak % 7) + 1;
+    }
+
+    const points = DAILY_STREAK_BONUSES[newStreak] || 1000;
+    db.addPoints(email, points);
+    db.setDailyClaim(email, today, newStreak);
+
+    if (newStreak >= 3) {
+        completeChallengeIfNew(email, 'streak_3', today);
+    }
+
+    const player = getPlayer(email);
+    const tomorrow = new Date();
+    tomorrow.setUTCHours(24, 0, 0, 0);
+
+    res.json({
+        pointsEarned: points,
+        newStreak,
+        newBalance: player.totalScore,
+        nextClaimAt: tomorrow.toISOString()
+    });
+});
+
+app.get('/api/game/daily-status', requireGameAuth, (req, res) => {
+    const email = req.playerEmail;
+    const today = new Date().toISOString().slice(0, 10);
+    const state = db.getDailyClaimState(email);
+    const completed = db.getDailyCompletions(email, today);
+
+    const challenges = getDailyChallenges(today).map(c => ({
+        id: c.id,
+        label: c.label,
+        points: c.points,
+        completed: completed.includes(c.id)
+    }));
+
+    const tomorrow = new Date();
+    tomorrow.setUTCHours(24, 0, 0, 0);
+
+    const claimed = (state && state.lastDailyClaim === today);
+    const nextBonus = DAILY_STREAK_BONUSES[(state?.dailyStreak % 7) + 1] || 1000;
+
+    res.json({
+        claimed,
+        streak: state?.dailyStreak || 0,
+        nextBonus,
+        nextClaimAt: tomorrow.toISOString(),
+        challenges
+    });
+});
 
 app.post('/api/game/redeem', requireGameAuth, (req, res) => {
     // Legacy endpoint — coin redemption replaced by milestone claim system
@@ -2346,59 +2500,8 @@ app.post('/api/game/redeem', requireGameAuth, (req, res) => {
 });
 
 app.post('/api/game/claim-code', requireGameAuth, (req, res) => {
-    const { milestone } = req.body;
-    const player = getPlayer(req.playerEmail);
-    if (!player) return res.status(404).json({ message: 'Player not found' });
-
-    // Calculate current milestone tier thresholds
-    if (!player.milestoneTier) player.milestoneTier = 0;
-    const tier = player.milestoneTier;
-    const baseTargets = [10000, 100000];
-    const escalation = [140000, 150000]; // how much to add per tier
-    const currentTargets = baseTargets.map((base, i) => base + (tier * escalation[i]));
-
-    const milestoneIndex = currentTargets.indexOf(milestone);
-    if (milestoneIndex === -1) return res.status(400).json({ message: 'Invalid milestone for current tier' });
-
-    if (player.totalScore < milestone) {
-        return res.status(400).json({ message: 'Milestone not reached' });
-    }
-
-    if (!player.unlockedCodes) player.unlockedCodes = {};
-    const milestoneKey = 'tier' + tier + '_' + milestone;
-    if (player.unlockedCodes[milestoneKey]) {
-        return res.json({ code: player.unlockedCodes[milestoneKey].code, discount: player.unlockedCodes[milestoneKey].discount });
-    }
-
-    const discountAmounts = ['£2', '£4'];
-    const fixedAmounts = [200, 400];
-
-    // Generate a real discount code via SQLite
-    const discount = db.createDiscountCode(player.email + '+game' + milestoneKey);
-    const code = discount.code;
-
-    // Override the default 10% with a fixed £ amount using SQLite
-    const discountRow = db.validateDiscountCode(code);
-    if (discountRow.valid) {
-        // Update the discount to be fixed amount instead of percent
-        db.updateDiscountToFixed(code, fixedAmounts[milestoneIndex], discountAmounts[milestoneIndex] + ' off (game milestone)');
-    }
-
-    player.unlockedCodes[milestoneKey] = { code, discount: discountAmounts[milestoneIndex], fixedAmount: fixedAmounts[milestoneIndex], claimedAt: Date.now(), tier };
-
-    // Check if both milestones at this tier are now claimed
-    const allClaimed = currentTargets.every((t, i) => player.unlockedCodes['tier' + tier + '_' + t]);
-    if (allClaimed) {
-        player.milestoneTier = tier + 1;
-    }
-
-    savePlayer(player);
-
-    // Return next tier targets for UI
-    const nextTier = player.milestoneTier;
-    const nextTargets = baseTargets.map((base, i) => base + (nextTier * escalation[i]));
-
-    res.json({ code, discount: discountAmounts[milestoneIndex], nextTargets, currentTier: player.milestoneTier });
+    // Legacy milestone claim
+    res.status(410).json({ message: 'Milestones have been replaced by the Wing Shop. Visit your profile to spend your points.' });
 });
 
 // ── One-time DB migration: fix game milestone codes + divide Wing Run coins ──
@@ -2789,6 +2892,13 @@ app.post('/webhooks/stripe', express.raw({ type: 'application/json' }), async (r
 
         // Send order confirmation to customer
         console.log(`[Order ${orderId.slice(-6)}] Sending customer notification | Pref: ${pref} | Phone: ${customerPhone} | Email: ${customerEmail}`);
+
+        // ── Challenge trigger ──
+        if (customerEmail) {
+            const today = new Date().toISOString().slice(0, 10);
+            completeChallengeIfNew(customerEmail, 'place_order', today);
+        }
+
         notifyOrderReceived({
             id: orderId,
             customer_name: customerName,

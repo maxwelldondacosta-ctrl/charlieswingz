@@ -229,6 +229,9 @@ const migrations = [
     ['game_players', 'referred_by',       'TEXT'],
     ['game_players', 'referral_rewarded', 'INTEGER DEFAULT 0'],
     ['game_players', 'referral_count',    'INTEGER DEFAULT 0'],
+    ['game_players', 'last_daily_claim',  'TEXT'],
+    ['game_players', 'daily_streak',      'INTEGER DEFAULT 0'],
+    ['orders', 'track_token',             'TEXT'],
 ];
 for (const [table, col, type] of migrations) {
     try {
@@ -238,6 +241,19 @@ for (const [table, col, type] of migrations) {
     }
 }
 db.prepare(`CREATE UNIQUE INDEX IF NOT EXISTS idx_game_players_referral_code ON game_players(referral_code) WHERE referral_code IS NOT NULL`).run();
+db.prepare(`CREATE UNIQUE INDEX IF NOT EXISTS idx_orders_track_token ON orders(track_token) WHERE track_token IS NOT NULL`).run();
+
+// ── Daily Drops Table ───────────────────────────────────────────────────────
+db.exec(`
+    CREATE TABLE IF NOT EXISTS daily_completions (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        email TEXT NOT NULL,
+        challenge_id TEXT NOT NULL,
+        claim_date TEXT NOT NULL,
+        UNIQUE(email, challenge_id, claim_date)
+    );
+    CREATE INDEX IF NOT EXISTS idx_daily_completions ON daily_completions(email, claim_date);
+`);
 
 // Ensure lottery row exists
 const lotteryRow = db.prepare('SELECT count FROM lottery WHERE id = 1').get();
@@ -297,12 +313,13 @@ try {
 // ── Prepared statements ─────────────────────────────────────────────────────
 
 const stmts = {
-    insertOrder: db.prepare(`INSERT INTO orders (id, payment_intent_id, customer_name, customer_email, customer_phone, order_type, contact_pref, items_json, total_pence, address, city, postcode, lat, lng, delivery_notes, order_notes, driver_token, status, payment_status, payment_method, source, customer_id, created_at, updated_at) VALUES (@id, @payment_intent_id, @customer_name, @customer_email, @customer_phone, @order_type, @contact_pref, @items_json, @total_pence, @address, @city, @postcode, @lat, @lng, @delivery_notes, @order_notes, NULL, @status, @payment_status, @payment_method, @source, @customer_id, @created_at, @updated_at)`),
+    insertOrder: db.prepare(`INSERT INTO orders (id, payment_intent_id, customer_name, customer_email, customer_phone, order_type, contact_pref, items_json, total_pence, address, city, postcode, lat, lng, delivery_notes, order_notes, driver_token, status, payment_status, payment_method, source, customer_id, track_token, created_at, updated_at) VALUES (@id, @payment_intent_id, @customer_name, @customer_email, @customer_phone, @order_type, @contact_pref, @items_json, @total_pence, @address, @city, @postcode, @lat, @lng, @delivery_notes, @order_notes, NULL, @status, @payment_status, @payment_method, @source, @customer_id, @track_token, @created_at, @updated_at)`),
     updateOrderStatus: db.prepare('UPDATE orders SET status = ?, updated_at = ? WHERE id = ?'),
     updateOrderPaymentStatus: db.prepare('UPDATE orders SET payment_status = ?, payment_method = ?, updated_at = ? WHERE id = ?'),
     setDriverToken: db.prepare('UPDATE orders SET driver_token = ? WHERE id = ?'),
     getOrderById: db.prepare('SELECT * FROM orders WHERE id = ?'),
     getOrderByDriverToken: db.prepare('SELECT * FROM orders WHERE driver_token = ?'),
+    getOrderByTrackToken: db.prepare('SELECT * FROM orders WHERE track_token = ?'),
     getAllOrders: db.prepare('SELECT * FROM orders ORDER BY created_at DESC'),
     getOrdersByEmail: db.prepare('SELECT * FROM orders WHERE LOWER(customer_email) = ? ORDER BY created_at DESC'),
     getPlayerByReferralCode: db.prepare('SELECT email, name FROM game_players WHERE referral_code = ?'),
@@ -338,6 +355,12 @@ const stmts = {
     updateLoyalty: db.prepare('UPDATE game_players SET loyalty_stamps = ?, loyalty_total_orders = ?, loyalty_claimed = ?, loyalty_rewards = ? WHERE email = ?'),
     updateGameFull: db.prepare('UPDATE game_players SET name = ?, total_score = ?, high_score = ?, wing_count = ?, crowns = ?, coins = ?, deliveries = ?, plays = ?, milestone_tier = ?, unlocked_codes = ?, redeemed_codes = ?, profile = ?, coins_migrated = ? WHERE email = ?'),
     getAllGamePlayers: db.prepare('SELECT * FROM game_players ORDER BY created_at DESC'),
+
+    spendPoints: db.prepare('UPDATE game_players SET total_score = total_score - ? WHERE email = ? AND total_score >= ?'),
+    addPoints: db.prepare('UPDATE game_players SET total_score = total_score + ? WHERE email = ?'),
+    setDailyClaim: db.prepare('UPDATE game_players SET last_daily_claim = ?, daily_streak = ? WHERE email = ?'),
+    insertDailyCompletion: db.prepare('INSERT OR IGNORE INTO daily_completions (email, challenge_id, claim_date) VALUES (?, ?, ?)'),
+    getDailyCompletions: db.prepare('SELECT challenge_id FROM daily_completions WHERE email = ? AND claim_date = ?'),
 
     getLotteryCount: db.prepare('SELECT count FROM lottery WHERE id = 1'),
     incrementLottery: db.prepare('UPDATE lottery SET count = count + 1 WHERE id = 1'),
@@ -437,7 +460,7 @@ const stmts = {
 
 // ── Orders ───────────────────────────────────────────────────────────────────
 
-function insertOrder({ id, paymentIntentId, customerName, customerEmail, customerPhone, orderType, contactPref, itemsJson, totalPence, address, city, postcode, lat, lng, deliveryNotes, orderNotes, status, paymentStatus, paymentMethod, source, customerId }) {
+function insertOrder({ id, paymentIntentId, customerName, customerEmail, customerPhone, orderType, contactPref, itemsJson, totalPence, address, city, postcode, lat, lng, deliveryNotes, orderNotes, status, paymentStatus, paymentMethod, source, customerId, trackToken = null }) {
     const now = new Date().toISOString();
     stmts.insertOrder.run({
         id,
@@ -461,6 +484,7 @@ function insertOrder({ id, paymentIntentId, customerName, customerEmail, custome
         payment_method: paymentMethod || 'stripe',
         source: source || 'web',
         customer_id: customerId || null,
+        track_token: trackToken,
         created_at: now,
         updated_at: now
     });
@@ -490,6 +514,11 @@ function setDriverToken(id, token) {
 function getOrderByDriverToken(token) {
     if (!token) return null;
     return stmts.getOrderByDriverToken.get(token) || null;
+}
+
+function getOrderByTrackToken(token) {
+    if (!token) return null;
+    return stmts.getOrderByTrackToken.get(token) || null;
 }
 
 function getOrderById(id) {
@@ -722,6 +751,34 @@ function claimGameCode(email, milestone) {
     });
 
     return codes[milestone];
+}
+
+function spendPoints(email, amount) {
+    const res = stmts.spendPoints.run(amount, email.toLowerCase(), amount);
+    return res.changes === 1;
+}
+
+function addPoints(email, amount) {
+    stmts.addPoints.run(amount, email.toLowerCase());
+}
+
+function setDailyClaim(email, dateStr, streak) {
+    stmts.setDailyClaim.run(dateStr, streak, email.toLowerCase());
+}
+
+function insertDailyCompletion(email, challengeId, dateStr) {
+    const res = stmts.insertDailyCompletion.run(email.toLowerCase(), challengeId, dateStr);
+    return res.changes === 1;
+}
+
+function getDailyCompletions(email, dateStr) {
+    return stmts.getDailyCompletions.all(email.toLowerCase(), dateStr).map(r => r.challenge_id);
+}
+
+function getDailyClaimState(email) {
+    const p = getGamePlayer(email);
+    if (!p) return null;
+    return { lastDailyClaim: p.last_daily_claim, dailyStreak: p.daily_streak || 0 };
 }
 
 // ── Customer Lottery ────────────────────────────────────────────────────────
@@ -1613,13 +1670,14 @@ module.exports = {
     load, save,
     nukeTestData,
     insertOrder, updateOrderStatus, updateOrderPayment, updateOrderPaymentStatus, deleteOrder, setDriverToken,
-    getOrderById, getOrderByDriverToken, getTodaysOrders, getAllOrders, getOrdersByEmail,
+    getOrderById, getOrderByDriverToken, getOrderByTrackToken, getTodaysOrders, getAllOrders, getOrdersByEmail,
     insertOptin, getAllOptins, deleteOptin,
     insertCateringRequest, getAllCateringRequests, updateCateringStatus, deleteCateringRequest,
     createDiscountCode, validateDiscountCode, markDiscountUsed, updateDiscountToFixed,
     getAllDiscountCodes, getDiscountsByEmail,
     getGamePlayer, getAllGamePlayers, createGamePlayer, saveGamePlayer, updateGamePassword,
     updateGameProgress, claimGameCode,
+    spendPoints, addPoints, setDailyClaim, insertDailyCompletion, getDailyCompletions, getDailyClaimState,
     getLotteryCount, incrementLotteryCount, createLotteryDiscount,
     addLoyaltyStamp, setLoyaltyStampsForPlayer, getLoyaltyProgress,
     // New customer API

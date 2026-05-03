@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+<title>Sauce Shooter – Charlie's Wingz Arcade</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:#000;color:#fff;font-family:sans-serif;overflow:hidden;touch-action:none;}
+canvas{display:block;margin:0 auto;background:#111;}
+.ui{position:fixed;top:10px;left:50%;transform:translateX(-50%);text-align:center;pointer-events:none;width:100%;max-width:400px;display:flex;justify-content:space-between;padding:0 20px;}
+.stat{background:rgba(0,0,0,0.6);padding:5px 12px;border-radius:15px;border:1px solid #333;font-weight:bold;font-size:14px;}
+#score-val{color:#fdd835;}
+#lives-val{color:#ff5252;}
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,0.85);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:100;text-align:center;padding:20px;}
+.overlay.hidden{display:none;}
+h1{color:#e8a838;margin-bottom:10px;font-size:2rem;}
+p{color:#aaa;margin-bottom:20px;}
+button{background:#e8a838;color:#000;border:none;padding:12px 30px;font-weight:bold;border-radius:8px;cursor:pointer;font-size:1rem;}
+.auth-box{background:#1a1a2e;padding:20px;border-radius:12px;border:1px solid #333;width:300px;margin-bottom:20px;}
+input{width:100%;padding:10px;margin-bottom:10px;background:#0d0d1a;border:1px solid #444;color:#fff;border-radius:6px;outline:none;}
+.back-link{position:fixed;bottom:20px;left:20px;color:#666;text-decoration:none;font-size:12px;}
+</style>
+</head>
+<body>
+
+<div class="ui">
+  <div class="stat">SCORE: <span id="score-val">0</span></div>
+  <div class="stat">LIVES: <span id="lives-val">3</span></div>
+</div>
+
+<div id="start-screen" class="overlay">
+  <div style="font-size:4rem;margin-bottom:10px;">🛸</div>
+  <h1>SAUCE SHOOTER</h1>
+  <p>Defend the shop! Shoot the rival vans.</p>
+  <div id="auth-section">
+    <div class="auth-box" id="login-form">
+      <input type="email" id="email" placeholder="Email">
+      <input type="password" id="password" placeholder="Password">
+      <button onclick="handleLogin()">LOGIN TO SAVE SCORE</button>
+    </div>
+    <p style="font-size:0.8rem;">Or <button style="padding:4px 10px;font-size:0.7rem;" onclick="startGame()">PLAY AS GUEST</button></p>
+  </div>
+  <div id="welcome-section" class="hidden">
+    <p>Welcome back, <span id="player-name"></span>!</p>
+    <button onclick="startGame()">START MISSION</button>
+  </div>
+</div>
+
+<div id="game-over-screen" class="overlay hidden">
+  <h1>MISSION FAILED</h1>
+  <p>Final Score: <span id="final-score">0</span></p>
+  <button onclick="startGame()">RETRY</button>
+  <a href="/play-win" style="margin-top:15px;color:#aaa;text-decoration:none;font-size:0.9rem;">Back to Arcade</a>
+</div>
+
+<canvas id="game"></canvas>
+<a href="/play-win" class="back-link">← Arcade</a>
+
+<script>
+const canvas=document.getElementById('game');
+const ctx=canvas.getContext('2d');
+const W=400, H=600;
+canvas.width=W; canvas.height=H;
+
+const API={
+  token:localStorage.getItem('cw_game_token'),
+  user:null,
+  async login(email,password){
+    const res=await fetch('/api/game/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,password})});
+    const d=await res.json(); if(!res.ok)throw new Error(d.message);
+    this.token=d.token; localStorage.setItem('cw_game_token',d.token); return d;
+  },
+  async saveGame(score){
+    if(!this.token)return;
+    return fetch('/api/game/save',{method:'POST',headers:{'Content-Type':'application/json','Authorization':`Bearer ${this.token}`},body:JSON.stringify({score})});
+  }
+};
+
+let state='title', score=0, lives=3, lastT=0;
+let player={x:W/2-25,y:H-80,w:50,h:50,speed:5,shield:0,rapid:0};
+let bullets=[], enemies=[], powerups=[], explosions=[];
+let keys={};
+let bgY=0;
+
+const assets={};
+function loadImg(name,src){
+  return new Promise(res=>{
+    const img=new Image();
+    img.onload=()=>res(img);
+    img.src=src;
+    assets[name]=img;
+  });
+}
+
+async function handleLogin(){
+  const e=document.getElementById('email').value, p=document.getElementById('password').value;
+  try{
+    const d=await API.login(e,p);
+    document.getElementById('auth-section').classList.add('hidden');
+    document.getElementById('welcome-section').classList.remove('hidden');
+    document.getElementById('player-name').textContent=d.user.name||d.user.id;
+  }catch(err){alert(err.message);}
+}
+
+function startGame(){
+  state='playing';
+  score=0; lives=3;
+  player={x:W/2-25,y:H-80,w:50,h:50,speed:6,shield:0,rapid:0};
+  bullets=[]; enemies=[]; powerups=[]; explosions=[];
+  document.getElementById('start-screen').classList.add('hidden');
+  document.getElementById('game-over-screen').classList.add('hidden');
+  requestAnimationFrame(loop);
+}
+
+function spawnEnemy(){
+  const side=Math.random()>0.5?1:2;
+  enemies.push({
+    x:Math.random()*(W-50),
+    y:-60,
+    w:50, h:50,
+    speed:2+Math.random()*2+(score/5000),
+    type:side
+  });
+}
+
+function spawnPowerup(){
+  const type=Math.random()>0.5?'shield':'rapid';
+  powerups.push({
+    x:Math.random()*(W-30),
+    y:-40,
+    w:30, h:30,
+    speed:2,
+    type:type
+  });
+}
+
+function loop(t){
+  if(state!=='playing')return;
+  const dt=(t-lastT)/16; lastT=t;
+  update(dt);
+  draw();
+  requestAnimationFrame(loop);
+}
+
+function update(dt){
+  // Input
+  if(keys['ArrowLeft'] && player.x>0) player.x-=player.speed*dt;
+  if(keys['ArrowRight'] && player.x<W-player.w) player.x+=player.speed*dt;
+  if(keys[' ']) shoot();
+
+  // Background
+  bgY=(bgY+2*dt)%assets.bg.height;
+
+  // Bullets
+  bullets.forEach(b=>b.y-=8*dt);
+  bullets=bullets.filter(b=>b.y>-20);
+
+  // Enemies
+  if(Math.random()<0.02) spawnEnemy();
+  enemies.forEach(e=>{
+    e.y+=e.speed*dt;
+    // Collision with player
+    if(rectIntersect(player.x,player.y,player.w,player.h, e.x,e.y,e.w,e.h)){
+      if(player.shield>0){
+        player.shield=0;
+        explode(e.x+25,e.y+25);
+        e.dead=true;
+      }else{
+        hit();
+        e.dead=true;
+      }
+    }
+    // Collision with bullets
+    bullets.forEach(b=>{
+      if(rectIntersect(b.x,b.y,b.w,b.h, e.x,e.y,e.w,e.h)){
+        explode(e.x+25,e.y+25);
+        e.dead=true; b.dead=true;
+        score+=100;
+        document.getElementById('score-val').textContent=score;
+        if(Math.random()<0.05) spawnPowerup();
+      }
+    });
+  });
+  enemies=enemies.filter(e=>!e.dead && e.y<H+60);
+
+  // Powerups
+  powerups.forEach(p=>{
+    p.y+=p.speed*dt;
+    if(rectIntersect(player.x,player.y,player.w,player.h, p.x,p.y,p.w,p.h)){
+      if(p.type==='shield') player.shield=500;
+      else player.rapid=300;
+      p.dead=true;
+    }
+  });
+  powerups=powerups.filter(p=>!p.dead && p.y<H+40);
+
+  // Timers
+  if(player.shield>0) player.shield-=dt;
+  if(player.rapid>0) player.rapid-=dt;
+
+  // Explosions
+  explosions.forEach(ex=>ex.life-=dt);
+  explosions=explosions.filter(ex=>ex.life>0);
+}
+
+function shoot(){
+  const now=Date.now();
+  if(!player.lastShot) player.lastShot=0;
+  const delay=player.rapid>0?100:300;
+  if(now-player.lastShot>delay){
+    bullets.push({x:player.x+player.w/2-5,y:player.y,w:10,h:20});
+    player.lastShot=now;
+  }
+}
+
+function hit(){
+  lives--;
+  document.getElementById('lives-val').textContent=lives;
+  explode(player.x+player.w/2, player.y+player.h/2);
+  if(lives<=0) gameOver();
+}
+
+function explode(x,y){
+  explosions.push({x,y,life:20});
+}
+
+function gameOver(){
+  state='gameOver';
+  document.getElementById('game-over-screen').classList.remove('hidden');
+  document.getElementById('final-score').textContent=score;
+  API.saveGame(score);
+}
+
+function rectIntersect(x1,y1,w1,h1, x2,y2,w2,h2){
+  return x2<x1+w1 && x2+w2>x1 && y2<y1+h1 && y2+h2>y1;
+}
+
+function draw(){
+  ctx.clearRect(0,0,W,H);
+  // BG
+  for(let y=bgY-assets.bg.height; y<H; y+=assets.bg.height){
+    ctx.drawImage(assets.bg, 0, y, W, assets.bg.height);
+  }
+
+  // Player
+  ctx.drawImage(assets.player, player.x, player.y, player.w, player.h);
+  if(player.shield>0){
+    ctx.strokeStyle='#e8a838'; ctx.lineWidth=3;
+    ctx.beginPath(); ctx.arc(player.x+player.w/2, player.y+player.h/2, 35, 0, Math.PI*2); ctx.stroke();
+  }
+
+  // Bullets
+  bullets.forEach(b=>{
+    ctx.drawImage(assets.bullet, b.x, b.y, b.w, b.h);
+  });
+
+  // Enemies
+  enemies.forEach(e=>{
+    ctx.drawImage(assets[`enemy${e.type}`], e.x, e.y, e.w, e.h);
+  });
+
+  // Powerups
+  powerups.forEach(p=>{
+    ctx.drawImage(assets[`pu_${p.type}`], p.x, p.y, p.w, p.h);
+  });
+
+  // Explosions
+  explosions.forEach(ex=>{
+    const s=40+(20-ex.life)*2;
+    ctx.globalAlpha=ex.life/20;
+    ctx.drawImage(assets.explosion, ex.x-s/2, ex.y-s/2, s, s);
+    ctx.globalAlpha=1;
+  });
+}
+
+window.addEventListener('keydown',e=>keys[e.key]=true);
+window.addEventListener('keyup',e=>keys[e.key]=false);
+
+// Touch controls
+canvas.addEventListener('touchstart',e=>{
+  const rect=canvas.getBoundingClientRect();
+  const tx=e.touches[0].clientX-rect.left;
+  player.x=tx-player.w/2;
+  keys[' ']=true;
+});
+canvas.addEventListener('touchmove',e=>{
+  const rect=canvas.getBoundingClientRect();
+  const tx=e.touches[0].clientX-rect.left;
+  player.x=tx-player.w/2;
+});
+canvas.addEventListener('touchend',()=>keys[' ']=false);
+
+Promise.all([
+  loadImg('bg','/game-assets/shooter/bg-tile.png'),
+  loadImg('player','/game-assets/shooter/player-ship.png'),
+  loadImg('enemy1','/game-assets/shooter/enemy-van-1.png'),
+  loadImg('enemy2','/game-assets/shooter/enemy-van-2.png'),
+  loadImg('bullet','/game-assets/shooter/bullet-sauce.png'),
+  loadImg('pu_shield','/game-assets/shooter/powerup-shield.png'),
+  loadImg('pu_rapid','/game-assets/shooter/powerup-rapid.png'),
+  loadImg('explosion','/game-assets/shooter/explosion.png')
+]).then(()=>{
+  if(API.token){
+    document.getElementById('auth-section').classList.add('hidden');
+    document.getElementById('welcome-section').classList.remove('hidden');
+    fetch('/api/game/progress',{headers:{'Authorization':`Bearer ${API.token}`}})
+      .then(r=>r.json()).then(d=>{
+        document.getElementById('player-name').textContent=d.user?.name||d.totalScore+' pts';
+      }).catch(()=>{});
+  }
+});
+</script>
+</body>
+</html>
