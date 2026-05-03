@@ -84,12 +84,37 @@ let keys={};
 let bgY=0;
 
 const assets={};
+function removeBackground(img){
+  const canvas=document.createElement('canvas');
+  const ctx=canvas.getContext('2d');
+  canvas.width=img.width; canvas.height=img.height;
+  ctx.drawImage(img,0,0);
+  const data=ctx.getImageData(0,0,canvas.width,canvas.height);
+  const pixels=data.data;
+  // Use top-left pixel as reference for background
+  const r=pixels[0], g=pixels[1], b=pixels[2];
+  for(let i=0; i<pixels.length; i+=4){
+    const dr=Math.abs(pixels[i]-r), dg=Math.abs(pixels[i+1]-g), db=Math.abs(pixels[i+2]-b);
+    if(dr<25 && dg<25 && db<25) pixels[i+3]=0;
+  }
+  ctx.putImageData(data,0,0);
+  const newImg=new Image();
+  newImg.src=canvas.toDataURL();
+  return newImg;
+}
+
 function loadImg(name,src){
   return new Promise(res=>{
     const img=new Image();
-    img.onload=()=>res(img);
+    img.onload=()=>{
+      if(name==='bg') { assets[name]=img; res(img); }
+      else {
+        const transparentImg=removeBackground(img);
+        transparentImg.onload=()=>res(transparentImg);
+        assets[name]=transparentImg;
+      }
+    };
     img.src=src;
-    assets[name]=img;
   });
 }
 
