@@ -612,7 +612,7 @@
 
             document.getElementById('state-live').style.display = 'block';
 
-        } else if (!cfg.isLive && (cfg.nextStreamAt || cfg.channelId || cfg.streamTitle)) {
+        } else if (!cfg.isLive && (cfg.nextStreamAt || cfg.replayUrl || cfg.streamTitle)) {
             // Offline — show countdown and/or replay
             document.getElementById('offline-title').textContent =
                 cfg.streamTitle ? 'Next: ' + cfg.streamTitle : 'Next Stream';
