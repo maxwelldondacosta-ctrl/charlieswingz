@@ -216,7 +216,7 @@ class SauceShooter extends Phaser.Scene {
     this.shieldGraphic.setVisible(false);
 
     // Spawning
-    this.spawnTimer = this.time.addEvent({ delay: 1000, callback: this.spawnEnemy, callbackScope: this, loop: true, paused: true });
+    this.spawnTimer = this.time.addEvent({ delay: 600, callback: this.spawnEnemy, callbackScope: this, loop: true, paused: true });
   }
 
   startGame() {
@@ -249,7 +249,7 @@ class SauceShooter extends Phaser.Scene {
     // Shooting
     if (this.fireKey.isDown && time > this.lastFired) {
       this.fireBullet();
-      this.lastFired = time + (this.rapidFire > 0 ? 100 : 300);
+      this.lastFired = time + (this.rapidFire > 0 ? 150 : 450);
     }
 
     // Powerup Timers
@@ -282,7 +282,8 @@ class SauceShooter extends Phaser.Scene {
     const x = Phaser.Math.Between(50, 350);
     const e = this.enemies.create(x, -50, `enemy${type}`);
     e.setScale(0.15).setDepth(8);
-    e.body.velocity.y = 150 + (this.score / 200);
+    // Increased base speed and faster scaling
+    e.body.velocity.y = 250 + (this.score / 100);
   }
 
   hitEnemy(bullet, enemy) {
@@ -292,7 +293,7 @@ class SauceShooter extends Phaser.Scene {
     this.score += 100;
     this.scoreText.setText('SCORE: ' + this.score);
 
-    if (Phaser.Math.Between(1, 20) === 1) this.spawnPowerup(enemy.x, enemy.y);
+    if (Phaser.Math.Between(1, 40) === 1) this.spawnPowerup(enemy.x, enemy.y);
   }
 
   spawnPowerup(x, y) {
