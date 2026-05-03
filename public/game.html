@@ -464,11 +464,15 @@ const API = {
   },
 
   async register(name, email, password) {
+    const referralCode = localStorage.getItem('cw_referral');
+    const body = { name, email, password };
+    if (referralCode) body.referralCode = referralCode;
     const res = await fetch('/api/game/register', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, email, password })
+      body: JSON.stringify(body)
     });
+    localStorage.removeItem('cw_referral');
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Registration failed');
     this.token = data.token;

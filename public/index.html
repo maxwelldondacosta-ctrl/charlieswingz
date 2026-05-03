@@ -4258,6 +4258,16 @@
         // START
         // ============================================
         init();
+
+        (function captureReferral() {
+            const params = new URLSearchParams(window.location.search);
+            const ref = params.get('ref');
+            if (!ref) return;
+            localStorage.setItem('cw_referral', ref);
+            const url = new URL(window.location.href);
+            url.searchParams.delete('ref');
+            window.history.replaceState({}, '', url.pathname + (url.search || ''));
+        })();
     </script>
 </body>
 </html>
