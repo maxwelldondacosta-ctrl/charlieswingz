@@ -237,6 +237,7 @@ for (const [table, col, type] of migrations) {
         // Column already exists — ignore
     }
 }
+db.prepare(`CREATE UNIQUE INDEX IF NOT EXISTS idx_game_players_referral_code ON game_players(referral_code) WHERE referral_code IS NOT NULL`).run();
 
 // Ensure lottery row exists
 const lotteryRow = db.prepare('SELECT count FROM lottery WHERE id = 1').get();
@@ -1543,6 +1544,7 @@ function getReferralCount(email) {
 }
 
 function insertReferralDiscount({ code, email, percent, source, description }) {
+    if (!email) return;
     stmts.insertDiscount.run({
         code,
         email:         email.toLowerCase(),
