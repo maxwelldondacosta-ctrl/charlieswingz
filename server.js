@@ -2160,7 +2160,7 @@ const GAME_MILESTONES = [
 ];
 
 app.post('/api/game/register', async (req, res) => {
-    const { name, email, password, phone } = req.body;
+    const { name, email, password, phone, referralCode } = req.body;
     if (!name || !email || !password) return res.status(400).json({ message: 'Name, email, and password required' });
     if (password.length < 6) return res.status(400).json({ message: 'Password min 6 characters' });
 
@@ -2210,6 +2210,19 @@ app.post('/api/game/register', async (req, res) => {
     } catch (e) {
         // Don't block signup if customer-link fails — just log it
         console.error('[Register] Customer link error:', e.message);
+    }
+
+    // ── Referral linking ──
+    try {
+        db.getOrCreateReferralCode(email.toLowerCase());
+        if (referralCode) {
+            const referrer = db.getPlayerByReferralCode(referralCode);
+            if (referrer && referrer.email.toLowerCase() !== email.toLowerCase()) {
+                db.setReferredBy(email.toLowerCase(), referrer.email);
+            }
+        }
+    } catch (e) {
+        // Never block signup if referral logic fails
     }
 
     const token = crypto.randomBytes(32).toString('hex');
@@ -2412,6 +2425,14 @@ app.get('/api/account/profile', requireGameAuth, (req, res) => {
     res.set('Cache-Control', 'no-store, no-cache, must-revalidate');
     const player = getPlayer(req.playerEmail);
     if (!player) return res.status(404).json({ message: 'Account not found' });
+    let referralCode = null;
+    let referralCount = 0;
+    try {
+        referralCode = db.getOrCreateReferralCode(player.email);
+        referralCount = db.getReferralCount(player.email);
+    } catch (e) {
+        // defaults already set above
+    }
     res.json({
         name: player.name || '',
         email: player.email || '',
@@ -2419,7 +2440,9 @@ app.get('/api/account/profile', requireGameAuth, (req, res) => {
         address: player.profile?.address || '',
         city: player.profile?.city || 'London',
         postcode: player.profile?.postcode || '',
-        contactPref: player.profile?.contactPref || 'email'
+        contactPref: player.profile?.contactPref || 'email',
+        referralCode,
+        referralCount
     });
 });
 
@@ -2829,6 +2852,51 @@ app.post('/webhooks/stripe', express.raw({ type: 'application/json' }), async (r
                     customer_name: customerName
                 }, loyaltyMsg, '👑 You Earned a Loyalty Reward!', loyaltyEmailHtml).catch(err => console.error('[Loyalty notification error]', err.message));
             }
+        }
+
+        // ── Referral Reward ──
+        try {
+            const referralState = db.getPlayerReferralState(customerEmail);
+            if (referralState && referralState.referred_by && referralState.referral_rewarded === 0) {
+                const referrerEmail = referralState.referred_by;
+
+                // 15% code for the referred friend
+                const friendCode = 'CWREF15-' + Math.random().toString(36).substring(2, 8).toUpperCase();
+                db.insertReferralDiscount({
+                    code: friendCode,
+                    email: customerEmail,
+                    percent: 15,
+                    source: 'referral',
+                    description: '15% referral reward'
+                });
+
+                // 15% code for the referrer
+                const referrerCode = 'CWREF15-' + Math.random().toString(36).substring(2, 8).toUpperCase();
+                db.insertReferralDiscount({
+                    code: referrerCode,
+                    email: referrerEmail,
+                    percent: 15,
+                    source: 'referral',
+                    description: '15% referral reward'
+                });
+
+                db.setReferralRewarded(customerEmail);
+                const newCount = db.incrementReferralCount(referrerEmail);
+
+                // 30% milestone (every 10 successful referrals)
+                if (newCount % 10 === 0) {
+                    const milestoneCode = 'CWREF30-' + Math.random().toString(36).substring(2, 8).toUpperCase();
+                    db.insertReferralDiscount({
+                        code: milestoneCode,
+                        email: referrerEmail,
+                        percent: 30,
+                        source: 'referral-milestone',
+                        description: '30% referral milestone reward'
+                    });
+                }
+            }
+        } catch (err) {
+            console.error('Referral reward error:', err);
         }
 
         // ── Customer Lottery: every 10th order wins 10% off ──
