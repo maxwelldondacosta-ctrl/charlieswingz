@@ -449,7 +449,51 @@
             margin: 1.5rem 0;
         }
 
-        /* ── Mobile ───────────────────────────────────────────────────────── */
+        /* ── Referral Card ── */
+        .referral-card { margin-top: 1.5rem; }
+        .referral-link-wrap {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: #f5f5f5;
+            border-radius: 8px;
+            padding: 0.5rem 0.75rem;
+            margin: 0.75rem 0;
+        }
+        .referral-link-text {
+            flex: 1;
+            font-size: 0.85rem;
+            color: #333;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            font-family: monospace;
+        }
+        .copy-ref-btn {
+            background: #e63946;
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            padding: 0.35rem 0.75rem;
+            font-size: 0.8rem;
+            cursor: pointer;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+        .copy-ref-btn:hover { background: #c1121f; }
+        .copy-ref-btn:disabled { background: #ccc; cursor: not-allowed; }
+        .referral-stats {
+            font-size: 0.9rem;
+            color: #444;
+            margin-top: 0.5rem;
+        }
+        .referral-milestone {
+            font-size: 0.85rem;
+            color: #666;
+            margin-top: 0.25rem;
+        }
+
+                /* ── Mobile ───────────────────────────────────────────────────────── */
         @media (max-width: 768px) {
             .site-nav { padding: 0.6rem 1rem; }
             .nav-links { gap: 0.75rem; }
@@ -528,7 +572,18 @@
                 <div class="stamp-circles" id="stamp-circles"></div>
                 <p class="stamp-msg" id="stamp-msg"></p>
             </div>
-            <div class="section-title">Your Rewards</div>
+            <!-- Refer a Friend -->
+            <div class="referral-card card">
+                <h3 class="section-title">Refer a Friend</h3>
+                <p style="font-size:0.9rem;color:var(--cream-dim);margin:0.25rem 0 0.5rem;">Share your link. When your friend places their first order, you both get 15% off.</p>
+                <div class="referral-link-wrap">
+                    <span class="referral-link-text" id="referral-link-text">Loading...</span>
+                    <button class="copy-ref-btn" onclick="copyReferralLink()">Copy</button>
+                </div>
+                <p class="referral-stats" id="referral-stats"></p>
+                <p class="referral-milestone" id="referral-milestone"></p>
+            </div>
+                        <div class="section-title">Your Rewards</div>
             <div id="loyalty-rewards"><p class="empty-msg">Loading…</p></div>
         </div>
 
@@ -707,6 +762,16 @@
             if (!res.ok) return;
             renderLoyalty(await res.json());
         } catch (e) { /* server offline — leave Loading… in place */ }
+        if (!_referralLoaded) {
+            try {
+                const profileRes = await fetch('/api/account/profile', { headers: authHeaders() });
+                if (profileRes.ok) {
+                    const data = await profileRes.json();
+                    _referralLoaded = true;
+                    loadReferralCard(data.referralCode, data.referralCount);
+                }
+            } catch (e) { /* server offline */ }
+        }
     }
 
     function renderLoyalty(data) {
@@ -927,34 +992,94 @@
         }
     }
 
-    // ── Copy code ─────────────────────────────────────────────────────────────
+    // ── Referral card ─────────────────────────────────────────────────────────────
+    const REFERRAL_BASE = 'https://charlieswingz.co.uk/?ref=';
+    let _referralCode = null;
+    let _referralLoaded = false;
+
+    function loadReferralCard(referralCode, referralCount) {
+        _referralCode = referralCode;
+        renderReferralCard(referralCode, referralCount);
+    }
+
+    function renderReferralCard(referralCode, referralCount) {
+        const linkEl = document.getElementById('referral-link-text');
+        const statsEl = document.getElementById('referral-stats');
+        const milestoneEl = document.getElementById('referral-milestone');
+        if (!linkEl) return;
+
+        if (referralCode) {
+            linkEl.textContent = REFERRAL_BASE + referralCode;
+        } else {
+            linkEl.textContent = 'Loading your referral link...';
+        }
+
+        const copyBtn = document.querySelector('.copy-ref-btn');
+        if (copyBtn) copyBtn.disabled = !referralCode;
+
+        const count = referralCount || 0;
+        statsEl.textContent = count + ' friend' + (count === 1 ? '' : 's') + ' referred';
+
+        const toNext = 10 - (count % 10);
+        if (count > 0 && count % 10 === 0) {
+            milestoneEl.textContent = '\u{1F389} 30% milestone reached!';
+        } else {
+            milestoneEl.textContent = toNext + ' more to unlock your 30% reward';
+        }
+    }
+
+    function fallbackCopy(text) {
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        ta.style.position = 'fixed';
+        ta.style.opacity  = '0';
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+    }
+
+    function copyReferralLink() {
+        if (!_referralCode) return;
+        const link = REFERRAL_BASE + _referralCode;
+        const btn = document.querySelector('.copy-ref-btn');
+        function showCopied() {
+            if (btn) {
+                btn.textContent = '\u2713 Copied!';
+                setTimeout(() => { btn.textContent = 'Copy'; }, 2000);
+            }
+        }
+        if (navigator.clipboard) {
+            navigator.clipboard.writeText(link).then(showCopied).catch(() => {
+                fallbackCopy(link);
+                showCopied();
+            });
+        } else {
+            fallbackCopy(link);
+            showCopied();
+        }
+    }
+
+        // ── Copy code ─────────────────────────────────────────────────────────────
     function copyCode(code, cardEl) {
-        navigator.clipboard.writeText(code).then(() => {
+        function showCopied() {
             const hint = cardEl.querySelector('.reward-card-hint');
-            hint.textContent = '✓ Copied!';
+            hint.textContent = '\u2713 Copied!';
             hint.classList.add('copied');
             setTimeout(() => {
                 hint.textContent = 'Tap to copy';
                 hint.classList.remove('copied');
             }, 2000);
-        }).catch(() => {
-            // Fallback for older browsers
-            const ta = document.createElement('textarea');
-            ta.value = code;
-            ta.style.position = 'fixed';
-            ta.style.opacity  = '0';
-            document.body.appendChild(ta);
-            ta.select();
-            document.execCommand('copy');
-            document.body.removeChild(ta);
-            const hint = cardEl.querySelector('.reward-card-hint');
-            hint.textContent = '✓ Copied!';
-            hint.classList.add('copied');
-            setTimeout(() => {
-                hint.textContent = 'Tap to copy';
-                hint.classList.remove('copied');
-            }, 2000);
-        });
+        }
+        if (navigator.clipboard) {
+            navigator.clipboard.writeText(code).then(showCopied).catch(() => {
+                fallbackCopy(code);
+                showCopied();
+            });
+        } else {
+            fallbackCopy(code);
+            showCopied();
+        }
     }
 </script>
 </body>
