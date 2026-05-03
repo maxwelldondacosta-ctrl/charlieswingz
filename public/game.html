@@ -688,6 +688,54 @@ function closeMilestone() {
 }
 
 // ===========================================================
+//  SFX
+// ===========================================================
+const SFX = (() => {
+  let ctx = null;
+  const buffers = {};
+  let ready = false;
+
+  function boot() {
+    if (ctx) return;
+    ctx = new (window.AudioContext || window.webkitAudioContext)();
+    preload();
+  }
+
+  async function preload() {
+    const sounds = {
+      eat:     '/sfx/snake-eat.mp3',
+      die:     '/sfx/snake-die.mp3',
+      start:   '/sfx/snake-start.mp3',
+      speedup: '/sfx/snake-speedup.mp3',
+    };
+    await Promise.all(Object.entries(sounds).map(async ([name, url]) => {
+      try {
+        const res = await fetch(url);
+        if (!res.ok) return;
+        const ab = await res.arrayBuffer();
+        buffers[name] = await ctx.decodeAudioData(ab);
+      } catch { /* sfx unavailable — game still works */ }
+    }));
+    ready = true;
+  }
+
+  function play(name, volume = 0.6, rate = 1) {
+    if (!ctx || !buffers[name]) return;
+    if (ctx.state === 'suspended') ctx.resume();
+    const src  = ctx.createBufferSource();
+    const gain = ctx.createGain();
+    src.buffer            = buffers[name];
+    src.playbackRate.value = rate;
+    gain.gain.value       = volume;
+    src.connect(gain);
+    gain.connect(ctx.destination);
+    src.start();
+  }
+
+  return { boot, play };
+})();
+
+// ===========================================================
 //  GAME ENGINE (same as before but with save hooks)
 // ===========================================================
 const canvas = document.getElementById('game');
@@ -879,6 +927,8 @@ function drawDeath() {
 // GAME LOGIC
 function startGame() {
   if(state==='playing'||!API.user) return;
+  SFX.boot();
+  SFX.play('start', 0.5);
   if(titleLoop) cancelAnimationFrame(titleLoop);
   if(deathLoop) clearInterval(deathLoop);
   snake=[{x:10,y:10},{x:9,y:10},{x:8,y:10}];
@@ -924,7 +974,10 @@ function gameTick() {
     wingCount+=foodType===3?0:foodType===2?2:1;
     addParticles(food.x,food.y,f.col,8);
     spawnFood();
-    if(speed>65){speed-=2;clearInterval(gameLoop);gameLoop=setInterval(gameTick,speed);}
+    const wasSpedUp = speed>65;
+    if(wasSpedUp){speed-=2;clearInterval(gameLoop);gameLoop=setInterval(gameTick,speed);}
+    SFX.play('eat', 0.55, foodType===3?1.3:1);
+    if(wasSpedUp && speed%10===5) SFX.play('speedup', 0.4);
   }else{snake.pop();}
   updateParticles();
   drawGame();
@@ -932,6 +985,7 @@ function gameTick() {
 
 async function die() {
   state='dead'; clearInterval(gameLoop);
+  SFX.play('die', 0.7);
   // Save to backend
   const crowns=snake.length-1;
   try {
