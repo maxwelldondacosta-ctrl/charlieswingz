@@ -472,9 +472,9 @@ const API = {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body)
     });
-    localStorage.removeItem('cw_referral');
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Registration failed');
+    localStorage.removeItem('cw_referral');
     this.token = data.token;
     this.user = data.user;
     return data;

@@ -4261,7 +4261,7 @@
 
         (function captureReferral() {
             const params = new URLSearchParams(window.location.search);
-            const ref = params.get('ref');
+            const ref = params.get('ref')?.trim();
             if (!ref) return;
             localStorage.setItem('cw_referral', ref);
             const url = new URL(window.location.href);
