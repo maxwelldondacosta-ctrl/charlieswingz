@@ -89,8 +89,49 @@ function startGame() {
   document.getElementById('start-screen').classList.add('hidden');
   document.getElementById('game-over-screen').classList.add('hidden');
   if (gameInstance && gameInstance.scene.getAt(0)) {
-    gameInstance.scene.getAt(0).scene.restart();
+    gameInstance.scene.getAt(0).startGame();
   }
+}
+
+function removeBackground(img){
+  const canvas=document.createElement('canvas');
+  const ctx=canvas.getContext('2d');
+  canvas.width=img.width; canvas.height=img.height;
+  ctx.drawImage(img,0,0);
+  const data=ctx.getImageData(0,0,canvas.width,canvas.height);
+  const pixels=data.data;
+  // Use top-left pixel as reference for background
+  const r=pixels[0], g=pixels[1], b=pixels[2];
+  for(let i=0; i<pixels.length; i+=4){
+    const dr=Math.abs(pixels[i]-r), dg=Math.abs(pixels[i+1]-g), db=Math.abs(pixels[i+2]-b);
+    if(dr<25 && dg<25 && db<25) pixels[i+3]=0;
+  }
+  ctx.putImageData(data,0,0);
+  const newImg=new Image();
+  newImg.src=canvas.toDataURL();
+  return newImg;
+}
+
+function loadImgWithTransparentBg(scene, key, src) {
+  const img = new Image();
+  img.crossOrigin = "Anonymous";
+  img.onload = () => {
+    if (key === 'bg') {
+        scene.textures.addImage(key, img);
+        if (scene.onAssetLoaded) scene.onAssetLoaded();
+    } else {
+        const transparentImg = removeBackground(img);
+        transparentImg.onload = () => {
+            scene.textures.addImage(key, transparentImg);
+            if (scene.onAssetLoaded) scene.onAssetLoaded();
+        };
+    }
+  };
+  img.onerror = () => {
+    console.error('Failed to load asset:', key, src);
+    if (scene.onAssetLoaded) scene.onAssetLoaded();
+  };
+  img.src = src;
 }
 
 // ── Phaser Game Engine ────────────────────────────────────────────────────────
@@ -98,27 +139,51 @@ class SauceShooter extends Phaser.Scene {
   constructor() { super('SauceShooter'); }
 
   preload() {
-    this.load.image('bg', '/game-assets/shooter/bg-tile.png');
-    this.load.image('player', '/game-assets/shooter/player-ship.png');
-    this.load.image('enemy1', '/game-assets/shooter/enemy-van-1.png');
-    this.load.image('enemy2', '/game-assets/shooter/enemy-van-2.png');
-    this.load.image('bullet', '/game-assets/shooter/bullet-sauce.png');
-    this.load.image('pu_shield', '/game-assets/shooter/powerup-shield.png');
-    this.load.image('pu_rapid', '/game-assets/shooter/powerup-rapid.png');
-    this.load.image('explosion', '/game-assets/shooter/explosion.png');
+    this.assetsToLoad = 8;
+    this.assetsLoaded = 0;
+    this.onAssetLoaded = () => {
+      this.assetsLoaded++;
+      if (this.assetsLoaded === this.assetsToLoad) {
+        this.assetsReady = true;
+      }
+    };
+
+    loadImgWithTransparentBg(this, 'bg', '/game-assets/shooter/bg-tile.png');
+    loadImgWithTransparentBg(this, 'player', '/game-assets/shooter/player-ship.png');
+    loadImgWithTransparentBg(this, 'enemy1', '/game-assets/shooter/enemy-van-1.png');
+    loadImgWithTransparentBg(this, 'enemy2', '/game-assets/shooter/enemy-van-2.png');
+    loadImgWithTransparentBg(this, 'bullet', '/game-assets/shooter/bullet-sauce.png');
+    loadImgWithTransparentBg(this, 'pu_shield', '/game-assets/shooter/powerup-shield.png');
+    loadImgWithTransparentBg(this, 'pu_rapid', '/game-assets/shooter/powerup-rapid.png');
+    loadImgWithTransparentBg(this, 'explosion', '/game-assets/shooter/explosion.png');
   }
 
   create() {
+    this.W = 400;
+    this.H = 600;
+
+    this.waitForAssets = this.time.addEvent({
+      delay: 100,
+      loop: true,
+      callback: () => {
+        if (this.assetsReady) {
+          this.waitForAssets.destroy();
+          this.initGame();
+        }
+      }
+    });
+  }
+
+  initGame() {
     // Scrolling Background
     this.bg = this.add.tileSprite(200, 300, 400, 600, 'bg');
 
     // Player
     this.player = this.physics.add.sprite(200, 520, 'player').setCollideWorldBounds(true);
-    this.player.setScale(0.15); // Adjust based on high-res asset size
-    this.player.setDepth(10);
+    this.player.setScale(0.15).setDepth(10);
     
     // Groups
-    this.bullets = this.physics.add.group({ classType: Phaser.Physics.Arcade.Image, maxSize: 30, runChildUpdate: true });
+    this.bullets = this.physics.add.group();
     this.enemies = this.physics.add.group();
     this.powerups = this.physics.add.group();
 
@@ -129,6 +194,7 @@ class SauceShooter extends Phaser.Scene {
     this.lastFired = 0;
     this.rapidFire = 0;
     this.shieldActive = 0;
+    this.gameActive = false;
 
     // UI
     this.scoreText = this.add.text(16, 16, 'SCORE: 0', { fontSize: '20px', fontWeight: '900', fill: '#e8a838', fontFamily: 'monospace' }).setDepth(100);
@@ -150,11 +216,28 @@ class SauceShooter extends Phaser.Scene {
     this.shieldGraphic.setVisible(false);
 
     // Spawning
-    this.time.addEvent({ delay: 1000, callback: this.spawnEnemy, callbackScope: this, loop: true });
+    this.spawnTimer = this.time.addEvent({ delay: 1000, callback: this.spawnEnemy, callbackScope: this, loop: true, paused: true });
+  }
+
+  startGame() {
+    this.gameActive = true;
+    this.isGameOver = false;
+    this.score = 0;
+    this.lives = 3;
+    this.scoreText.setText('SCORE: 0');
+    this.livesText.setText('LIVES: 3');
+    this.player.setPosition(200, 520);
+    this.player.setAlpha(1);
+    this.player.clearTint();
+    this.enemies.clear(true, true);
+    this.bullets.clear(true, true);
+    this.powerups.clear(true, true);
+    this.spawnTimer.paused = false;
+    this.physics.resume();
   }
 
   update(time, delta) {
-    if (this.isGameOver) return;
+    if (!this.gameActive || this.isGameOver) return;
 
     this.bg.tilePositionY -= 2;
 
@@ -186,7 +269,7 @@ class SauceShooter extends Phaser.Scene {
   }
 
   fireBullet() {
-    const b = this.bullets.get(this.player.x, this.player.y - 20, 'bullet');
+    const b = this.bullets.create(this.player.x, this.player.y - 20, 'bullet');
     if (b) {
       b.setActive(true).setVisible(true).setScale(0.1).setDepth(5);
       b.body.velocity.y = -600;
@@ -255,6 +338,7 @@ class SauceShooter extends Phaser.Scene {
     this.isGameOver = true;
     this.physics.pause();
     this.player.setTint(0xff0000);
+    this.spawnTimer?.destroy();
     document.getElementById('ui-overlay').classList.remove('hidden');
     document.getElementById('game-over-screen').classList.remove('hidden');
     document.getElementById('final-score').textContent = this.score;
