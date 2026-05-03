@@ -2856,7 +2856,7 @@ app.post('/webhooks/stripe', express.raw({ type: 'application/json' }), async (r
 
         // ── Referral Reward ──
         try {
-            if (customerEmail) {
+            if (customerEmail && foodSubtotal >= 2500) {
                 const referralState = db.getPlayerReferralState(customerEmail);
                 if (referralState && referralState.referred_by && !referralState.referral_rewarded) {
                     const referrerEmail = referralState.referred_by;
@@ -2884,6 +2884,64 @@ app.post('/webhooks/stripe', express.raw({ type: 'application/json' }), async (r
                     db.setReferralRewarded(customerEmail);
                     const newCount = db.incrementReferralCount(referrerEmail);
 
+                    // Notify referred friend about their 15% code
+                    try {
+                        const friendPlayer = db.getGamePlayer(customerEmail);
+                        if (friendPlayer) {
+                            const friendContactPref = friendPlayer.profile?.contactPref || 'email';
+                            const friendPhone = friendPlayer.profile?.phone || '';
+                            const friendMsg = `You and your friend each earned a 15% referral reward! Use code ${friendCode} on your next order.`;
+                            const friendEmailHtml = `
+                                <div style="font-family:sans-serif;max-width:520px;margin:0 auto;background:#1a1a1a;color:#f5f0e8;padding:32px;border-radius:8px">
+                                    <h1 style="color:#d4af37;margin:0 0 16px;font-size:1.8rem">You Earned a Referral Reward!</h1>
+                                    <p>You and your friend each earned a <strong style="color:#4caf50">15% discount</strong> on your next order!</p>
+                                    <div style="background:#111;border:2px solid #d4af37;border-radius:8px;padding:20px;text-align:center;margin:20px 0">
+                                        <p style="font-family:monospace;font-size:2rem;color:#4caf50;font-weight:bold;letter-spacing:0.15em;margin:0">${friendCode}</p>
+                                    </div>
+                                    <p style="color:#aaa;font-size:0.85rem">Use this code at checkout on your next order at order.charlieswingz.com</p>
+                                    <p style="color:#d4af37;font-weight:bold;margin-top:24px">Fit for Royalty 👑</p>
+                                </div>
+                            `;
+                            notifyCustomerDirect({
+                                customer_email: customerEmail,
+                                customer_phone: friendPhone,
+                                contact_pref: friendContactPref,
+                                customer_name: friendPlayer.name || customerEmail
+                            }, friendMsg, 'You Earned a 15% Referral Reward!', friendEmailHtml).catch(err => console.error('[Referral friend notification error]', err.message));
+                        }
+                    } catch (err) {
+                        console.error('[Referral friend notification error]', err);
+                    }
+
+                    // Notify referrer about their 15% code
+                    try {
+                        const referrerPlayer = db.getGamePlayer(referrerEmail);
+                        if (referrerPlayer) {
+                            const referrerContactPref = referrerPlayer.profile?.contactPref || 'email';
+                            const referrerPhone = referrerPlayer.profile?.phone || '';
+                            const referrerMsg = `Your referral was successful! You both earned 15% off. Use code ${referrerCode} on your next order.`;
+                            const referrerEmailHtml = `
+                                <div style="font-family:sans-serif;max-width:520px;margin:0 auto;background:#1a1a1a;color:#f5f0e8;padding:32px;border-radius:8px">
+                                    <h1 style="color:#d4af37;margin:0 0 16px;font-size:1.8rem">Your Referral Was Successful!</h1>
+                                    <p>Your friend just placed their first order — you both earned a <strong style="color:#4caf50">15% discount</strong>!</p>
+                                    <div style="background:#111;border:2px solid #d4af37;border-radius:8px;padding:20px;text-align:center;margin:20px 0">
+                                        <p style="font-family:monospace;font-size:2rem;color:#4caf50;font-weight:bold;letter-spacing:0.15em;margin:0">${referrerCode}</p>
+                                    </div>
+                                    <p style="color:#aaa;font-size:0.85rem">Use this code at checkout on your next order at order.charlieswingz.com</p>
+                                    <p style="color:#d4af37;font-weight:bold;margin-top:24px">Fit for Royalty 👑</p>
+                                </div>
+                            `;
+                            notifyCustomerDirect({
+                                customer_email: referrerEmail,
+                                customer_phone: referrerPhone,
+                                contact_pref: referrerContactPref,
+                                customer_name: referrerPlayer.name || referrerEmail
+                            }, referrerMsg, 'Your Referral Was Successful! 15% Off Earned', referrerEmailHtml).catch(err => console.error('[Referral referrer notification error]', err.message));
+                        }
+                    } catch (err) {
+                        console.error('[Referral referrer notification error]', err);
+                    }
+
                     // 30% milestone (every 10 successful referrals)
                     if (newCount > 0 && newCount % 10 === 0) {
                         const milestoneCode = 'CWREF30-' + crypto.randomBytes(4).toString('hex').toUpperCase();
@@ -2894,6 +2952,35 @@ app.post('/webhooks/stripe', express.raw({ type: 'application/json' }), async (r
                             source: 'referral-milestone',
                             description: '30% referral milestone reward'
                         });
+
+                        // Notify referrer about 30% milestone code
+                        try {
+                            const referrerPlayer = db.getGamePlayer(referrerEmail);
+                            if (referrerPlayer) {
+                                const referrerContactPref = referrerPlayer.profile?.contactPref || 'email';
+                                const referrerPhone = referrerPlayer.profile?.phone || '';
+                                const milestoneMsg = `🎉 30% milestone reached! You've referred ${newCount} friends. Use code ${milestoneCode} for 30% off.`;
+                                const milestoneEmailHtml = `
+                                    <div style="font-family:sans-serif;max-width:520px;margin:0 auto;background:#1a1a1a;color:#f5f0e8;padding:32px;border-radius:8px">
+                                        <h1 style="color:#d4af37;margin:0 0 16px;font-size:1.8rem">🎉 30% Milestone Reached!</h1>
+                                        <p>Amazing — you've referred <strong style="color:#d4af37">${newCount} friends</strong>! Here's a special <strong style="color:#4caf50">30% discount</strong> as a thank you.</p>
+                                        <div style="background:#111;border:2px solid #d4af37;border-radius:8px;padding:20px;text-align:center;margin:20px 0">
+                                            <p style="font-family:monospace;font-size:2rem;color:#4caf50;font-weight:bold;letter-spacing:0.15em;margin:0">${milestoneCode}</p>
+                                        </div>
+                                        <p style="color:#aaa;font-size:0.85rem">Use this code at checkout on your next order at order.charlieswingz.com</p>
+                                        <p style="color:#d4af37;font-weight:bold;margin-top:24px">Fit for Royalty 👑</p>
+                                    </div>
+                                `;
+                                notifyCustomerDirect({
+                                    customer_email: referrerEmail,
+                                    customer_phone: referrerPhone,
+                                    contact_pref: referrerContactPref,
+                                    customer_name: referrerPlayer.name || referrerEmail
+                                }, milestoneMsg, '🎉 30% Milestone Reward — You\'ve Referred ' + newCount + ' Friends!', milestoneEmailHtml).catch(err => console.error('[Referral milestone notification error]', err.message));
+                            }
+                        } catch (err) {
+                            console.error('[Referral milestone notification error]', err);
+                        }
                     }
                 }
             }
