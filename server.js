@@ -2215,14 +2215,14 @@ app.post('/api/game/register', async (req, res) => {
     // ── Referral linking ──
     try {
         db.getOrCreateReferralCode(email.toLowerCase());
-        if (referralCode) {
+        if (referralCode && /^CWREF-[A-Z0-9]{6}$/.test(referralCode)) {
             const referrer = db.getPlayerByReferralCode(referralCode);
             if (referrer && referrer.email.toLowerCase() !== email.toLowerCase()) {
                 db.setReferredBy(email.toLowerCase(), referrer.email);
             }
         }
     } catch (e) {
-        // Never block signup if referral logic fails
+        console.error('[Register] Referral linking error:', e.message);
     }
 
     const token = crypto.randomBytes(32).toString('hex');
@@ -2856,43 +2856,45 @@ app.post('/webhooks/stripe', express.raw({ type: 'application/json' }), async (r
 
         // ── Referral Reward ──
         try {
-            const referralState = db.getPlayerReferralState(customerEmail);
-            if (referralState && referralState.referred_by && referralState.referral_rewarded === 0) {
-                const referrerEmail = referralState.referred_by;
+            if (customerEmail) {
+                const referralState = db.getPlayerReferralState(customerEmail);
+                if (referralState && referralState.referred_by && !referralState.referral_rewarded) {
+                    const referrerEmail = referralState.referred_by;
 
-                // 15% code for the referred friend
-                const friendCode = 'CWREF15-' + Math.random().toString(36).substring(2, 8).toUpperCase();
-                db.insertReferralDiscount({
-                    code: friendCode,
-                    email: customerEmail,
-                    percent: 15,
-                    source: 'referral',
-                    description: '15% referral reward'
-                });
-
-                // 15% code for the referrer
-                const referrerCode = 'CWREF15-' + Math.random().toString(36).substring(2, 8).toUpperCase();
-                db.insertReferralDiscount({
-                    code: referrerCode,
-                    email: referrerEmail,
-                    percent: 15,
-                    source: 'referral',
-                    description: '15% referral reward'
-                });
-
-                db.setReferralRewarded(customerEmail);
-                const newCount = db.incrementReferralCount(referrerEmail);
-
-                // 30% milestone (every 10 successful referrals)
-                if (newCount % 10 === 0) {
-                    const milestoneCode = 'CWREF30-' + Math.random().toString(36).substring(2, 8).toUpperCase();
+                    // 15% code for the referred friend
+                    const friendCode = 'CWREF15-' + crypto.randomBytes(4).toString('hex').toUpperCase();
                     db.insertReferralDiscount({
-                        code: milestoneCode,
-                        email: referrerEmail,
-                        percent: 30,
-                        source: 'referral-milestone',
-                        description: '30% referral milestone reward'
+                        code: friendCode,
+                        email: customerEmail,
+                        percent: 15,
+                        source: 'referral',
+                        description: '15% referral reward'
                     });
+
+                    // 15% code for the referrer
+                    const referrerCode = 'CWREF15-' + crypto.randomBytes(4).toString('hex').toUpperCase();
+                    db.insertReferralDiscount({
+                        code: referrerCode,
+                        email: referrerEmail,
+                        percent: 15,
+                        source: 'referral',
+                        description: '15% referral reward'
+                    });
+
+                    db.setReferralRewarded(customerEmail);
+                    const newCount = db.incrementReferralCount(referrerEmail);
+
+                    // 30% milestone (every 10 successful referrals)
+                    if (newCount > 0 && newCount % 10 === 0) {
+                        const milestoneCode = 'CWREF30-' + crypto.randomBytes(4).toString('hex').toUpperCase();
+                        db.insertReferralDiscount({
+                            code: milestoneCode,
+                            email: referrerEmail,
+                            percent: 30,
+                            source: 'referral-milestone',
+                            description: '30% referral milestone reward'
+                        });
+                    }
                 }
             }
         } catch (err) {
