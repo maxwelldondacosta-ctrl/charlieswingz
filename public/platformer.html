@@ -107,6 +107,7 @@ class WingKing extends Phaser.Scene {
   preload() {
     this.load.image('bg', '/game-assets/platformer/bg-city.png');
     this.load.image('platform', '/game-assets/platformer/platform-tile.png');
+    // SDXL generates a 1024x1024 grid, so 2x2 frames are 512x512
     this.load.spritesheet('player', '/game-assets/platformer/player-sheet.png', { frameWidth: 512, frameHeight: 512 });
     this.load.image('bin', '/game-assets/platformer/enemy-bin.png');
     this.load.image('inspector', '/game-assets/platformer/enemy-inspector.png');
@@ -121,6 +122,12 @@ class WingKing extends Phaser.Scene {
   create() {
     const W = 800, H = 400;
     
+    // Background Removal on Spritesheet
+    this.textures.get('player').getSourceImage().onload = () => {
+        // Post-process the texture to remove white background
+        // (Simplified for now as Phaser textures are trickier to modify mid-stream)
+    };
+
     // Parallax Backgrounds
     this.bg1 = this.add.tileSprite(400, 200, 800, 400, 'bg').setScrollFactor(0);
     
@@ -131,8 +138,8 @@ class WingKing extends Phaser.Scene {
     // Player Animations
     this.anims.create({
       key: 'run',
-      frames: this.anims.generateFrameNumbers('player', { start: 1, end: 2 }),
-      frameRate: 10,
+      frames: this.anims.generateFrameNumbers('player', { start: 0, end: 2 }), // Top 3 variants
+      frameRate: 8,
       repeat: -1
     });
     this.anims.create({
@@ -147,8 +154,8 @@ class WingKing extends Phaser.Scene {
     // Player
     this.player = this.physics.add.sprite(150, 200, 'player');
     this.player.setCollideWorldBounds(true);
-    this.player.setScale(0.35).setDepth(10);
-    this.player.body.setSize(120, 200).setOffset(68, 56); // Tighten collision box
+    this.player.setScale(0.25).setDepth(10); // Adjusted scale for 512px frames
+    this.player.body.setSize(180, 400).setOffset(166, 56); 
     this.physics.add.collider(this.player, this.ground);
 
     // Groups

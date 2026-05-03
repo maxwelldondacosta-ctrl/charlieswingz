@@ -106,18 +106,22 @@ function removeBackground(img){
   const ctx=canvas.getContext('2d');
   canvas.width=img.width; canvas.height=img.height;
   ctx.drawImage(img,0,0);
+
   const data=ctx.getImageData(0,0,canvas.width,canvas.height);
   const pixels=data.data;
-  const r=pixels[0], g=pixels[1], b=pixels[2];
+  const rRef=pixels[0], gRef=pixels[1], bRef=pixels[2];
+
   for(let i=0; i<pixels.length; i+=4){
-    const dr=Math.abs(pixels[i]-r), dg=Math.abs(pixels[i+1]-g), db=Math.abs(pixels[i+2]-b);
-    if(dr<25 && dg<25 && db<25) pixels[i+3]=0;
+    const r=pixels[i], g=pixels[i+1], b=pixels[2];
+    const dr=Math.abs(r-rRef), dg=Math.abs(g-gRef), db=Math.abs(b-bRef);
+    if(dr < 60 && dg < 60 && db < 60) pixels[i+3]=0;
   }
   ctx.putImageData(data,0,0);
   const newImg=new Image();
   newImg.src=canvas.toDataURL();
   return newImg;
 }
+
 
 function loadImgWithTransparentBg(scene, key, src) {
   const img = new Image();
