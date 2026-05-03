@@ -4,77 +4,53 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
 <title>Wing King – Charlie's Wingz Arcade</title>
+<script src="https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser.min.js"></script>
 <style>
-*{margin:0;padding:0;box-sizing:border-box;}
-body{background:#0d0d1a;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;font-family:'Courier New',monospace;touch-action:manipulation;}
-canvas{display:block;border:2px solid #ff9800;image-rendering:pixelated;image-rendering:crisp-edges;max-width:100vw;}
-#overlay{position:fixed;inset:0;background:rgba(0,0,0,0.85);display:flex;align-items:center;justify-content:center;z-index:10;}
-#overlay.hidden{display:none;}
-.panel{background:#1a1a2e;border:2px solid #ff9800;border-radius:8px;padding:28px 36px;width:340px;color:#fff;}
-.panel h2{color:#ff9800;text-align:center;margin-bottom:20px;font-size:20px;}
-.panel input{width:100%;padding:10px;margin:6px 0;background:#111;border:1px solid #444;color:#fff;border-radius:4px;font-size:14px;}
-.panel button{width:100%;padding:11px;margin:6px 0;border:none;border-radius:4px;cursor:pointer;font-size:15px;font-family:'Courier New',monospace;}
-.btn-primary{background:#ff9800;color:#000;font-weight:bold;}
-.btn-secondary{background:#333;color:#aaa;}
-.btn-secondary:hover{color:#fff;}
-.panel .err{color:#ff5252;font-size:13px;text-align:center;min-height:18px;}
-.panel .link{color:#ff9800;cursor:pointer;font-size:13px;text-align:center;margin-top:8px;}
-.panel .link:hover{text-decoration:underline;}
-#nav{color:#ff9800;font-size:13px;margin-top:8px;}
-#nav a{color:#ff9800;text-decoration:none;}
-#nav a:hover{text-decoration:underline;}
+  body { margin: 0; background: #0d0d1a; overflow: hidden; font-family: 'Inter', sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
+  #game-container { border: 4px solid #e8a838; border-radius: 12px; box-shadow: 0 0 40px rgba(232, 168, 56, 0.2); overflow: hidden; }
+  .ui-overlay { position: fixed; inset: 0; pointer-events: none; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 100; }
+  .panel { background: rgba(26, 26, 46, 0.95); border: 2px solid #ff9800; border-radius: 12px; padding: 40px; width: 360px; color: #fff; text-align: center; pointer-events: auto; box-shadow: 0 0 30px rgba(0,0,0,0.5); }
+  h2 { color: #ff9800; margin-bottom: 20px; font-size: 2rem; text-transform: uppercase; letter-spacing: 2px; }
+  input { width: 100%; padding: 12px; margin: 8px 0; background: #05050a; border: 1px solid #444; color: #fff; border-radius: 8px; font-size: 1rem; outline: none; }
+  input:focus { border-color: #ff9800; }
+  button { width: 100%; padding: 14px; margin: 10px 0; border: none; border-radius: 8px; cursor: pointer; font-size: 1.1rem; font-weight: 800; text-transform: uppercase; transition: transform 0.1s; }
+  button:active { transform: scale(0.98); }
+  .btn-primary { background: #ff9800; color: #000; }
+  .btn-secondary { background: transparent; border: 1px solid #444; color: #888; font-size: 0.9rem; }
+  .hidden { display: none !important; }
+  #nav { position: fixed; bottom: 20px; color: #ff9800; font-size: 0.9rem; text-decoration: none; font-weight: 600; opacity: 0.6; transition: opacity 0.2s; }
+  #nav:hover { opacity: 1; }
 </style>
 </head>
 <body>
 
-<!-- Auth overlay -->
-<div id="overlay">
-  <!-- login -->
+<div id="game-container"></div>
+
+<div class="ui-overlay" id="overlay">
+  <!-- Login -->
   <div class="panel" id="pLogin">
-    <h2>WING KING</h2>
-    <div class="err" id="loginErr"></div>
+    <h2>Wing King</h2>
     <input id="loginEmail" type="email" placeholder="Email" autocomplete="email">
-    <input id="loginPass" type="password" placeholder="Password" autocomplete="current-password">
-    <button class="btn-primary" onclick="doLogin()">PLAY</button>
-    <button class="btn-secondary" onclick="showPanel('register')">Create account</button>
-    <div class="link" onclick="showPanel('guest')">Play as guest (score won't save)</div>
+    <input id="loginPass" type="password" placeholder="Password">
+    <button class="btn-primary" onclick="doLogin()">Start Mission</button>
+    <button class="btn-secondary" onclick="showPanel('register')">Create Account</button>
+    <button class="btn-secondary" style="margin-top:20px; border:none" onclick="closeOverlay()">Play as Guest</button>
   </div>
-  <!-- register -->
+  <!-- Register -->
   <div class="panel hidden" id="pRegister">
-    <h2>CREATE ACCOUNT</h2>
-    <div class="err" id="regErr"></div>
+    <h2>Join the Flight</h2>
     <input id="regName" type="text" placeholder="Name">
     <input id="regEmail" type="email" placeholder="Email">
     <input id="regPass" type="password" placeholder="Password">
-    <button class="btn-primary" onclick="doRegister()">JOIN & PLAY</button>
-    <button class="btn-secondary" onclick="showPanel('login')">← Back</button>
+    <button class="btn-primary" onclick="doRegister()">Join & Play</button>
+    <button class="btn-secondary" onclick="showPanel('login')">← Back to Login</button>
   </div>
 </div>
 
-<canvas id="c"></canvas>
-<div id="nav"><a href="/play-win.html">← Back to Arcade</a></div>
+<a id="nav" href="/play-win">← BACK TO ARCADE</a>
 
 <script>
-// ── Canvas ────────────────────────────────────────────────────────────────────
-const canvas = document.getElementById('c');
-const ctx    = canvas.getContext('2d');
-const W = 800, H = 400;
-canvas.width = W; canvas.height = H;
-
-// ── Constants ─────────────────────────────────────────────────────────────────
-const GROUND    = H - 60;
-const PLAYER_X  = 110;
-const GRAVITY   = 0.75;
-const JUMP_VY   = -15.5;
-const SHEET_COLS = 4;
-const SHEET_W   = 1024;
-const SHEET_H   = 768;
-const FRAME_W   = SHEET_W / SHEET_COLS; // 256
-// Characters live in lower portion of the 768px sheet
-const CROP_Y    = 280;
-const CROP_H    = SHEET_H - CROP_Y;     // 488
-
-// ── Auth ──────────────────────────────────────────────────────────────────────
+// ── Auth & API ────────────────────────────────────────────────────────────────
 const API = {
   token: null, user: null,
   async login(email, pw) {
@@ -82,12 +58,14 @@ const API = {
     const d = await r.json();
     if (!r.ok) throw new Error(d.error || 'Login failed');
     this.token = d.token; this.user = d.user;
+    localStorage.setItem('cw_session', JSON.stringify({token:this.token, user:this.user}));
   },
   async register(name, email, pw) {
     const r = await fetch('/api/game/register',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,email,password:pw})});
     const d = await r.json();
     if (!r.ok) throw new Error(d.error || 'Registration failed');
     this.token = d.token; this.user = d.user;
+    localStorage.setItem('cw_session', JSON.stringify({token:this.token, user:this.user}));
   },
   async save(score, wings) {
     if (!this.token) return;
@@ -95,379 +73,197 @@ const API = {
     await fetch('/api/game/save',{method:'POST',headers:{'Content-Type':'application/json','Authorization':`Bearer ${this.token}`},body:JSON.stringify({score:pts,wings})}).catch(()=>{});
   },
 };
-function saveSession(){ try{ localStorage.setItem('cw_session', JSON.stringify({token:API.token,user:API.user})); }catch(e){} }
-function loadSession(){ try{ return JSON.parse(localStorage.getItem('cw_session')||'null'); }catch(e){ return null; } }
-function clearSession(){ try{ localStorage.removeItem('cw_session'); }catch(e){} }
 
 function showPanel(name) {
-  document.querySelectorAll('.panel').forEach(p => p.classList.add('hidden'));
-  if (name === 'login')    document.getElementById('pLogin').classList.remove('hidden');
+  document.getElementById('pLogin').classList.add('hidden');
+  document.getElementById('pRegister').classList.add('hidden');
+  if (name === 'login') document.getElementById('pLogin').classList.remove('hidden');
   if (name === 'register') document.getElementById('pRegister').classList.remove('hidden');
 }
+
 async function doLogin() {
-  const email = document.getElementById('loginEmail').value.trim();
-  const pw    = document.getElementById('loginPass').value;
-  document.getElementById('loginErr').textContent = '';
-  try { await API.login(email, pw); saveSession(); closeOverlay(); }
-  catch(e) { document.getElementById('loginErr').textContent = e.message; }
+  try {
+    await API.login(document.getElementById('loginEmail').value, document.getElementById('loginPass').value);
+    closeOverlay();
+  } catch(e) { alert(e.message); }
 }
+
 async function doRegister() {
-  const name  = document.getElementById('regName').value.trim();
-  const email = document.getElementById('regEmail').value.trim();
-  const pw    = document.getElementById('regPass').value;
-  document.getElementById('regErr').textContent = '';
-  try { await API.register(name, email, pw); saveSession(); closeOverlay(); }
-  catch(e) { document.getElementById('regErr').textContent = e.message; }
+  try {
+    await API.register(document.getElementById('regName').value, document.getElementById('regEmail').value, document.getElementById('regPass').value);
+    closeOverlay();
+  } catch(e) { alert(e.message); }
 }
+
 function closeOverlay() {
   document.getElementById('overlay').classList.add('hidden');
-  SFX.boot();
+  if (gameInstance) gameInstance.scene.getAt(0).startGame();
 }
 
-// Restore session on load
-(async () => {
-  const s = loadSession();
-  if (s && s.token) {
-    API.token = s.token; API.user = s.user;
-    try {
-      const r = await fetch('/api/game/progress', {headers:{'Authorization':`Bearer ${API.token}`}});
-      if (r.ok) { closeOverlay(); return; }
-    } catch {}
-    clearSession(); API.token = null; API.user = null;
-  }
-})();
+// ── Phaser Engine ─────────────────────────────────────────────────────────────
+class WingKing extends Phaser.Scene {
+  constructor() { super('WingKing'); }
 
-// ── SFX ───────────────────────────────────────────────────────────────────────
-const SFX = (() => {
-  let ac = null;
-  const buf = {};
-  function boot() {
-    if (ac) return;
-    ac = new (window.AudioContext || window.webkitAudioContext)();
-    const sounds = { jump:'/sfx/wr-hop.mp3', collect:'/sfx/wr-deliver.mp3', die:'/sfx/wr-crash.mp3', start:'/sfx/snake-start.mp3', speedup:'/sfx/snake-speedup.mp3' };
-    Object.entries(sounds).forEach(([k,url]) => {
-      fetch(url).then(r=>r.ok?r.arrayBuffer():null).then(ab=>ab?ac.decodeAudioData(ab):null).then(b=>{if(b)buf[k]=b;}).catch(()=>{});
-    });
+  preload() {
+    this.load.image('bg', '/game-assets/platformer/bg-city.png');
+    this.load.image('platform', '/game-assets/platformer/platform-tile.png');
+    this.load.image('player', '/game-assets/platformer/spritesheet-character_4.png');
+    this.load.image('bin', '/game-assets/platformer/enemy-bin.png');
+    this.load.image('inspector', '/game-assets/platformer/enemy-inspector.png');
+    this.load.image('wing', '/game-assets/platformer/collectible-wing_fix1.png');
+    
+    // SFX
+    this.load.audio('jump', '/sfx/wr-hop.mp3');
+    this.load.audio('collect', '/sfx/wr-deliver.mp3');
+    this.load.audio('die', '/sfx/wr-crash.mp3');
   }
-  function play(name, vol=0.6, rate=1) {
-    if (!ac||!buf[name]) return;
-    if (ac.state==='suspended') ac.resume();
-    const s=ac.createBufferSource(), g=ac.createGain();
-    s.buffer=buf[name]; s.playbackRate.value=rate; g.gain.value=vol;
-    s.connect(g); g.connect(ac.destination); s.start();
-  }
-  return { boot, play };
-})();
 
-// ── Assets ────────────────────────────────────────────────────────────────────
-const IMG = {};
-function removeBackgroundAndCrop(img, isPlayer){
-  const canvas=document.createElement('canvas');
-  const ctx=canvas.getContext('2d');
-  canvas.width=img.width; canvas.height=img.height;
-  ctx.drawImage(img,0,0);
-  const data=ctx.getImageData(0,0,canvas.width,canvas.height);
-  const pixels=data.data;
-  const r=pixels[0], g=pixels[1], b=pixels[2];
-  
-  let minX=img.width, maxX=0, minY=img.height, maxY=0;
-  
-  for(let i=0; i<pixels.length; i+=4){
-    const dr=Math.abs(pixels[i]-r), dg=Math.abs(pixels[i+1]-g), db=Math.abs(pixels[i+2]-b);
-    if(dr<30 && dg<30 && db<30) {
-      pixels[i+3]=0;
-    } else {
-      const x=(i/4)%img.width;
-      const y=Math.floor((i/4)/img.width);
-      minX=Math.min(minX,x); maxX=Math.max(maxX,x);
-      minY=Math.min(minY,y); maxY=Math.max(maxY,y);
+  create() {
+    const W = 800, H = 400;
+    
+    // Parallax Backgrounds
+    this.bg1 = this.add.tileSprite(400, 200, 800, 400, 'bg').setScrollFactor(0);
+    
+    // Ground
+    this.ground = this.add.tileSprite(400, 370, 800, 60, 'platform');
+    this.physics.add.existing(this.ground, true);
+
+    // Player
+    this.player = this.physics.add.sprite(150, 200, 'player');
+    this.player.setCollideWorldBounds(true);
+    this.player.setScale(0.25); // Large, high-res character
+    this.player.setDepth(10);
+    this.physics.add.collider(this.player, this.ground);
+
+    // Groups
+    this.obstacles = this.physics.add.group();
+    this.wingsGroup = this.physics.add.group();
+
+    // Collisions
+    this.physics.add.overlap(this.player, this.obstacles, this.hitObstacle, null, this);
+    this.physics.add.overlap(this.player, this.wingsGroup, this.collectWing, null, this);
+
+    // State
+    this.score = 0;
+    this.wings = 0;
+    this.gameActive = false;
+    this.speed = 400;
+    this.jumps = 0;
+
+    // HUD
+    this.scoreText = this.add.text(400, 30, 'SCORE: 0', { fontSize: '24px', fontWeight: '900', color: '#ff9800', fontFamily: 'monospace' }).setOrigin(0.5).setDepth(100);
+    this.wingsText = this.add.text(30, 30, '🍗 0', { fontSize: '24px', fontWeight: '900', color: '#fff', fontFamily: 'monospace' }).setDepth(100);
+
+    // Input
+    this.input.on('pointerdown', () => this.doJump());
+    this.input.keyboard.on('keydown-SPACE', () => this.doJump());
+    this.input.keyboard.on('keydown-UP', () => this.doJump());
+
+    // Auto-spawn
+    this.time.addEvent({ delay: 1500, callback: this.spawnObstacle, callbackScope: this, loop: true });
+    this.time.addEvent({ delay: 1000, callback: this.spawnWing, callbackScope: this, loop: true });
+  }
+
+  startGame() {
+    this.gameActive = true;
+    this.score = 0;
+    this.wings = 0;
+    this.speed = 400;
+    this.player.setPosition(150, 200);
+    this.obstacles.clear(true, true);
+    this.wingsGroup.clear(true, true);
+    this.physics.resume();
+  }
+
+  update(time, delta) {
+    if (!this.gameActive) return;
+
+    this.bg1.tilePositionX += (this.speed * 0.001) * delta * 0.2;
+    this.ground.tilePositionX += (this.speed * 0.001) * delta;
+
+    this.score += delta * 0.01;
+    this.scoreText.setText('SCORE: ' + Math.floor(this.score));
+
+    // Ramp speed
+    this.speed += delta * 0.005;
+
+    // Ground reset jump
+    if (this.player.body.touching.down) {
+      this.jumps = 0;
     }
-  }
-  ctx.putImageData(data,0,0);
-  const newImg=new Image();
-  newImg.src=canvas.toDataURL();
-  return { img: newImg, crop: { x: minX, y: minY, w: maxX-minX, h: maxY-minY } };
-}
 
-let playerCrop = { x:0, y:280, w:256, h:488 }; // Fallback
-
-function loadImg(key, src) {
-  return new Promise(res => {
-    const img = new Image();
-    img.onload = () => {
-      if (key==='bg'||key==='platform') { 
-        IMG[key] = img; res(); 
-      } else {
-        const processed = removeBackgroundAndCrop(img, key==='player');
-        processed.img.onload = () => {
-          IMG[key] = processed.img;
-          if (key==='player') {
-            // Spritesheet is 4 frames, so we want the vertical crop but horizontal stays based on columns
-            playerCrop.y = processed.crop.y;
-            playerCrop.h = processed.crop.h;
-            // Frame width is still SHEET_W / 4
-          }
-          res();
-        };
-      }
-    };
-    img.onerror = () => res();
-    img.src = src;
-  });
-}
-
-// ── Player ────────────────────────────────────────────────────────────────────
-let player;
-function resetPlayer() {
-  // Increased size from 60x72 to 80x96 for visibility
-  player = { x:PLAYER_X, y:GROUND-96, w:80, h:96, vy:0, onGround:true, frame:0, frameTick:0, jumps:0 };
-}
-
-// ── Game state ────────────────────────────────────────────────────────────────
-let gState   = 'start';
-let score    = 0;
-let wings    = 0;
-let distance = 0;
-let speed    = 5;
-let speedTick= 0;
-let obstacles= [];
-let items    = [];
-let spawnCD  = 60;
-let wingCD   = 90;
-let bgX      = 0;
-let gndX     = 0;
-let saved    = false;
-
-function newGame() {
-  resetPlayer();
-  score=0; wings=0; distance=0; speed=5; speedTick=0;
-  obstacles=[]; items=[]; spawnCD=80; wingCD=100;
-  bgX=0; gndX=0; saved=false;
-  gState='play';
-  SFX.play('start', 0.45);
-}
-
-// ── Input ─────────────────────────────────────────────────────────────────────
-function onJump() {
-  if (gState==='start') { SFX.boot(); newGame(); return; }
-  if (gState==='dead')  { gState='start'; return; }
-  if (player.jumps < 2) {
-    player.vy = player.jumps===0 ? JUMP_VY : JUMP_VY * 0.78;
-    player.onGround = false;
-    player.jumps++;
-    SFX.play('jump', 0.5, player.jumps===2 ? 1.3 : 1);
-  }
-}
-document.addEventListener('keydown', e => { if (e.code==='Space'||e.code==='ArrowUp'){e.preventDefault();onJump();} });
-canvas.addEventListener('pointerdown', e => { e.preventDefault(); onJump(); });
-
-// ── Collision ─────────────────────────────────────────────────────────────────
-function overlaps(a, b, pad=12) {
-  return a.x+pad < b.x+b.w-pad && a.x+a.w-pad > b.x+pad &&
-         a.y+pad < b.y+b.h-pad && a.y+a.h-pad > b.y+pad;
-}
-
-// ── Spawn ─────────────────────────────────────────────────────────────────────
-function spawnObstacle() {
-  const bin = Math.random() < 0.55;
-  const h   = bin ? 68 : 80;
-  const w   = bin ? 54 : 50;
-  obstacles.push({ x:W+30, y:GROUND-h, w, h, type: bin?'bin':'inspector' });
-}
-function spawnWing() {
-  const y = GROUND - 100 - Math.random()*50;
-  items.push({ x:W+30, y, w:42, h:42, alive:true });
-}
-
-// ── Save score ────────────────────────────────────────────────────────────────
-async function saveScore() {
-  if (saved) return;
-  saved = true;
-  await API.save(Math.floor(distance), wings);
-}
-
-// ── Update ────────────────────────────────────────────────────────────────────
-function update() {
-  if (gState !== 'play') return;
-
-  // Speed ramp every ~5 sec at 60fps
-  speedTick++;
-  if (speedTick % 300 === 0) {
-    speed = Math.min(speed + 0.6, 16);
-    SFX.play('speedup', 0.3);
+    // Clean up
+    this.obstacles.children.each(o => { if (o.x < -50) o.destroy(); });
+    this.wingsGroup.children.each(w => { if (w.x < -50) w.destroy(); });
   }
 
-  // Scroll
-  bgX  = (bgX  - speed * 0.35) % W;
-  gndX = (gndX - speed) % 64;
-
-  // Distance = score component
-  distance += speed * 0.05;
-  score = Math.floor(wings * 500 + distance);
-
-  // Player physics
-  player.vy += GRAVITY;
-  player.y  += player.vy;
-  if (player.y >= GROUND - player.h) {
-    player.y = GROUND - player.h;
-    player.vy = 0;
-    player.onGround = true;
-    player.jumps = 0;
-  } else {
-    player.onGround = false;
-  }
-
-  // Animate
-  player.frameTick++;
-  if (player.frameTick >= 8) {
-    player.frameTick = 0;
-    player.frame = player.onGround ? (player.frame + 1) % 4 : 3;
-  }
-
-  // Obstacle spawn
-  spawnCD--;
-  if (spawnCD <= 0) {
-    spawnObstacle();
-    spawnCD = Math.max(40, Math.floor(70 + Math.random()*80 - speed*3));
-  }
-
-  // Wing spawn
-  wingCD--;
-  if (wingCD <= 0) {
-    spawnWing();
-    wingCD = Math.floor(80 + Math.random()*60);
-  }
-
-  // Move obstacles + collision
-  for (let i = obstacles.length-1; i >= 0; i--) {
-    obstacles[i].x -= speed;
-    if (obstacles[i].x + obstacles[i].w < 0) { obstacles.splice(i,1); continue; }
-    if (overlaps(player, obstacles[i])) {
-      gState = 'dead';
-      SFX.play('die', 0.75);
-      saveScore();
-      return;
+  doJump() {
+    if (!this.gameActive) return;
+    if (this.jumps < 2) {
+      this.player.setVelocityY(-600);
+      this.jumps++;
+      this.sound.play('jump', { volume: 0.5 });
     }
   }
 
-  // Move wings + collect
-  for (let i = items.length-1; i >= 0; i--) {
-    items[i].x -= speed;
-    if (items[i].x + 42 < 0) { items.splice(i,1); continue; }
-    if (items[i].alive && overlaps(player, items[i], 6)) {
-      items[i].alive = false;
-      wings++;
-      SFX.play('collect', 0.6, Math.min(1 + wings*0.04, 1.5));
-    }
+  spawnObstacle() {
+    if (!this.gameActive) return;
+    const type = Math.random() > 0.5 ? 'bin' : 'inspector';
+    const o = this.obstacles.create(850, 320, type);
+    o.setScale(0.2).setOrigin(0.5, 1);
+    o.body.allowGravity = false;
+    o.setVelocityX(-this.speed);
+  }
+
+  spawnWing() {
+    if (!this.gameActive) return;
+    const w = this.wingsGroup.create(850, Phaser.Math.Between(150, 280), 'wing');
+    w.setScale(0.15);
+    w.body.allowGravity = false;
+    w.setVelocityX(-this.speed);
+    // Bobbing tween
+    this.tweens.add({ targets: w, y: w.y - 20, duration: 600, yoyo: true, loop: -1 });
+  }
+
+  collectWing(player, wing) {
+    wing.destroy();
+    this.wings++;
+    this.wingsText.setText('🍗 ' + this.wings);
+    this.sound.play('collect', { volume: 0.5 });
+  }
+
+  hitObstacle() {
+    this.gameActive = false;
+    this.physics.pause();
+    this.player.setTint(0xff0000);
+    this.sound.play('die', { volume: 0.6 });
+    this.cameras.main.shake(300, 0.03);
+    
+    setTimeout(() => {
+      document.getElementById('overlay').classList.remove('hidden');
+      API.save(this.score, this.wings);
+    }, 1000);
   }
 }
 
-// ── Draw helpers ──────────────────────────────────────────────────────────────
-function drawBg() {
-  if (IMG.bg) {
-    ctx.drawImage(IMG.bg, bgX, 0, W, H);
-    ctx.drawImage(IMG.bg, bgX+W, 0, W, H);
-    if (bgX < 0) ctx.drawImage(IMG.bg, bgX+W*2, 0, W, H);
-  } else {
-    ctx.fillStyle='#1a1a2e'; ctx.fillRect(0,0,W,H);
-  }
+const config = {
+  type: Phaser.AUTO,
+  width: 800,
+  height: 400,
+  parent: 'game-container',
+  physics: { default: 'arcade', arcade: { gravity: { y: 1500 }, debug: false } },
+  scene: WingKing,
+  antialias: true
+};
+
+let gameInstance = new Phaser.Game(config);
+
+// Restore session
+const s = JSON.parse(localStorage.getItem('cw_session') || 'null');
+if (s && s.token) {
+  API.token = s.token; API.user = s.user;
+  document.getElementById('overlay').classList.add('hidden');
 }
-
-function drawGround() {
-  if (IMG.platform) {
-    const tw=64, th=60;
-    const n = Math.ceil(W/tw)+2;
-    for (let i=0;i<n;i++) ctx.drawImage(IMG.platform, gndX+i*tw-tw, GROUND, tw, th);
-  } else {
-    ctx.fillStyle='#3d2b1f'; ctx.fillRect(0,GROUND,W,H-GROUND);
-  }
-}
-
-function drawPlayer() {
-  if (IMG.player) {
-    const sx = player.frame * FRAME_W;
-    ctx.drawImage(IMG.player, sx, playerCrop.y, FRAME_W, playerCrop.h, player.x, player.y, player.w, player.h);
-  } else {
-    ctx.fillStyle='#ffeb3b'; ctx.fillRect(player.x,player.y,player.w,player.h);
-  }
-}
-
-function drawObstacles() {
-  for (const o of obstacles) {
-    const img = o.type==='bin' ? IMG.bin : IMG.inspector;
-    if (img) { ctx.drawImage(img, o.x, o.y, o.w, o.h); }
-    else { ctx.fillStyle=o.type==='bin'?'#2196F3':'#607D8B'; ctx.fillRect(o.x,o.y,o.w,o.h); }
-  }
-}
-
-function drawWings() {
-  const bob = Math.sin(Date.now()*0.003)*5;
-  for (const c of items) {
-    if (!c.alive) continue;
-    if (IMG.wing) { ctx.drawImage(IMG.wing, c.x, c.y+bob, c.w, c.h); }
-    else { ctx.fillStyle='#ff9800'; ctx.fillRect(c.x, c.y+bob, c.w, c.h); }
-  }
-}
-
-function drawHUD() {
-  ctx.fillStyle='rgba(0,0,0,0.45)'; ctx.fillRect(0,0,W,40);
-  ctx.fillStyle='#ff9800'; ctx.font='bold 17px "Courier New"';
-  ctx.fillText(`🍗 ${wings}`, 12, 26);
-  ctx.textAlign='center'; ctx.fillText(`SCORE  ${score}`, W/2, 26); ctx.textAlign='left';
-  ctx.fillStyle='#888'; ctx.font='12px "Courier New"';
-  ctx.fillText(`x${(speed/5).toFixed(1)} speed`, W-90, 26);
-}
-
-function drawOverlay(title, colour, lines, blink) {
-  ctx.fillStyle='rgba(0,0,0,0.62)'; ctx.fillRect(0,0,W,H);
-  ctx.textAlign='center';
-  ctx.fillStyle=colour; ctx.font='bold 38px "Courier New"'; ctx.fillText(title, W/2, H/2-58);
-  ctx.fillStyle='#fff'; ctx.font='18px "Courier New"';
-  lines.forEach((l,i)=>ctx.fillText(l, W/2, H/2-10+i*28));
-  if (Math.floor(Date.now()/550)%2 && blink) {
-    ctx.fillStyle='#ff9800'; ctx.font='bold 20px "Courier New"';
-    ctx.fillText(blink, W/2, H/2+80);
-  }
-  ctx.textAlign='left';
-}
-
-// ── Draw ──────────────────────────────────────────────────────────────────────
-function draw() {
-  ctx.clearRect(0,0,W,H);
-  drawBg();
-  drawGround();
-  drawObstacles();
-  drawWings();
-  drawPlayer();
-
-  if (gState==='play') drawHUD();
-
-  if (gState==='start') {
-    drawOverlay('WING KING','#ff9800',
-      ['Collect 🍗 wings.  Dodge the enemies.','SPACE / TAP to jump  ·  Double jump!'],
-      '▶  TAP TO START  ◀');
-  }
-
-  if (gState==='dead') {
-    const pts = Math.floor(wings*500+distance);
-    drawOverlay('GAME OVER','#ff5252',
-      [`Wings collected: ${wings}`,`Score: ${pts}`, API.token ? 'Score saved to Wing Shop' : 'Log in to save scores'],
-      'TAP to play again');
-  }
-}
-
-// ── Loop ──────────────────────────────────────────────────────────────────────
-function loop() { update(); draw(); requestAnimationFrame(loop); }
-
-// ── Boot ──────────────────────────────────────────────────────────────────────
-Promise.all([
-  loadImg('bg',        '/game-assets/platformer/bg-city.png'),
-  loadImg('platform',  '/game-assets/platformer/platform-tile.png'),
-  loadImg('player',    '/game-assets/platformer/spritesheet-character_4.png'),
-  loadImg('bin',       '/game-assets/platformer/enemy-bin.png'),
-  loadImg('inspector', '/game-assets/platformer/enemy-inspector.png'),
-  loadImg('wing',      '/game-assets/platformer/collectible-wing_fix1.png'),
-]).then(loop);
 </script>
 </body>
 </html>
