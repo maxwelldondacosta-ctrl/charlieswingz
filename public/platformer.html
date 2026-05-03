@@ -107,10 +107,10 @@ class WingKing extends Phaser.Scene {
   preload() {
     this.load.image('bg', '/game-assets/platformer/bg-city.png');
     this.load.image('platform', '/game-assets/platformer/platform-tile.png');
-    this.load.image('player', '/game-assets/platformer/spritesheet-character_4.png');
+    this.load.spritesheet('player', '/game-assets/platformer/spritesheet-character.png', { frameWidth: 256, frameHeight: 256 });
     this.load.image('bin', '/game-assets/platformer/enemy-bin.png');
     this.load.image('inspector', '/game-assets/platformer/enemy-inspector.png');
-    this.load.image('wing', '/game-assets/platformer/collectible-wing_fix1.png');
+    this.load.image('wing', '/game-assets/platformer/collectible-wing.png');
     
     // SFX
     this.load.audio('jump', '/sfx/wr-hop.mp3');
@@ -128,11 +128,27 @@ class WingKing extends Phaser.Scene {
     this.ground = this.add.tileSprite(400, 370, 800, 60, 'platform');
     this.physics.add.existing(this.ground, true);
 
+    // Player Animations
+    this.anims.create({
+      key: 'run',
+      frames: this.anims.generateFrameNumbers('player', { start: 1, end: 2 }),
+      frameRate: 10,
+      repeat: -1
+    });
+    this.anims.create({
+      key: 'idle',
+      frames: [{ key: 'player', frame: 0 }]
+    });
+    this.anims.create({
+      key: 'jump',
+      frames: [{ key: 'player', frame: 3 }]
+    });
+
     // Player
     this.player = this.physics.add.sprite(150, 200, 'player');
     this.player.setCollideWorldBounds(true);
-    this.player.setScale(0.25); // Large, high-res character
-    this.player.setDepth(10);
+    this.player.setScale(0.35).setDepth(10);
+    this.player.body.setSize(120, 200).setOffset(68, 56); // Tighten collision box
     this.physics.add.collider(this.player, this.ground);
 
     // Groups
@@ -186,6 +202,13 @@ class WingKing extends Phaser.Scene {
 
     // Ramp speed
     this.speed += delta * 0.005;
+
+    // Animations
+    if (!this.player.body.touching.down) {
+      this.player.play('jump', true);
+    } else {
+      this.player.play('run', true);
+    }
 
     // Ground reset jump
     if (this.player.body.touching.down) {
