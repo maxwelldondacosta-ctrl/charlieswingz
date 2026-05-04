@@ -168,24 +168,6 @@
         /* ── Profile state ────────────────────────────────────────────────── */
         #state-profile { display: none; }
 
-        .profile-header {
-            padding: 1.75rem 2rem 0;
-            max-width: 900px;
-            margin: 0 auto;
-        }
-        .profile-header h2 {
-            font-family: 'Playfair Display', serif;
-            font-size: 1.5rem;
-            color: var(--cream);
-            margin-bottom: 0.25rem;
-        }
-        .profile-header h2 span { color: var(--gold); }
-        .profile-header p {
-            font-size: 0.82rem;
-            color: var(--cream-dim);
-            margin-bottom: 1.25rem;
-        }
-
         /* ── Tabs ─────────────────────────────────────────────────────────── */
         .profile-tabs-wrap {
             border-bottom: 1px solid var(--border);
@@ -455,23 +437,24 @@
             display: flex;
             align-items: center;
             gap: 0.5rem;
-            background: #f5f5f5;
+            background: #0d0d0d;
+            border: 1px solid var(--border);
             border-radius: 8px;
             padding: 0.5rem 0.75rem;
             margin: 0.75rem 0;
         }
         .referral-link-text {
             flex: 1;
-            font-size: 0.85rem;
-            color: #333;
+            font-size: 0.82rem;
+            color: var(--gold);
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
             font-family: monospace;
         }
         .copy-ref-btn {
-            background: #e63946;
-            color: #fff;
+            background: var(--burgundy);
+            color: var(--cream);
             border: none;
             border-radius: 6px;
             padding: 0.35rem 0.75rem;
@@ -480,22 +463,22 @@
             white-space: nowrap;
             flex-shrink: 0;
         }
-        .copy-ref-btn:hover { background: #c1121f; }
-        .copy-ref-btn:disabled { background: #ccc; cursor: not-allowed; }
+        .copy-ref-btn:hover { background: #a02020; }
+        .copy-ref-btn:disabled { background: var(--border); color: var(--cream-dim); cursor: not-allowed; }
         .referral-stats {
-            font-size: 0.9rem;
-            color: #444;
+            font-size: 0.85rem;
+            color: var(--cream-dim);
             margin-top: 0.5rem;
         }
         .referral-milestone {
-            font-size: 0.85rem;
-            color: #666;
+            font-size: 0.82rem;
+            color: var(--cream-dim);
             margin-top: 0.25rem;
         }
 
-        /* Wing Shop & Daily Drops */
+        /* CP-Store & Daily Drops */
         .shop-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 12px; }
-        .shop-card { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 12px; padding: 16px; display: flex; flex-direction: column; transition: border-color 0.2s; }
+        .shop-card { background: var(--dark); border: 1px solid var(--border); border-radius: 12px; padding: 16px; display: flex; flex-direction: column; transition: border-color 0.2s; }
         .shop-card.affordable { border-color: var(--gold); box-shadow: 0 0 10px rgba(232, 168, 56, 0.1); }
         .shop-card.dimmed { opacity: 0.7; }
         .shop-name { font-weight: 700; font-size: 0.95rem; color: var(--gold); margin-bottom: 4px; }
@@ -505,10 +488,10 @@
         .shop-btn:disabled { background: #333; color: #666; cursor: default; }
         .shop-btn:active:not(:disabled) { transform: scale(0.96); }
 
-        .daily-card { margin-bottom: 16px; border: 1px solid var(--border-color); border-radius: 12px; overflow: hidden; }
-        .daily-header { background: #1a1a3a; padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); }
+        .daily-card { margin-bottom: 16px; border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+        .daily-header { background: #1a1a2e; padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); }
         .daily-title { font-weight: 800; font-size: 0.85rem; color: var(--gold); text-transform: uppercase; letter-spacing: 1px; }
-        .daily-content { padding: 16px; background: var(--card-bg); }
+        .daily-content { padding: 16px; background: var(--dark); }
         .daily-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; font-size: 0.9rem; }
         .daily-row:last-child { margin-bottom: 0; }
         .challenge-label { display: flex; align-items: center; gap: 8px; }
@@ -516,18 +499,68 @@
         .challenge-pending { color: var(--cream-dim); }
         .challenge-pts { font-family: monospace; color: var(--gold); font-weight: 700; }
         .challenge-completed-text { text-decoration: line-through; color: var(--cream-dim); }
-        .daily-footer { background: #0f0f1f; padding: 8px 16px; font-size: 0.75rem; color: var(--cream-dim); text-align: center; }
+        .daily-footer { background: #0a0a14; padding: 8px 16px; font-size: 0.75rem; color: var(--cream-dim); text-align: center; }
+
+        /* Profile Hero */
+        .profile-hero {
+            background: linear-gradient(135deg, #0d0d1a 0%, #1a1a2e 100%);
+            border-bottom: 1px solid rgba(212,168,75,0.2);
+            padding: 1.75rem 2rem 1.5rem;
+        }
+        .profile-hero-inner { max-width: 900px; margin: 0 auto; }
+        .profile-hero h2 {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.5rem;
+            color: var(--cream);
+            margin-bottom: 0.2rem;
+        }
+        .profile-hero h2 span { color: var(--gold); }
+        .profile-hero-email {
+            font-size: 0.8rem;
+            color: var(--cream-dim);
+            margin-bottom: 1.25rem;
+        }
+        .hero-stats {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+        .hero-stat {
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(212,168,75,0.2);
+            border-radius: 10px;
+            padding: 0.65rem 1.1rem;
+            min-width: 100px;
+        }
+        .hero-stat-value {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 1.5rem;
+            color: var(--gold);
+            letter-spacing: 0.05em;
+            line-height: 1;
+        }
+        .hero-stat-label {
+            font-size: 0.6rem;
+            color: var(--cream-dim);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin-top: 0.2rem;
+        }
 
                 /* ── Mobile ───────────────────────────────────────────────────────── */
         @media (max-width: 768px) {
             .site-nav { padding: 0.6rem 1rem; }
             .nav-links { gap: 0.75rem; }
             .nav-links a { font-size: 0.65rem; }
-            .profile-header { padding: 1.5rem 1rem 0; }
+            .profile-hero { padding: 1.25rem 1rem 1rem; }
             .profile-tabs { padding: 0 1rem; }
             .tab-content { padding: 1.25rem 1rem 3rem; }
             .stamp-circle { width: 30px; height: 30px; }
             .stats-grid { grid-template-columns: repeat(3, 1fr); }
+            .hero-stats { gap: 0.6rem; }
+            .hero-stat { padding: 0.5rem 0.85rem; min-width: 80px; }
+            .hero-stat-value { font-size: 1.25rem; }
+            .shop-grid { grid-template-columns: 1fr; }
             .order-card-header { flex-direction: column; align-items: flex-start; }
             .btn-primary, .reorder-btn { width: 100%; text-align: center; }
         }
@@ -568,7 +601,7 @@
                 <div class="login-error" id="login-error"></div>
             </form>
             <div class="login-footer">
-                Don't have an account? <a href="/game.html">Create one</a><br>
+                Don't have an account? <a href="/play-win">Create one via Play &amp; Win</a><br>
                 <a href="#" onclick="showResetForm(); return false;" style="margin-top:0.5rem;display:inline-block">Forgot password?</a>
             </div>
         </div>
@@ -576,9 +609,25 @@
 
     <!-- ── PROFILE STATE ────────────────────────────────────────────────── -->
     <div id="state-profile">
-        <div class="profile-header">
-            <h2>Welcome back, <span id="profile-name">—</span></h2>
-            <p id="profile-email-header"></p>
+        <div class="profile-hero">
+            <div class="profile-hero-inner">
+                <h2>Welcome back, <span id="profile-name">—</span></h2>
+                <p class="profile-hero-email" id="profile-email-header"></p>
+                <div class="hero-stats">
+                    <div class="hero-stat">
+                        <div class="hero-stat-value" id="hero-cp">—</div>
+                        <div class="hero-stat-label">Charlie Points</div>
+                    </div>
+                    <div class="hero-stat">
+                        <div class="hero-stat-value" id="hero-streak">—</div>
+                        <div class="hero-stat-label">Day Streak</div>
+                    </div>
+                    <div class="hero-stat">
+                        <div class="hero-stat-value" id="hero-stamps">—</div>
+                        <div class="hero-stat-label">Stamps</div>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <div class="profile-tabs-wrap">
@@ -767,6 +816,15 @@
         document.getElementById('profile-name').textContent    = session.user?.name || 'there';
         document.getElementById('profile-email-header').textContent = session.user?.email || '';
         loadLoyalty();
+        // Eagerly fetch CP for the hero bar without rendering the full game tab
+        fetch('/api/game/progress', { headers: authHeaders() })
+            .then(r => r.ok ? r.json() : null)
+            .then(data => {
+                if (!data) return;
+                const heroCP = document.getElementById('hero-cp');
+                if (heroCP) heroCP.textContent = (data.totalScore || 0).toLocaleString();
+            })
+            .catch(() => {});
     }
 
     // ── Init ──────────────────────────────────────────────────────────────────
@@ -833,6 +891,10 @@
             return `${h}h ${m}m`;
         };
 
+        // Update hero streak
+        const heroStreak = document.getElementById('hero-streak');
+        if (heroStreak) heroStreak.textContent = streak;
+
         let html = `
             <div class="daily-card">
                 <div class="daily-header">
@@ -842,7 +904,7 @@
                 <div class="daily-content">
                     <p style="font-size:0.85rem;color:var(--cream-dim);margin-bottom:12px;">Claim your daily bonus! Streak resets at day 7.</p>
                     <button class="shop-btn primary" id="daily-claim-btn" onclick="claimDaily()" ${claimed ? 'disabled' : ''}>
-                        ${claimed ? '✓ Claimed' : `Claim ${nextBonus.toLocaleString()} pts`}
+                        ${claimed ? '✓ Claimed' : `Claim ${nextBonus.toLocaleString()} CP`}
                     </button>
                 </div>
                 <div class="daily-footer">
@@ -900,6 +962,10 @@
         const prevTierStamps = claimed.length > 0 ? tiers[claimed.length - 1].stamps : 0;
         const progressInTier = allClaimed ? 10 : Math.max(0, stamps - prevTierStamps);
         const tierTarget = allClaimed ? 10 : (nextTier.stamps - prevTierStamps);
+
+        // Update hero stamps
+        const heroStamps = document.getElementById('hero-stamps');
+        if (heroStamps) heroStamps.textContent = allClaimed ? '✓' : `${progressInTier}/${tierTarget}`;
 
         // Stamp count
         document.getElementById('stamp-count').textContent = allClaimed
@@ -1000,7 +1066,11 @@
     }
 
     function renderGame(data) {
-        document.getElementById('points-balance').textContent = (data.totalScore || 0).toLocaleString();
+        const cp = (data.totalScore || 0).toLocaleString();
+        document.getElementById('points-balance').textContent = cp;
+        // Update hero CP
+        const heroCP = document.getElementById('hero-cp');
+        if (heroCP) heroCP.textContent = cp;
         const stats = [
             { label: 'High Score',  value: (data.highScore || 0).toLocaleString() },
             { label: 'Wings Eaten', value: data.wingCount || 0 },
@@ -1020,7 +1090,7 @@
         const rewardsEl = document.getElementById('game-rewards');
         const rewards = data.rewards || [];
         if (rewards.length === 0) {
-            rewardsEl.innerHTML = '<p class="empty-msg">No game rewards yet — spend your points in the shop above!</p>';
+            rewardsEl.innerHTML = '<p class="empty-msg">No CP-Store rewards yet — redeem your Charlie Points above.</p>';
             return;
         }
         rewardsEl.innerHTML = rewards.map(r => `
@@ -1045,7 +1115,7 @@
                 return `
                     <div class="shop-card ${canAfford ? 'affordable' : 'dimmed'}" id="shop-item-${item.id}">
                         <div class="shop-name">${escapeHtml(item.name)}</div>
-                        <div class="shop-points">${item.points.toLocaleString()} pts</div>
+                        <div class="shop-points">${item.points.toLocaleString()} CP</div>
                         <button class="shop-btn primary" ${canAfford ? '' : 'disabled'} onclick="redeemShopItem('${item.id}')">
                             Redeem
                         </button>
