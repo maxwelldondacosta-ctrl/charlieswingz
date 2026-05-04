@@ -363,7 +363,7 @@ class SauceShooter extends Phaser.Scene {
     this.sound.play('boom', { volume: 0.5 });
     bullet.destroy();
     enemy.destroy();
-    this.score += 100;
+    this.score += 1;
     this.scoreText.setText('SCORE: ' + this.score);
 
     if (Phaser.Math.Between(1, 40) === 1) this.spawnPowerup(enemy.x, enemy.y);

@@ -318,11 +318,11 @@ class SnakeGame extends Phaser.Scene {
     this.sound.play('eat', { volume: 0.5 });
     
     if (isCrown) {
-        this.score += 500;
+        this.score += 5;
         this.crowns++;
-        this.speed = Math.max(50, this.speed - 5); // Speed up slightly
+        this.speed = Math.max(50, this.speed - 5);
     } else {
-        this.score += 100;
+        this.score += 1;
         this.wings++;
     }
     

@@ -2197,22 +2197,22 @@ app.get('/live', (req, res) => {
 
 // ── Snake Game API ───────────────────────────────────────────────────────────
 const WING_SHOP = [
-    { id: 'pop',     name: 'Free Can of Pop', points: 80000,   amountPence: 80,   type: 'fixed'   },
-    { id: 'side',    name: 'Free Side',        points: 200000,  amountPence: 250,  type: 'fixed'   },
-    { id: 'three',   name: '£3 Off',           points: 300000,  amountPence: 300,  type: 'fixed'   },
-    { id: 'ten',     name: '10% Off',          points: 400000,  percent: 10,       type: 'percent' },
-    { id: 'wings6',  name: 'Free 6 Wings',     points: 750000,  amountPence: 850,  type: 'fixed'   },
-    { id: 'twenty',  name: '20% Off',          points: 1000000, percent: 20,       type: 'percent' },
-    { id: 'wings20', name: 'Free 20 Wings',    points: 10000000,amountPence: 2600, type: 'fixed'   },
+    { id: 'pop',     name: 'Free Can of Pop', points: 800,    amountPence: 80,   type: 'fixed'   },
+    { id: 'side',    name: 'Free Side',        points: 2000,   amountPence: 250,  type: 'fixed'   },
+    { id: 'three',   name: '£3 Off',           points: 3000,   amountPence: 300,  type: 'fixed'   },
+    { id: 'ten',     name: '10% Off',          points: 4000,   percent: 10,       type: 'percent' },
+    { id: 'wings6',  name: 'Free 6 Wings',     points: 7500,   amountPence: 850,  type: 'fixed'   },
+    { id: 'twenty',  name: '20% Off',          points: 10000,  percent: 20,       type: 'percent' },
+    { id: 'wings20', name: 'Free 20 Wings',    points: 100000, amountPence: 2600, type: 'fixed'   },
 ];
 
-const DAILY_STREAK_BONUSES = { 1: 1000, 2: 1500, 3: 2000, 4: 3000, 5: 4000, 6: 5000, 7: 10000 };
+const DAILY_STREAK_BONUSES = { 1: 10, 2: 15, 3: 20, 4: 30, 5: 40, 6: 50, 7: 100 };
 const DAILY_CHALLENGE_POOL = [
-    { id: 'play_game',     label: 'Play a game today',          points: 2000,  trigger: 'game_save'  },
-    { id: 'score_1k',      label: 'Score 1,000+ in one game',   points: 5000,  trigger: 'game_save'  },
-    { id: 'score_5k',      label: 'Score 5,000+ in one game',   points: 15000, trigger: 'game_save'  },
-    { id: 'place_order',   label: 'Place an order today',       points: 10000, trigger: 'order'      },
-    { id: 'streak_3',      label: 'Log in 3 days in a row',     points: 8000,  trigger: 'daily_claim' },
+    { id: 'play_game',     label: 'Play a game today',          points: 20,  trigger: 'game_save'  },
+    { id: 'score_1k',      label: 'Score 1,000+ in one game',   points: 50,  trigger: 'game_save'  },
+    { id: 'score_5k',      label: 'Score 5,000+ in one game',   points: 150, trigger: 'game_save'  },
+    { id: 'place_order',   label: 'Place an order today',       points: 100, trigger: 'order'      },
+    { id: 'streak_3',      label: 'Log in 3 days in a row',     points: 80,  trigger: 'daily_claim' },
 ];
 
 function getDailyChallenges(dateStr) {
@@ -2407,8 +2407,8 @@ app.post('/api/game/save', requireGameAuth, (req, res) => {
     res.json({ totalScore: player.totalScore, highScore: player.highScore, coins: player.coins, deliveries: player.deliveries, totalDeliveries: player.deliveries, plays: player.plays, wingCount: player.wingCount, crowns: player.crowns, unlockedCodes: player.unlockedCodes || {}, redeemedCodes: player.redeemedCodes || [], rewards, milestoneTier: player.milestoneTier || 0 });
 });
 
-// Wing Run coin-to-points conversion: each coin earned = 10 points toward milestones
-const WING_RUN_COIN_MULTIPLIER = 10;
+// Wing Run coin-to-points conversion: each coin = 0.1 CP
+const WING_RUN_COIN_MULTIPLIER = 0.1;
 
 app.get('/api/game/shop', (req, res) => {
     res.json(WING_SHOP.map(item => ({ id: item.id, name: item.name, points: item.points })));

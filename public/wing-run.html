@@ -375,9 +375,9 @@ class WingRun extends Phaser.Scene {
     if (zone.graphics) zone.graphics.destroy();
     
     this.deliveries++;
-    this.score += 50;
+    this.score += 2;
     this.heat = Math.min(100, this.heat + 30);
-    
+
     if (this.deliveries % 5 === 0) {
         this.speed += 50;
         this.coins += Phaser.Math.Between(10, 20);
