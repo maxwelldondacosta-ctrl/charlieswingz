@@ -4,6 +4,9 @@ import { useMetaStore } from './store/metaStore'
 import { requireSession } from './api/auth'
 import { fetchProgress, getCachedProgress, drainPendingSaves } from './api/progression'
 import { initPixi } from './game/PixiApp'
+import { GameScene } from './game/GameScene'
+import { getLevelConfig } from './game/levelConfig'
+import { useRunStore } from './store/runStore'
 import MainMenu from './ui/MainMenu'
 import HUD from './ui/HUD'
 import LevelResult from './ui/LevelResult'
@@ -88,9 +91,22 @@ export default function App() {
 
 function GameCanvas() {
   const ref = useRef<HTMLDivElement>(null)
+  const currentLevel = useRunStore(s => s.currentLevel)
+
   useEffect(() => {
     if (!ref.current) return
-    initPixi(ref.current)
+    let scene: GameScene | null = null
+
+    initPixi(ref.current).then((app) => {
+      const config = getLevelConfig(currentLevel)
+      scene = new GameScene(app, config)
+      scene.start()
+    })
+
+    return () => {
+      if (scene) scene.stop()
+    }
   }, [])
+
   return <div ref={ref} style={{ position: 'absolute', inset: 0 }} />
 }

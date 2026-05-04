@@ -18,7 +18,7 @@ export function getSession(): CwSession | null {
 export function requireSession(): CwSession {
   const session = getSession()
   if (!session) {
-    window.location.href = '/login?redirect=/games/chicken-shop'
+    window.location.href = '/profile'
     throw new Error('No session — redirecting to login')
   }
   return session
