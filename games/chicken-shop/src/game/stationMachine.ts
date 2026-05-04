@@ -18,12 +18,11 @@ export function enqueue(station: StationRuntime, orderId: string): StationRuntim
 }
 
 export function startActive(station: StationRuntime): StationRuntime {
+  if (station.activeOrderId !== null) return station  // already processing — do nothing
   if (station.outputBufferOrderId !== null) {
     return { ...station, interactionState: 'blocked' }
   }
-  if (station.queue.length === 0 || station.activeOrderId !== null) {
-    return station
-  }
+  if (station.queue.length === 0) return station
   const [next, ...rest] = station.queue
   return {
     ...station,

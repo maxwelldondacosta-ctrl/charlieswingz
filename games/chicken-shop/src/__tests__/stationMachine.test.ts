@@ -7,6 +7,7 @@ import {
   completeActive,
   releaseBuffer,
   removeOrder,
+  isQueueFull,
 } from '../game/stationMachine'
 
 describe('createStation', () => {
@@ -109,5 +110,32 @@ describe('removeOrder', () => {
     s = completeActive(s)
     s = removeOrder(s, 'o1')
     expect(s.outputBufferOrderId).toBeNull()
+  })
+})
+
+describe('isQueueFull', () => {
+  it('returns true when queue has 3 orders', () => {
+    let s = createStation('fryer')
+    s = enqueue(s, 'o1')
+    s = enqueue(s, 'o2')
+    s = enqueue(s, 'o3')
+    expect(isQueueFull(s)).toBe(true)
+  })
+
+  it('returns false when queue has fewer than 3 orders', () => {
+    const s = enqueue(createStation('fryer'), 'o1')
+    expect(isQueueFull(s)).toBe(false)
+  })
+})
+
+describe('startActive priority', () => {
+  it('does not clobber interactionState when activeOrderId is set and buffer is occupied', () => {
+    let s = createStation('fryer')
+    s = enqueue(s, 'o1')
+    s = startActive(s)  // sets activeOrderId and interactionState='waitingForInput'
+    s = { ...s, outputBufferOrderId: 'blocking-order' }  // buffer also occupied
+    const next = startActive(s)  // should do nothing
+    expect(next.activeOrderId).toBe('o1')
+    expect(next.interactionState).toBe('waitingForInput')  // NOT overwritten to 'blocked'
   })
 })
