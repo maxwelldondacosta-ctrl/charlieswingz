@@ -34,6 +34,8 @@ export class GameScene {
   private nextSpawnMs: number
   private running = false
   private customerIdCounter = 0
+  private wobbleActive = false
+  private spawnVip = false
   private _tickHandler: ((t: { deltaMS: number }) => void) | null = null
 
   constructor(app: Application, config: LevelConfig) {
@@ -238,6 +240,9 @@ export class GameScene {
     const timeUp = run.timerRemainingMs <= 0
 
     if (cashEarned >= target && run.result === null) {
+      if (this.config.modifier === 'cleanRunBonus' && run.walkouts === 0) {
+        run.addCash(500)
+      }
       run.setResult('success')
       this.running = false
     } else if (timeUp && cashEarned < target && run.result === null) {
@@ -266,6 +271,23 @@ export class GameScene {
 
   start(): void {
     this.running = true
+
+    // Endgame modifiers (levels 61+)
+    if (this.config.modifier === 'rushMinute') {
+      const orig = this.nextSpawnMs
+      setTimeout(() => {
+        this.nextSpawnMs = orig * 0.4
+        setTimeout(() => { this.nextSpawnMs = orig }, 15_000)
+      }, Math.random() * Math.max(0, this.config.durationMs - 20_000))
+    }
+    if (this.config.modifier === 'fryerWobble') {
+      this.wobbleActive = true
+      setTimeout(() => { this.wobbleActive = false }, 20_000)
+    }
+    if (this.config.modifier === 'vipCustomer') {
+      this.spawnVip = true
+    }
+
     this._tickHandler = (t: { deltaMS: number }) => this.tick(t)
     this.app.ticker.add(this._tickHandler)
   }
