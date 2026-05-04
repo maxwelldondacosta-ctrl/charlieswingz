@@ -98,15 +98,6 @@ class SauceShooter extends Phaser.Scene {
   constructor() { super('SauceShooter'); }
 
   preload() {
-    this.load.image('bg', '/game-assets/shooter/bg-tile.png');
-    this.load.image('player', '/game-assets/shooter/player-ship.png');
-    this.load.image('enemy1', '/game-assets/shooter/enemy-van-1.png');
-    this.load.image('enemy2', '/game-assets/shooter/enemy-van-2.png');
-    this.load.image('bullet', '/game-assets/shooter/bullet-sauce.png');
-    this.load.image('pu_shield', '/game-assets/shooter/powerup-shield.png');
-    this.load.image('pu_rapid', '/game-assets/shooter/powerup-rapid.png');
-    this.load.image('explosion', '/game-assets/shooter/explosion.png');
-
     this.load.audio('shoot', '/sfx/ss-shoot.mp3');
     this.load.audio('boom', '/sfx/ss-explosion.mp3');
     this.load.audio('hit', '/sfx/ss-hit.mp3');
@@ -114,15 +105,88 @@ class SauceShooter extends Phaser.Scene {
     this.load.audio('gameover', '/sfx/ss-gameover.mp3');
   }
 
+  mk(key, w, h, fn) {
+    const g = this.make.graphics({ x: 0, y: 0, add: false });
+    fn(g); g.generateTexture(key, w, h); g.destroy();
+  }
+
+  createTextures() {
+    // Charlie's gold van (player) — top-down
+    this.mk('player', 52, 80, g => {
+      g.fillStyle(0xe8a838); g.fillRoundedRect(4, 4, 44, 72, 8);
+      g.fillStyle(0x88bbff); g.fillRoundedRect(10, 10, 32, 16, 3);
+      g.fillStyle(0xb07820); g.fillRoundedRect(12, 30, 28, 34, 4);
+      g.fillStyle(0x222222);
+      g.fillRoundedRect(0, 10, 6, 12, 2); g.fillRoundedRect(46, 10, 6, 12, 2);
+      g.fillRoundedRect(0, 58, 6, 12, 2); g.fillRoundedRect(46, 58, 6, 12, 2);
+      g.fillStyle(0xffff88); g.fillRect(12, 4, 8, 4); g.fillRect(32, 4, 8, 4);
+    });
+    // Red rival van
+    this.mk('enemy1', 52, 80, g => {
+      g.fillStyle(0xcc2222); g.fillRoundedRect(4, 4, 44, 72, 8);
+      g.fillStyle(0x88bbff); g.fillRoundedRect(10, 50, 32, 16, 3);
+      g.fillStyle(0xaa1111); g.fillRoundedRect(12, 10, 28, 34, 4);
+      g.fillStyle(0x222222);
+      g.fillRoundedRect(0, 10, 6, 12, 2); g.fillRoundedRect(46, 10, 6, 12, 2);
+      g.fillRoundedRect(0, 58, 6, 12, 2); g.fillRoundedRect(46, 58, 6, 12, 2);
+      g.fillStyle(0xff8888); g.fillRect(12, 72, 8, 4); g.fillRect(32, 72, 8, 4);
+    });
+    // Purple rival van
+    this.mk('enemy2', 52, 80, g => {
+      g.fillStyle(0x7722cc); g.fillRoundedRect(4, 4, 44, 72, 8);
+      g.fillStyle(0x88bbff); g.fillRoundedRect(10, 50, 32, 16, 3);
+      g.fillStyle(0x5500aa); g.fillRoundedRect(12, 10, 28, 34, 4);
+      g.fillStyle(0x222222);
+      g.fillRoundedRect(0, 10, 6, 12, 2); g.fillRoundedRect(46, 10, 6, 12, 2);
+      g.fillRoundedRect(0, 58, 6, 12, 2); g.fillRoundedRect(46, 58, 6, 12, 2);
+      g.fillStyle(0xcc88ff); g.fillRect(12, 72, 8, 4); g.fillRect(32, 72, 8, 4);
+    });
+    // Sauce drop bullet
+    this.mk('bullet', 14, 22, g => {
+      g.fillStyle(0xff6600); g.fillEllipse(7, 8, 12, 12);
+      g.fillStyle(0xff9944); g.fillEllipse(7, 7, 6, 6);
+      g.fillStyle(0xff6600); g.fillTriangle(3, 12, 11, 12, 7, 20);
+    });
+    // Explosion burst
+    this.mk('explosion', 64, 64, g => {
+      const cx = 32, cy = 32;
+      g.fillStyle(0xff8800);
+      for (let i = 0; i < 8; i++) {
+        const a = (i / 8) * Math.PI * 2;
+        g.fillTriangle(cx, cy, cx+Math.cos(a-0.35)*16, cy+Math.sin(a-0.35)*16, cx+Math.cos(a)*28, cy+Math.sin(a)*28);
+        g.fillTriangle(cx, cy, cx+Math.cos(a+0.35)*16, cy+Math.sin(a+0.35)*16, cx+Math.cos(a)*28, cy+Math.sin(a)*28);
+      }
+      g.fillStyle(0xffcc00); g.fillCircle(cx, cy, 13);
+      g.fillStyle(0xffffff); g.fillCircle(cx, cy, 6);
+    });
+    // Shield powerup (blue)
+    this.mk('pu_shield', 36, 36, g => {
+      g.fillStyle(0x2266ff);
+      g.fillTriangle(18, 2, 34, 12, 34, 26); g.fillTriangle(18, 2, 2, 12, 2, 26);
+      g.fillRect(2, 24, 32, 6); g.fillTriangle(2, 30, 34, 30, 18, 36);
+      g.fillStyle(0x88aaff); g.fillCircle(18, 18, 9);
+      g.fillStyle(0xffffff); g.fillRect(16, 11, 4, 14); g.fillRect(11, 17, 14, 4);
+    });
+    // Rapid fire powerup (gold lightning)
+    this.mk('pu_rapid', 36, 36, g => {
+      g.fillStyle(0xffee00);
+      g.fillTriangle(24, 2, 12, 20, 20, 20);
+      g.fillTriangle(16, 16, 28, 16, 16, 34);
+      g.fillStyle(0xffffff); g.fillCircle(20, 18, 3);
+    });
+  }
+
   create() {
     this.W = 400;
     this.H = 600;
+    this.createTextures();
     this.initGame();
   }
 
   initGame() {
-    // Scrolling Background
-    this.bg = this.add.tileSprite(200, 300, 400, 600, 'bg');
+    // Dark background
+    this.add.rectangle(200, 300, 400, 600, 0x0d0d1a);
+    this.bg = this.add.graphics();
 
     // Player
     this.player = this.physics.add.sprite(200, 520, 'player').setCollideWorldBounds(true).setScale(0.4);
@@ -185,7 +249,7 @@ class SauceShooter extends Phaser.Scene {
   update(time, delta) {
     if (!this.gameActive || this.isGameOver) return;
 
-    this.bg.tilePositionY -= 2;
+    // bg is now a plain graphics object, no tilePositionY needed
 
     // Movement
     if (this.cursors.left.isDown) this.player.setVelocityX(-350);

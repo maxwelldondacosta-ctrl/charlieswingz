@@ -106,30 +106,99 @@ class WingRun extends Phaser.Scene {
   constructor() { super('WingRun'); }
 
   preload() {
-    this.load.image('bg-road', '/game-assets/wingrun/bg-road.png');
-    this.load.image('bike', '/game-assets/wingrun/player-bike.png');
-    this.load.image('car1', '/game-assets/wingrun/enemy-car-1.png');
-    this.load.image('car2', '/game-assets/wingrun/enemy-car-2.png');
-    this.load.image('shop', '/game-assets/wingrun/building-shop.png');
-    this.load.image('house', '/game-assets/wingrun/building-house.png');
-
     this.load.audio('deliver', '/sfx/wr-deliver.mp3');
     this.load.audio('crash', '/sfx/wr-crash.mp3');
     this.load.audio('hop', '/sfx/wr-hop.mp3');
   }
 
+  mk(key, w, h, fn) {
+    const g = this.make.graphics({ x: 0, y: 0, add: false });
+    fn(g); g.generateTexture(key, w, h); g.destroy();
+  }
+
+  createTextures() {
+    // Delivery bike — top-down view, gold scooter with chicken rider
+    this.mk('bike', 56, 80, g => {
+      g.fillStyle(0xe8a838); g.fillRoundedRect(14, 8, 28, 64, 8); // frame
+      g.fillStyle(0x222222); g.fillEllipse(28, 7, 22, 14);         // front wheel
+      g.fillStyle(0x222222); g.fillEllipse(28, 73, 22, 14);        // rear wheel
+      g.fillStyle(0x555555); g.fillEllipse(28, 7, 12, 8);
+      g.fillStyle(0x555555); g.fillEllipse(28, 73, 12, 8);
+      g.fillStyle(0xf5c842); g.fillCircle(28, 30, 11);             // chicken head
+      g.fillStyle(0xff2222); g.fillCircle(23, 22, 4); g.fillCircle(28, 20, 5); g.fillCircle(33, 22, 4); // comb
+      g.fillStyle(0x111111); g.fillCircle(33, 28, 3);              // eye
+      g.fillStyle(0xff8c00); g.fillTriangle(38, 29, 43, 31, 38, 33); // beak
+      g.fillStyle(0xe53935); g.fillRoundedRect(18, 50, 20, 16, 3); // delivery box
+      g.fillStyle(0xffffff); g.fillRect(20, 52, 16, 4);            // box label
+      g.fillStyle(0x888888); g.fillRect(4, 18, 12, 4); g.fillRect(40, 18, 12, 4); // handlebars
+      g.fillStyle(0xffff88); g.fillRect(12, 6, 8, 4); g.fillRect(36, 6, 8, 4); // headlights
+    });
+
+    // Car 1 — red top-down
+    this.mk('car1', 44, 68, g => {
+      g.fillStyle(0xe53935); g.fillRoundedRect(4, 4, 36, 60, 8);
+      g.fillStyle(0x88bbff); g.fillRoundedRect(10, 10, 24, 18, 3); // windshield
+      g.fillStyle(0x4488cc); g.fillRoundedRect(10, 42, 24, 14, 3); // rear window
+      g.fillStyle(0x222222);
+      g.fillRect(0, 8, 7, 14); g.fillRect(37, 8, 7, 14); // front wheels
+      g.fillRect(0, 48, 7, 14); g.fillRect(37, 48, 7, 14); // rear wheels
+      g.fillStyle(0xffff88); g.fillRect(10, 4, 8, 4); g.fillRect(26, 4, 8, 4); // headlights
+      g.fillStyle(0xff4444); g.fillRect(10, 62, 8, 4); g.fillRect(26, 62, 8, 4); // taillights
+    });
+
+    // Car 2 — blue top-down
+    this.mk('car2', 44, 68, g => {
+      g.fillStyle(0x1565c0); g.fillRoundedRect(4, 4, 36, 60, 8);
+      g.fillStyle(0x88bbff); g.fillRoundedRect(10, 10, 24, 18, 3);
+      g.fillStyle(0x4488cc); g.fillRoundedRect(10, 42, 24, 14, 3);
+      g.fillStyle(0x222222);
+      g.fillRect(0, 8, 7, 14); g.fillRect(37, 8, 7, 14);
+      g.fillRect(0, 48, 7, 14); g.fillRect(37, 48, 7, 14);
+      g.fillStyle(0xffff88); g.fillRect(10, 4, 8, 4); g.fillRect(26, 4, 8, 4);
+      g.fillStyle(0xff4444); g.fillRect(10, 62, 8, 4); g.fillRect(26, 62, 8, 4);
+    });
+
+    // Shop building
+    this.mk('shop', 60, 110, g => {
+      g.fillStyle(0xcc8844); g.fillRect(2, 18, 56, 92);         // walls
+      g.fillStyle(0xe8a838); g.fillRect(0, 0, 60, 20);          // roof band
+      g.fillStyle(0xe53935); g.fillRoundedRect(6, 22, 48, 14, 3); // sign
+      g.fillStyle(0xffffff); g.fillRect(10, 25, 12, 6); g.fillRect(26, 25, 10, 6); g.fillRect(40, 25, 10, 6);
+      g.fillStyle(0x88bbff); g.fillRoundedRect(8, 44, 44, 30, 3); // window
+      g.fillStyle(0xaaddff); g.fillRect(10, 46, 19, 26);         // window pane
+      g.fillStyle(0x8d5a2a); g.fillRoundedRect(20, 78, 20, 32, 3); // door
+      g.fillStyle(0xffd700); g.fillCircle(36, 94, 2.5);
+    });
+
+    // House building
+    this.mk('house', 60, 110, g => {
+      g.fillStyle(0x9e9e9e); g.fillRect(2, 46, 56, 64);         // walls
+      g.fillStyle(0x795548); g.fillTriangle(0, 48, 30, 10, 60, 48); // roof
+      g.fillStyle(0x888888); g.fillRect(40, 16, 10, 26);        // chimney
+      g.fillStyle(0x555555); g.fillRect(42, 14, 6, 4);          // chimney top
+      g.fillStyle(0x88bbff); g.fillRoundedRect(6, 56, 18, 18, 2); // left window
+      g.fillStyle(0x88bbff); g.fillRoundedRect(36, 56, 18, 18, 2); // right window
+      g.fillStyle(0xaaddff); g.fillRect(8, 58, 7, 14); g.fillRect(38, 58, 7, 14); // window panes
+      g.fillStyle(0x8d5a2a); g.fillRoundedRect(22, 76, 16, 34, 2); // door
+      g.fillStyle(0xffd700); g.fillCircle(34, 93, 2);
+    });
+  }
+
   create() {
     this.W = 400;
     this.H = 700;
+    this.createTextures();
     this.initGame();
   }
 
   initGame() {
-    // Parallax scrolling backgrounds
-    this.road = this.add.tileSprite(200, 350, 400, 700, 'bg-road');
+    // Road background + scrolling lane markers
+    this.add.rectangle(200, 350, 400, 700, 0x2a2a2a);
+    this.road = this.add.graphics();
+    this.roadOffset = 0;
 
     // Player
-    this.player = this.physics.add.sprite(200, 600, 'bike').setCollideWorldBounds(true).setScale(0.6);
+    this.player = this.physics.add.sprite(200, 600, 'bike').setCollideWorldBounds(true);
     this.player.setDepth(20);
 
     // Groups
@@ -197,8 +266,13 @@ class WingRun extends Phaser.Scene {
   update(time, delta) {
     if (!this.gameActive) return;
 
-    // Scrolling
-    this.road.tilePositionY -= (this.speed * 0.001) * delta;
+    // Scrolling lane markers
+    this.roadOffset = ((this.roadOffset || 0) + (this.speed * 0.001) * delta) % 80;
+    this.road.clear();
+    this.road.lineStyle(3, 0xffffff, 0.3);
+    for (let y = -80 + this.roadOffset; y < 750; y += 80) {
+      this.road.lineBetween(200, y, 200, y + 40);
+    }
 
     // Movement
     if (this.cursors.left.isDown) {
@@ -223,7 +297,7 @@ class WingRun extends Phaser.Scene {
         this.sound.play('hop', { volume: 0.5 });
         this.tweens.add({
             targets: this.player,
-            scale: 1.5,
+            scaleX: 1.3, scaleY: 1.3,
             duration: 250,
             yoyo: true,
             onComplete: () => { this.hopping = false; }
@@ -258,7 +332,6 @@ class WingRun extends Phaser.Scene {
     const type = Phaser.Math.Between(1, 2);
     const car = this.cars.create(laneX, -100, `car${type}`);
     car.setDepth(15);
-    car.setScale(0.4);
     car.setVelocityY(this.speed * 0.4);
   }
 

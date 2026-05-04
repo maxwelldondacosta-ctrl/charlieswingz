@@ -105,24 +105,70 @@ class WingKing extends Phaser.Scene {
   constructor() { super('WingKing'); }
 
   preload() {
-    this.load.image('bg', '/game-assets/platformer/bg-city.png');
-    this.load.image('platform', '/game-assets/platformer/platform-tile.png');
-    this.load.image('player', '/game-assets/platformer/player-idle.png');
-    this.load.image('bin', '/game-assets/platformer/enemy-bin.png');
-    this.load.image('inspector', '/game-assets/platformer/enemy-inspector.png');
-    this.load.image('wing', '/game-assets/platformer/collectible-wing.png');
-
     this.load.audio('jump', '/sfx/wk-jump.mp3');
     this.load.audio('collect', '/sfx/wk-collect.mp3');
     this.load.audio('die', '/sfx/wk-die.mp3');
   }
 
+  mk(key, w, h, fn) {
+    const g = this.make.graphics({ x: 0, y: 0, add: false });
+    fn(g); g.generateTexture(key, w, h); g.destroy();
+  }
+
+  createTextures() {
+    // Platform tile (tiled for ground)
+    this.mk('platform', 64, 64, g => {
+      g.fillStyle(0x6b4226); g.fillRect(0, 0, 64, 64);
+      g.fillStyle(0x4caf50); g.fillRect(0, 0, 64, 14);
+      g.fillStyle(0x388e3c); g.fillRect(0, 0, 64, 4);
+      g.fillStyle(0x8d5a2a); g.fillRect(0, 18, 64, 3); g.fillRect(0, 36, 64, 3);
+    });
+    // Chicken player (64×80 — facing right)
+    this.mk('player', 64, 80, g => {
+      g.fillStyle(0xf5c842); g.fillEllipse(32, 54, 44, 38); // body
+      g.fillStyle(0xd4a82a); g.fillEllipse(20, 54, 18, 28); // wing
+      g.fillStyle(0xf5c842); g.fillCircle(36, 24, 20); // head
+      g.fillStyle(0xff2222); // comb
+      g.fillCircle(28, 8, 6); g.fillCircle(36, 4, 7); g.fillCircle(44, 8, 6);
+      g.fillStyle(0xff8c00); g.fillTriangle(52, 22, 62, 24, 52, 28); // beak
+      g.fillStyle(0x111111); g.fillCircle(46, 20, 4); // eye
+      g.fillStyle(0xffffff); g.fillCircle(47, 19, 1.5);
+      g.fillStyle(0xff8c00); g.fillRect(26, 70, 6, 9); g.fillRect(36, 70, 6, 9); // legs
+    });
+    // Bin obstacle (grey trash can)
+    this.mk('bin', 48, 56, g => {
+      g.fillStyle(0x888888); g.fillRoundedRect(6, 12, 36, 40, 4);
+      g.fillStyle(0x666666); g.fillRoundedRect(2, 6, 44, 10, 4); // lid
+      g.fillStyle(0xaaaaaa); g.fillRect(4, 8, 8, 4); // lid handle
+      g.fillStyle(0x999999); g.fillRect(14, 18, 5, 26); g.fillRect(24, 18, 5, 26); // ridges
+      g.fillStyle(0x555555); g.fillRect(6, 48, 36, 4); // base
+    });
+    // Inspector obstacle (suited purple figure)
+    this.mk('inspector', 48, 64, g => {
+      g.fillStyle(0x6a0dad); g.fillRect(10, 28, 28, 32); // suit body
+      g.fillStyle(0xffd700); g.fillRect(20, 28, 8, 20); // gold tie
+      g.fillStyle(0xf5c842); g.fillCircle(24, 20, 14); // face
+      g.fillStyle(0x4a0080); g.fillRect(8, 2, 32, 12); g.fillRect(6, 12, 36, 6); // hat
+      g.fillStyle(0x111111); g.fillCircle(19, 18, 3); g.fillCircle(29, 18, 3); // eyes
+      g.fillStyle(0xcccccc); g.fillRect(15, 16, 18, 5); // glasses
+      g.fillStyle(0xf5c842); g.fillRect(14, 58, 8, 6); g.fillRect(26, 58, 8, 6); // legs
+    });
+    // Wing collectible (gold drumstick)
+    this.mk('wing', 36, 36, g => {
+      g.fillStyle(0xc8660a); g.fillCircle(18, 12, 12); // meat
+      g.fillStyle(0xf5e6d0); g.fillRoundedRect(13, 20, 10, 14, 4); // bone
+      g.fillStyle(0xffd700); // gold sheen
+      g.fillCircle(14, 9, 4);
+    });
+  }
+
   create() {
     const W = 800, H = 400;
-    
-    // Parallax Backgrounds
-    this.bg1 = this.add.tileSprite(400, 200, 800, 400, 'bg').setAlpha(0.3).setScrollFactor(0);
-    
+    this.createTextures();
+
+    // Dark sky with city silhouette feel
+    this.add.rectangle(400, 200, 800, 400, 0x1a1a2e);
+
     // Ground
     this.ground = this.add.tileSprite(400, 370, 800, 60, 'platform');
     this.physics.add.existing(this.ground, true);

@@ -101,70 +101,19 @@ function closeOverlay() {
   if (gameInstance) gameInstance.scene.getAt(0).startGame();
 }
 
-function removeBackground(img){
-  const canvas=document.createElement('canvas');
-  const ctx=canvas.getContext('2d');
-  canvas.width=img.width; canvas.height=img.height;
-  ctx.drawImage(img,0,0);
-
-  const data=ctx.getImageData(0,0,canvas.width,canvas.height);
-  const pixels=data.data;
-  const rRef=pixels[0], gRef=pixels[1], bRef=pixels[2];
-
-  for(let i=0; i<pixels.length; i+=4){
-    const r=pixels[i], g=pixels[i+1], b=pixels[2];
-    const dr=Math.abs(r-rRef), dg=Math.abs(g-gRef), db=Math.abs(b-bRef);
-    if(dr < 60 && dg < 60 && db < 60) pixels[i+3]=0;
-  }
-  ctx.putImageData(data,0,0);
-  const newImg=new Image();
-  newImg.src=canvas.toDataURL();
-  return newImg;
-}
-
-
-function loadImgWithTransparentBg(scene, key, src) {
-  const img = new Image();
-  img.crossOrigin = "Anonymous";
-  img.onload = () => {
-    if (key === 'bg') {
-        scene.textures.addImage(key, img);
-        if (scene.onAssetLoaded) scene.onAssetLoaded();
-    } else {
-        const transparentImg = removeBackground(img);
-        transparentImg.onload = () => {
-            scene.textures.addImage(key, transparentImg);
-            if (scene.onAssetLoaded) scene.onAssetLoaded();
-        };
-    }
-  };
-  img.src = src;
-}
-
 // ── Phaser Engine ─────────────────────────────────────────────────────────────
 class SnakeGame extends Phaser.Scene {
   constructor() { super('SnakeGame'); }
 
   preload() {
-    this.assetsToLoad = 4;
-    this.assetsLoaded = 0;
-    this.onAssetLoaded = () => {
-      this.assetsLoaded++;
-      if (this.assetsLoaded === this.assetsToLoad) {
-        this.assetsReady = true;
-      }
-    };
-
-    // Load SFX
     this.load.audio('eat', '/sfx/snake-eat.mp3');
     this.load.audio('die', '/sfx/snake-die.mp3');
     this.load.audio('start', '/sfx/snake-start.mp3');
+  }
 
-    // Load visual assets via custom transparent loader
-    loadImgWithTransparentBg(this, 'bg', '/game-assets/snake/bg-tile.png');
-    loadImgWithTransparentBg(this, 'head', '/game-assets/snake/snake-head.png');
-    loadImgWithTransparentBg(this, 'wing', '/game-assets/snake/wing.png');
-    loadImgWithTransparentBg(this, 'crown', '/game-assets/snake/crown.png');
+  mk(key, w, h, fn) {
+    const g = this.make.graphics({ x: 0, y: 0, add: false });
+    fn(g); g.generateTexture(key, w, h); g.destroy();
   }
 
   create() {
@@ -172,29 +121,54 @@ class SnakeGame extends Phaser.Scene {
     this.H = 600;
     this.TILE_SIZE = 30;
 
-    // Generate body segment texture — gold rounded square matching TILE_SIZE
-    const bodyGfx = this.make.graphics({ x: 0, y: 0, add: false });
-    bodyGfx.fillStyle(0xe8a838, 1);
-    bodyGfx.fillRoundedRect(2, 2, 26, 26, 5);
-    bodyGfx.lineStyle(2, 0xb07820, 1);
-    bodyGfx.strokeRoundedRect(2, 2, 26, 26, 5);
-    bodyGfx.generateTexture('body', 30, 30);
-    bodyGfx.destroy();
-
-    this.waitForAssets = this.time.addEvent({
-      delay: 100,
-      loop: true,
-      callback: () => {
-        if (this.assetsReady) {
-          this.waitForAssets.destroy();
-          this.initGame();
-        }
-      }
+    // Body segment
+    this.mk('body', 30, 30, g => {
+      g.fillStyle(0xe8a838); g.fillRoundedRect(2, 2, 26, 26, 5);
+      g.lineStyle(2, 0xb07820, 1); g.strokeRoundedRect(2, 2, 26, 26, 5);
     });
+
+    // Chicken head — faces right (east), rotated in code for direction
+    this.mk('head', 30, 30, g => {
+      g.fillStyle(0xf5c842); g.fillRoundedRect(2, 2, 26, 26, 5);
+      g.lineStyle(2, 0xb07820, 1); g.strokeRoundedRect(2, 2, 26, 26, 5);
+      g.fillStyle(0xff2222); g.fillCircle(8, 3, 3); g.fillCircle(15, 1, 4); g.fillCircle(22, 3, 3); // comb
+      g.fillStyle(0x111111); g.fillCircle(22, 11, 4);  // eye
+      g.fillStyle(0xffffff); g.fillCircle(23, 10, 1.5);
+      g.fillStyle(0xff8c00); g.fillTriangle(27, 14, 30, 16, 27, 18); // beak
+      g.fillStyle(0xff4444); g.fillRect(2, 20, 5, 4);  // wattle
+    });
+
+    // Wing food — gold drumstick
+    this.mk('wing', 30, 30, g => {
+      g.fillStyle(0xc8660a); g.fillCircle(15, 11, 11);
+      g.fillStyle(0xf5e6d0); g.fillRoundedRect(11, 20, 8, 9, 3);
+      g.fillStyle(0xffd700); g.fillCircle(11, 8, 4);
+      g.fillStyle(0xffeedd); g.fillCircle(13, 6, 2);
+    });
+
+    // Crown collectible
+    this.mk('crown', 30, 30, g => {
+      g.fillStyle(0xffd700);
+      g.fillRect(4, 17, 22, 9);                         // base
+      g.fillTriangle(4, 17, 4, 7, 10, 13);              // left spike
+      g.fillTriangle(15, 17, 15, 4, 22, 13);            // center spike
+      g.fillTriangle(20, 17, 26, 7, 26, 17);            // right spike
+      g.fillStyle(0xe53935); g.fillCircle(8, 22, 3);    // left jewel
+      g.fillStyle(0x4caf50); g.fillCircle(15, 22, 3);   // center jewel
+      g.fillStyle(0xe53935); g.fillCircle(22, 22, 3);   // right jewel
+      g.lineStyle(1, 0xb07820, 1); g.strokeRect(4, 17, 22, 9);
+    });
+
+    this.initGame();
   }
 
   initGame() {
-    this.bg = this.add.tileSprite(300, 300, 600, 600, 'bg').setAlpha(0.5);
+    // Dark background with subtle grid
+    this.add.rectangle(300, 300, 600, 600, 0x0d0d1a);
+    const grid = this.add.graphics();
+    grid.lineStyle(1, 0x1a1a2e, 1);
+    for (let x = 0; x <= 600; x += this.TILE_SIZE || 30) grid.lineBetween(x, 0, x, 600);
+    for (let y = 0; y <= 600; y += this.TILE_SIZE || 30) grid.lineBetween(0, y, 600, y);
     
     this.scoreText = this.add.text(10, 10, 'SCORE: 0', { fontSize: '20px', fontWeight: 'bold', fill: '#4caf50' }).setDepth(100);
     this.wingText = this.add.text(480, 10, '🍗 0', { fontSize: '20px', fontWeight: 'bold', fill: '#fff' }).setDepth(100);
@@ -211,8 +185,8 @@ class SnakeGame extends Phaser.Scene {
     this.speed = 150; // ms per move
     this.lastMoveTime = 0;
     
-    this.food = this.add.sprite(0, 0, 'wing').setScale(0.45).setDepth(10);
-    this.crown = this.add.sprite(-100, -100, 'crown').setScale(0.85).setDepth(10).setVisible(false);
+    this.food = this.add.sprite(0, 0, 'wing').setScale(1).setDepth(10);
+    this.crown = this.add.sprite(-100, -100, 'crown').setScale(1).setDepth(10).setVisible(false);
     
     // Swipe controls for mobile
     this.input.on('pointerup', this.handleSwipe, this);
@@ -236,7 +210,6 @@ class SnakeGame extends Phaser.Scene {
   }
 
   startGame() {
-    if (!this.assetsReady) return;
     
     this.snake.forEach(seg => seg.destroy());
     this.snake = [];
@@ -244,7 +217,7 @@ class SnakeGame extends Phaser.Scene {
     // Initial snake
     for (let i = 0; i < 3; i++) {
         const sprite = this.add.sprite(300 - i * this.TILE_SIZE, 300, i === 0 ? 'head' : 'body');
-        sprite.setScale(i === 0 ? 0.22 : 1);
+        sprite.setScale(1);
         sprite.setDepth(20 - i);
         this.snake.push(sprite);
     }
@@ -283,7 +256,7 @@ class SnakeGame extends Phaser.Scene {
   }
 
   update(time) {
-    if (!this.gameActive || !this.assetsReady) return;
+    if (!this.gameActive) return;
 
     if (this.cursors.left.isDown && this.direction.x !== 1) this.nextDirection = Phaser.Math.Vector2.LEFT;
     else if (this.cursors.right.isDown && this.direction.x !== -1) this.nextDirection = Phaser.Math.Vector2.RIGHT;
