@@ -2330,10 +2330,7 @@ app.post('/api/game/register', async (req, res) => {
         console.error('[Register] Referral linking error:', e.message);
     }
 
-    const token = crypto.randomBytes(32).toString('hex');
-    if (!global.gameSessionMap) global.gameSessionMap = new Map();
-    global.gameSessionMap.set(token, email.toLowerCase());
-
+    const token = db.createGameSession(email.toLowerCase());
     res.json({ token, user: { id: player.email, name: player.name, email: player.email } });
 });
 
@@ -2347,20 +2344,18 @@ app.post('/api/game/login', async (req, res) => {
     const valid = await bcrypt.compare(password, player.password || player.password_hash);
     if (!valid) return res.status(401).json({ message: 'Invalid email or password' });
 
-    const token = crypto.randomBytes(32).toString('hex');
-    if (!global.gameSessionMap) global.gameSessionMap = new Map();
-    global.gameSessionMap.set(token, player.email);
-
+    const token = db.createGameSession(player.email);
     res.json({ token, user: { id: player.email, name: player.name, email: player.email } });
 });
 
 // Game auth middleware
 function requireGameAuth(req, res, next) {
     const token = (req.headers.authorization || '').replace('Bearer ', '');
-    if (!global.gameSessionMap || !global.gameSessionMap.has(token)) {
+    const email = db.getGameSessionEmail(token);
+    if (!email) {
         return res.status(401).json({ message: 'Not authenticated' });
     }
-    req.playerEmail = global.gameSessionMap.get(token);
+    req.playerEmail = email;
     next();
 }
 
