@@ -29,6 +29,8 @@ export class FryerMinigame {
   private timeInWindow = 0
   private resolved = false
   private onComplete: OnComplete
+  private _app: Application
+  private _tickFn: ((t: { deltaMS: number }) => void) | null = null
 
   constructor(app: Application, parent: Container, onComplete: OnComplete, wobble = false) {
     this.onComplete = onComplete
@@ -70,7 +72,9 @@ export class FryerMinigame {
     this.container.eventMode = 'static'
     this.container.on('pointertap', () => this.tap())
 
-    app.ticker.add(t => this.tick(t))
+    this._app = app
+    this._tickFn = (t: { deltaMS: number }) => this.tick(t)
+    this._app.ticker.add(this._tickFn)
   }
 
   private tick(ticker: { deltaMS: number }): void {
@@ -98,6 +102,10 @@ export class FryerMinigame {
 
   private resolve(penalty: number): void {
     this.resolved = true
+    if (this._tickFn) {
+      this._app.ticker.remove(this._tickFn)
+      this._tickFn = null
+    }
     this.container.destroy({ children: true })
     this.onComplete(penalty)
   }
@@ -109,6 +117,7 @@ export class FryerMinigame {
 export class ChoiceMinigame {
   container: Container
   private resolved = false
+  private _timer: ReturnType<typeof setTimeout> | null = null
 
   constructor(
     parent: Container,
@@ -141,6 +150,10 @@ export class ChoiceMinigame {
       btn.on('pointertap', () => {
         if (this.resolved) return
         this.resolved = true
+        if (this._timer !== null) {
+          clearTimeout(this._timer)
+          this._timer = null
+        }
         const penalty = i === correctIndex ? 0 : PENALTY
         this.container.destroy({ children: true })
         onComplete(penalty)
@@ -148,14 +161,13 @@ export class ChoiceMinigame {
     })
 
     // Auto-fail on timeout
-    const timer = setTimeout(() => {
+    this._timer = setTimeout(() => {
       if (!this.resolved) {
         this.resolved = true
         this.container.destroy({ children: true })
         onComplete(PENALTY)
       }
     }, timeoutMs)
-    ;(this.container as any).__timer = timer
   }
 }
 
@@ -169,6 +181,8 @@ export class DrinksMinigame {
   private resolved = false
   private fillBar: Graphics
   private FILL_TO_OVERFLOW_MS = 2000
+  private _app: Application
+  private _tickFn: ((t: { deltaMS: number }) => void) | null = null
 
   constructor(app: Application, parent: Container, onComplete: OnComplete) {
     this.container = new Container()
@@ -194,18 +208,24 @@ export class DrinksMinigame {
     this.container.on('pointerup', () => { if (!this.resolved) this.resolve(onComplete) })
     this.container.on('pointerupoutside', () => { if (!this.resolved) this.resolve(onComplete) })
 
-    app.ticker.add(t => {
+    this._app = app
+    this._tickFn = (t: { deltaMS: number }) => {
       if (!this.filling || this.resolved) return
       this.fillLevel = Math.min(1, this.fillLevel + t.deltaMS / this.FILL_TO_OVERFLOW_MS)
       this.fillBar.clear()
       const fillH = Math.floor(this.fillLevel * 80)
       this.fillBar.rect(2, 80 - fillH, 36, fillH).fill(0x3b82f6)
       if (this.fillLevel >= 1) this.resolve(onComplete)
-    })
+    }
+    this._app.ticker.add(this._tickFn)
   }
 
   private resolve(onComplete: OnComplete): void {
     this.resolved = true
+    if (this._tickFn) {
+      this._app.ticker.remove(this._tickFn)
+      this._tickFn = null
+    }
     const f = this.fillLevel
     let penalty = 0
     if (f >= 0.45 && f <= 0.60) penalty = 0
@@ -226,6 +246,7 @@ export class BoxingMinigame {
   private TARGET = 6
   private WINDOW_MS = 1800
   private counter: Text
+  private _timer: ReturnType<typeof setTimeout> | null = null
 
   constructor(app: Application, parent: Container, onComplete: OnComplete) {
     this.container = new Container()
@@ -255,13 +276,17 @@ export class BoxingMinigame {
       if (this.taps >= this.TARGET) this.finish(onComplete, 0)
     })
 
-    setTimeout(() => {
+    this._timer = setTimeout(() => {
       if (!this.resolved) this.finish(onComplete, 100)
     }, this.WINDOW_MS)
   }
 
   private finish(onComplete: OnComplete, penalty: number): void {
     this.resolved = true
+    if (this._timer !== null) {
+      clearTimeout(this._timer)
+      this._timer = null
+    }
     this.container.destroy({ children: true })
     onComplete(penalty)
   }
