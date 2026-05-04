@@ -9,6 +9,12 @@ const push = require('./push');
 const webauthn = require('./webauthn');
 const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
+const rateLimit = require('express-rate-limit');
+
+const gameSaveLimit   = rateLimit({ windowMs: 60_000, max: 10, keyGenerator: (req) => req.playerEmail || req.ip, skip: () => false, standardHeaders: true, legacyHeaders: false, message: { message: 'Too many score saves — slow down' } });
+const dailyClaimLimit = rateLimit({ windowMs: 24 * 60 * 60_000, max: 1, keyGenerator: (req) => req.playerEmail || req.ip, skip: () => false, standardHeaders: true, legacyHeaders: false, message: { message: 'Already claimed today' } });
+const redeemLimit     = rateLimit({ windowMs: 60_000, max: 2, keyGenerator: (req) => req.playerEmail || req.ip, skip: () => false, standardHeaders: true, legacyHeaders: false, message: { message: 'Too many redemptions — slow down' } });
+const discountValLimit = rateLimit({ windowMs: 60_000, max: 10, keyGenerator: (req) => req.ip, skip: () => false, standardHeaders: true, legacyHeaders: false, message: { error: 'Too many requests' } });
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -17,7 +23,7 @@ const PORT = process.env.PORT || 3000;
 let ordersPaused = false;
 
 // Middleware
-app.use(cors());
+app.use(cors({ origin: ['https://charlieswingz.com', 'https://order.charlieswingz.com', 'http://localhost:3000'], credentials: true }));
 
 // Override restrictive hosting CSP — allow all domains needed for Stripe, Google Pay, Maps
 app.use((req, res, next) => {
@@ -578,6 +584,17 @@ app.post('/api/create-checkout-session', async (req, res) => {
         }
     }
 
+    // Validate free-text field lengths
+    if (customerDetails?.deliveryNotes && customerDetails.deliveryNotes.length > 500) {
+        return res.status(400).json({ error: 'Delivery notes must be 500 characters or fewer' });
+    }
+    if (customerDetails?.notes && customerDetails.notes.length > 500) {
+        return res.status(400).json({ error: 'Order notes must be 500 characters or fewer' });
+    }
+    if (customerDetails?.address && customerDetails.address.length > 200) {
+        return res.status(400).json({ error: 'Address must be 200 characters or fewer' });
+    }
+
     // Apply discount code if provided
     let discountAmount = 0;
     let appliedDiscount = null;
@@ -653,6 +670,11 @@ app.post('/api/create-checkout-session', async (req, res) => {
         }
 
         const session = await stripe.checkout.sessions.create(sessionParams);
+
+        // Mark discount code as used immediately — don't rely on webhook for this
+        if (appliedDiscount) {
+            db.markDiscountUsed(appliedDiscount.code);
+        }
 
         // Save order to DB as pending payment
         const dbOrder = {
@@ -2209,8 +2231,8 @@ const WING_SHOP = [
 const DAILY_STREAK_BONUSES = { 1: 10, 2: 15, 3: 20, 4: 30, 5: 40, 6: 50, 7: 100 };
 const DAILY_CHALLENGE_POOL = [
     { id: 'play_game',     label: 'Play a game today',          points: 20,  trigger: 'game_save'  },
-    { id: 'score_1k',      label: 'Score 1,000+ in one game',   points: 50,  trigger: 'game_save'  },
-    { id: 'score_5k',      label: 'Score 5,000+ in one game',   points: 150, trigger: 'game_save'  },
+    { id: 'score_1k',      label: 'Score 50+ in one game',      points: 50,  trigger: 'game_save'  },
+    { id: 'score_5k',      label: 'Score 200+ in one game',     points: 150, trigger: 'game_save'  },
     { id: 'place_order',   label: 'Place an order today',       points: 100, trigger: 'order'      },
     { id: 'streak_3',      label: 'Log in 3 days in a row',     points: 80,  trigger: 'daily_claim' },
 ];
@@ -2297,7 +2319,10 @@ app.post('/api/game/register', async (req, res) => {
         db.getOrCreateReferralCode(email.toLowerCase());
         if (referralCode && /^CWREF-[A-Z0-9]{6}$/.test(referralCode)) {
             const referrer = db.getPlayerByReferralCode(referralCode);
-            if (referrer && referrer.email.toLowerCase() !== email.toLowerCase()) {
+            if (!referrer) {
+                return res.status(400).json({ message: 'Referral code not found' });
+            }
+            if (referrer.email.toLowerCase() !== email.toLowerCase()) {
                 db.setReferredBy(email.toLowerCase(), referrer.email);
             }
         }
@@ -2374,8 +2399,24 @@ app.get('/api/game/progress', requireGameAuth, (req, res) => {
     });
 });
 
-app.post('/api/game/save', requireGameAuth, (req, res) => {
+app.post('/api/game/save', requireGameAuth, gameSaveLimit, (req, res) => {
     const { score, wings, crowns, coins, deliveries, bonus } = req.body;
+
+    // Validate all numeric inputs — reject bad values before touching the DB
+    const MAX_SESSION_SCORE = 500;
+    const fields = { score, wings, crowns, coins, deliveries };
+    for (const [key, val] of Object.entries(fields)) {
+        if (val !== undefined && val !== null) {
+            if (typeof val !== 'number' || !isFinite(val) || val < 0) {
+                return res.status(400).json({ message: `Invalid value for ${key}` });
+            }
+        }
+    }
+    if ((score || 0) > MAX_SESSION_SCORE) {
+        console.warn(`[AUDIT] Suspicious score rejected: ${score} from ${req.playerEmail}`);
+        return res.status(400).json({ message: 'Score exceeds per-session maximum' });
+    }
+
     const player = getPlayer(req.playerEmail);
     if (!player) return res.status(404).json({ message: 'Player not found' });
 
@@ -2391,12 +2432,13 @@ app.post('/api/game/save', requireGameAuth, (req, res) => {
     player.plays = (player.plays || 0) + 1;
 
     savePlayer(player);
+    console.log(`[AUDIT] game/save email=${player.email} score=${score || 0} plays=${player.plays}`);
 
     // ── Challenge triggers ──
     const today = new Date().toISOString().slice(0, 10);
     completeChallengeIfNew(player.email, 'play_game', today);
-    if ((score || 0) >= 1000) completeChallengeIfNew(player.email, 'score_1k', today);
-    if ((score || 0) >= 5000) completeChallengeIfNew(player.email, 'score_5k', today);
+    if ((score || 0) >= 50) completeChallengeIfNew(player.email, 'score_1k', today);
+    if ((score || 0) >= 200) completeChallengeIfNew(player.email, 'score_5k', today);
 
     const rewards = (player.redeemedCodes || []).map(r => ({
         icon: '🎁',
@@ -2414,7 +2456,7 @@ app.get('/api/game/shop', (req, res) => {
     res.json(WING_SHOP.map(item => ({ id: item.id, name: item.name, points: item.points })));
 });
 
-app.post('/api/game/shop/redeem', requireGameAuth, (req, res) => {
+app.post('/api/game/shop/redeem', requireGameAuth, redeemLimit, (req, res) => {
     const { itemId } = req.body;
     const item = WING_SHOP.find(i => i.id === itemId);
     if (!item) return res.status(400).json({ message: 'Item not found' });
@@ -2426,6 +2468,7 @@ app.post('/api/game/shop/redeem', requireGameAuth, (req, res) => {
 
     const success = db.spendPoints(player.email, item.points);
     if (!success) return res.status(400).json({ message: 'Not enough points' });
+    console.log(`[AUDIT] cp-redeem email=${req.playerEmail} item=${item.id} points=${item.points}`);
 
     const code = 'WING-' + crypto.randomBytes(4).toString('hex').toUpperCase();
     db.insertDiscount({
@@ -2443,16 +2486,16 @@ app.post('/api/game/shop/redeem', requireGameAuth, (req, res) => {
     res.json({ code, newBalance: (player.totalScore || 0) - item.points });
 });
 
-app.post('/api/game/daily-claim', requireGameAuth, (req, res) => {
+app.post('/api/game/daily-claim', requireGameAuth, dailyClaimLimit, (req, res) => {
     const email = req.playerEmail;
-    const today = new Date().toISOString().slice(0, 10);
+    const today = getLondonTime().toISOString().slice(0, 10);
     const state = db.getDailyClaimState(email);
 
     if (state && state.lastDailyClaim === today) {
         return res.status(400).json({ message: 'Already claimed today' });
     }
 
-    const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+    const yesterday = new Date(getLondonTime().getTime() - 86400000).toISOString().slice(0, 10);
     let newStreak = 1;
     if (state && state.lastDailyClaim === yesterday) {
         newStreak = (state.dailyStreak % 7) + 1;
@@ -2480,7 +2523,7 @@ app.post('/api/game/daily-claim', requireGameAuth, (req, res) => {
 
 app.get('/api/game/daily-status', requireGameAuth, (req, res) => {
     const email = req.playerEmail;
-    const today = new Date().toISOString().slice(0, 10);
+    const today = getLondonTime().toISOString().slice(0, 10);
     const state = db.getDailyClaimState(email);
     const completed = db.getDailyCompletions(email, today);
 
@@ -2707,7 +2750,7 @@ app.post('/api/discount/signup', async (req, res) => {
 });
 
 // ── Validate discount code ──────────────────────────────────────────────────
-app.post('/api/discount/validate', (req, res) => {
+app.post('/api/discount/validate', discountValLimit, (req, res) => {
     const { code } = req.body;
     if (!code) return res.status(400).json({ valid: false, error: 'No code provided' });
     res.json(db.validateDiscountCode(code));
@@ -2722,7 +2765,7 @@ app.get('/discount', (req, res) => {
 });
 
 app.get('/game', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'game.html'));
+    res.redirect(301, '/play-win');
 });
 
 // ── Bank Transfer Invoice ────────────────────────────────────────────────────
@@ -2887,10 +2930,7 @@ app.post('/webhooks/stripe', express.raw({ type: 'application/json' }), async (r
 
         console.log(`[Webhook] Payment confirmed for order ${orderId.slice(-6)} — ${customerName}`);
 
-        // Mark discount code as used
-        if (meta.discount_code) {
-            db.markDiscountUsed(meta.discount_code);
-        }
+        // Discount code already marked used at checkout session creation
 
         // Handle marketing opt-in
         if (meta.marketing_optin === '1') {
