@@ -29,55 +29,53 @@ if (!FAL_KEY) {
 }
 
 // ─── Shared style prefix ──────────────────────────────────────────────────────
-// Prepended to every prompt. High-fidelity modern arcade style.
-const STYLE = 'High-fidelity 4K digital game illustration, sleek 3D-rendered look, cinematic lighting, sharp edges, vibrant colors, professional game character design, isolated on plain white background, masterfully detailed,';
+// High-fidelity modern arcade style. DEFENSIVE: Insisting on single asset, centered, white bg.
+const STYLE = 'Sleek professional 3D digital game asset, single isolated object, perfectly centered in frame, pure solid white background, high-fidelity 4K render, cinematic studio lighting, sharp edges, vibrant colors, masterfully detailed, NO COLLAGE, NO GRID, NO MULTIPLE VIEWS, ONLY ONE CHARACTER,';
 
 // ─── Asset definitions ────────────────────────────────────────────────────────
 const ASSET_SETS = {
 
   // ── Top-down Sauce Shooter ─────────────────────────────────────────────────
-  // A top-down arcade shooter: you defend Charlie's Wingz shop from rival
-  // food vans coming in waves. Shoot sauce bottles at them.
   shooter: [
     {
       name: 'player-ship',
-      prompt: `${STYLE} top-down view of a golden crown wearing chicken king riding a high-tech glowing chrome sauce bottle jet, sci-fi delivery vehicle, sleek design`,
-      count: 4,
+      prompt: `${STYLE} a single top-down view of a golden crown wearing chicken king riding a sleek high-tech glowing chrome sauce bottle jet, sci-fi delivery vehicle, sleek design`,
+      count: 1,
     },
     {
       name: 'enemy-van-1',
-      prompt: `${STYLE} top-down view of a mean-looking red armored fast food delivery van, futuristic spikes, aggressive sports car details`,
-      count: 4,
+      prompt: `${STYLE} a single top-down view of a mean-looking red armored fast food delivery van, futuristic spikes, aggressive sports car details`,
+      count: 1,
     },
     {
       name: 'enemy-van-2',
-      prompt: `${STYLE} top-down view of a heavy-duty purple armored burger truck, sci-fi tank details, glowing engine parts`,
-      count: 4,
+      prompt: `${STYLE} a single top-down view of a heavy-duty purple armored burger truck, sci-fi tank details, glowing engine parts`,
+      count: 1,
     },
     {
       name: 'bullet-sauce',
-      prompt: `${STYLE} glowing orange plasma bolt in the shape of a sauce drop, energy projectile, trails of fire`,
-      count: 4,
+      prompt: `${STYLE} a single glowing orange plasma bolt in the shape of a sauce drop, energy projectile, trails of fire`,
+      count: 1,
     },
     {
       name: 'explosion',
-      prompt: `${STYLE} cinematic fireball explosion, glowing orange and white heat, smoke trails, dramatic impact`,
-      count: 4,
+      prompt: `${STYLE} a single cinematic fireball explosion, glowing orange and white heat, smoke trails, dramatic impact`,
+      count: 1,
     },
     {
       name: 'powerup-shield',
-      prompt: `${STYLE} glowing hexagonal energy shield icon, holographic gold aura, futuristic powerup`,
-      count: 4,
+      prompt: `${STYLE} a single glowing hexagonal energy shield icon, holographic gold aura, futuristic powerup`,
+      count: 1,
     },
     {
       name: 'powerup-rapid',
-      prompt: `${STYLE} glowing lightning bolt icon inside a sauce bottle, blue neon energy, futuristic speed powerup`,
-      count: 4,
+      prompt: `${STYLE} a single glowing lightning bolt icon inside a sauce bottle, blue neon energy, futuristic speed powerup`,
+      count: 1,
     },
     {
       name: 'bg-tile',
       prompt: `High-detail 4K aerial view of a futuristic neon city grid at night, glowing streets, cyberpunk architecture, seamless texture tile`,
-      count: 2,
+      count: 1,
     },
   ],
 
@@ -85,38 +83,38 @@ const ASSET_SETS = {
   wingrun: [
     {
       name: 'player-bike',
-      prompt: `${STYLE} top-down view of a golden crown wearing chicken king riding a sleek high-tech futuristic e-bike, neon glowing tires, cyberpunk style`,
-      count: 4,
+      prompt: `${STYLE} a single full top-down aerial view of a futuristic high-tech cyberpunk delivery motorcycle, glowing neon tires, sleek aerodynamic chrome body, a golden crown wearing chicken king is the rider, perfectly centered, isolated`,
+      count: 1,
     },
     {
       name: 'enemy-car-1',
-      prompt: `${STYLE} top-down view of a sleek red futuristic sports car, neon lights, cyberpunk vehicle`,
-      count: 4,
+      prompt: `${STYLE} a single top-down view of a sleek red futuristic sports car, neon lights, cyberpunk vehicle`,
+      count: 1,
     },
     {
       name: 'enemy-car-2',
-      prompt: `${STYLE} top-down view of a heavy blue futuristic armored truck, neon lights`,
-      count: 4,
+      prompt: `${STYLE} a single top-down view of a heavy blue futuristic armored truck, neon lights`,
+      count: 1,
     },
     {
       name: 'building-shop',
-      prompt: `${STYLE} top-down aerial view of a futuristic cyberpunk fast food shop building with neon signs saying "Wingz", highly detailed roof`,
-      count: 4,
+      prompt: `${STYLE} a single top-down aerial view of a futuristic cyberpunk fast food shop building with neon signs saying "Wingz", highly detailed roof`,
+      count: 1,
     },
     {
       name: 'building-house',
-      prompt: `${STYLE} top-down aerial view of a futuristic cyberpunk residential house roof, neon accents`,
-      count: 4,
+      prompt: `${STYLE} a single top-down aerial view of a futuristic cyberpunk residential house roof, neon accents`,
+      count: 1,
     },
     {
       name: 'bg-road',
       prompt: `High-detail 4K top-down view of a futuristic cyberpunk city road intersection, glowing neon lines, dark asphalt, seamless tileable`,
-      count: 2,
+      count: 1,
     },
     {
       name: 'bg-grass',
       prompt: `High-detail 4K top-down view of glowing futuristic synthetic grass, cyberpunk landscaping, seamless tileable`,
-      count: 2,
+      count: 1,
     }
   ],
 
@@ -124,28 +122,28 @@ const ASSET_SETS = {
   snake: [
     {
       name: 'snake-head',
-      prompt: `${STYLE} top-down view of a chicken king head with a gold crown, high fidelity 3D render`,
-      count: 4,
+      prompt: `${STYLE} a single top-down view of the head of a chicken king wearing a gold crown, high fidelity 3D render`,
+      count: 1,
     },
     {
       name: 'snake-body',
-      prompt: `${STYLE} top-down view of a golden fried chicken wing, high fidelity 3D render`,
-      count: 4,
+      prompt: `${STYLE} a single top-down view of a golden fried chicken wing, high fidelity 3D render`,
+      count: 1,
     },
     {
       name: 'collectible-crown',
-      prompt: `${STYLE} top-down view of a glowing gold crown jewel, high fidelity 3D render`,
-      count: 4,
+      prompt: `${STYLE} a single top-down view of a glowing gold crown jewel, high fidelity 3D render`,
+      count: 1,
     },
     {
       name: 'collectible-wing',
-      prompt: `${STYLE} top-down view of a glowing golden crispy fried chicken wing, high fidelity 3D render`,
-      count: 4,
+      prompt: `${STYLE} a single top-down view of a glowing golden crispy fried chicken wing, high fidelity 3D render`,
+      count: 1,
     },
     {
       name: 'bg-tile',
       prompt: `High-detail 4K dark asphalt texture, subtle glowing neon grid lines, seamless tile`,
-      count: 2,
+      count: 1,
     },
   ],
 
@@ -153,48 +151,48 @@ const ASSET_SETS = {
   platformer: [
     {
       name: 'player-idle',
-      prompt: `${STYLE} side view of a fat chubby chicken king character standing idle, gold crown, red comb, white feathers, 3D character model style, high detail`,
-      count: 4,
+      prompt: `${STYLE} a single side view of a fat chubby chicken king character standing idle, gold crown, red comb, white feathers, 3D character model style, high detail`,
+      count: 1,
     },
     {
       name: 'player-run-1',
-      prompt: `${STYLE} side view of a chicken king mid-run frame 1, crown on head, one leg forward, 3D character model style`,
-      count: 4,
+      prompt: `${STYLE} a single side view of a chicken king mid-run frame 1, crown on head, one leg forward, 3D character model style`,
+      count: 1,
     },
     {
       name: 'player-run-2',
-      prompt: `${STYLE} side view of a chicken king mid-run frame 2, crown on head, opposite leg forward, 3D character model style`,
-      count: 4,
+      prompt: `${STYLE} a single side view of a chicken king mid-run frame 2, crown on head, opposite leg forward, 3D character model style`,
+      count: 1,
     },
     {
       name: 'player-jump',
-      prompt: `${STYLE} side view of a chicken king character jumping, crown on head, wings spread, legs tucked, 3D character model style`,
-      count: 4,
+      prompt: `${STYLE} a single side view of a chicken king character jumping, crown on head, wings spread, legs tucked, 3D character model style`,
+      count: 1,
     },
     {
       name: 'enemy-bin',
-      prompt: `${STYLE} side view of a futuristic robotic garbage bin with glowing red eyes, metallic textures, high detail`,
-      count: 4,
+      prompt: `${STYLE} a single side view of a futuristic robotic garbage bin with glowing red eyes, metallic textures, high detail`,
+      count: 1,
     },
     {
       name: 'enemy-inspector',
-      prompt: `${STYLE} side view of a sinister corporate health inspector, glowing visor, metallic suit, futuristic clipboard`,
-      count: 4,
+      prompt: `${STYLE} a single side view of a sinister corporate health inspector, glowing visor, metallic suit, futuristic clipboard`,
+      count: 1,
     },
     {
       name: 'collectible-wing',
       prompt: `${STYLE} a single golden crispy fried chicken wing, glowing radiant energy, floating in mid-air, 3D render`,
-      count: 4,
+      count: 1,
     },
     {
       name: 'platform-tile',
       prompt: `High-fidelity futuristic industrial platform tile, metallic plating with glowing gold seams, 3D texture, seamless tileable`,
-      count: 2,
+      count: 1,
     },
     {
       name: 'bg-city',
       prompt: `High-detail 4K cinematic city background at night, glowing neon signs, rainy atmosphere, depth of field, futuristic architecture`,
-      count: 2,
+      count: 1,
     },
   ],
 

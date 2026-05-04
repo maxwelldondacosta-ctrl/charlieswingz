@@ -30,11 +30,12 @@ This document logs the changes and fixes made to the Charlie's Wingz website by 
 
 ### 🎨 High-Fidelity Assets & Engine
 *   **Asset Generation Upgrade:** Switched the generation model from Flux to **SDXL (fal-ai/fast-sdxl)** as requested. Updated `scripts/generate-assets.js` and `scripts/generate-sprite-sheet.js` to utilize SDXL with high-fidelity 4K prompts.
-*   **Game Engine Upgrade (Phaser.js):**
-*   **Wing Run & Snake:** Completely rewrote both games to replace the old React/Babel/Canvas implementations with **Phaser 3**.
-    *   **Wing Run:** Now a smooth vertical-scrolling delivery game. You ride an e-bike, hop over traffic, and deliver wings to glowing houses. Includes a 'heat' survival mechanic.
-    *   **Snake:** Updated to a smooth grid-based crawler with swipe support for mobile, dynamic food spawning, and growing mechanics.
-*   **High-Fidelity Assets:** Updated `scripts/generate-assets.js` with new prompts for `wingrun` and `snake` to generate 4K 3D-rendered elements (cyberpunk bikes, sleek cars, glowing wings).
+*   **Automated Asset Selection:** Implemented a script to automatically select and rename the best SDXL variants for use in the games, ensuring a smooth transition to high-res graphics.
+*   **Full Game Refactor (Phaser 3):**
+    *   **All Games:** Moved Snake, Wing Run, Sauce Shooter, and Wing King to the professional **Phaser 3** game engine.
+    *   **High-Res Rendering:** Enabled sub-pixel anti-aliasing and dynamic scaling for 4K/High-DPI screen support.
+    *   **Animations:** Wing King now uses a 4-frame SDXL spritesheet for fluid running and jumping animations.
+    *   **Visual Effects:** Added camera shakes, particle-like bobbing for collectibles, and smooth parallax backgrounds.
 
 ### 🎮 Game Visual & Transparency Fixes
 *   **Real-time Background Removal:** Implemented a dynamic "Chroma Key" logic in both `platformer.html` and `shooter.html` that identifies the background color (from the top-left pixel) and replaces it with transparency on the fly. This removes the ugly "squares" around AI-generated assets.
