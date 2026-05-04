@@ -88,6 +88,86 @@
     "duration": 1.49649
   },
   {
+    "file": "wk-jump.mp3",
+    "id": 825575,
+    "title": "Springy UI",
+    "author": "akelley6",
+    "license": "https://creativecommons.org/licenses/by/4.0/",
+    "duration": 0.682667
+  },
+  {
+    "file": "wk-doublejump.mp3",
+    "id": 494789,
+    "title": "Jacket/Cloth Rustle 3",
+    "author": "brandondelehoy",
+    "license": "http://creativecommons.org/publicdomain/zero/1.0/",
+    "duration": 0.928479
+  },
+  {
+    "file": "wk-collect.mp3",
+    "id": 350869,
+    "title": "Coin_C_06",
+    "author": "cabled_mess",
+    "license": "http://creativecommons.org/publicdomain/zero/1.0/",
+    "duration": 0.500726
+  },
+  {
+    "file": "wk-die.mp3",
+    "id": 404743,
+    "title": "Retro video game sfx - Fail",
+    "author": "OwlStorm",
+    "license": "http://creativecommons.org/publicdomain/zero/1.0/",
+    "duration": 0.439093
+  },
+  {
+    "file": "wk-gameover.mp3",
+    "id": 488381,
+    "title": "UIHover1.wav",
+    "author": "wobesound",
+    "license": "http://creativecommons.org/publicdomain/zero/1.0/",
+    "duration": 0.319875
+  },
+  {
+    "file": "ss-shoot.mp3",
+    "id": 350916,
+    "title": "Zap_C_09",
+    "author": "cabled_mess",
+    "license": "http://creativecommons.org/publicdomain/zero/1.0/",
+    "duration": 0.320023
+  },
+  {
+    "file": "ss-explosion.mp3",
+    "id": 404752,
+    "title": "Retro video game sfx - Explode 3",
+    "author": "OwlStorm",
+    "license": "http://creativecommons.org/publicdomain/zero/1.0/",
+    "duration": 1.44363
+  },
+  {
+    "file": "ss-hit.mp3",
+    "id": 656737,
+    "title": "Thud.wav",
+    "author": "Geoff-Bremner-Audio",
+    "license": "http://creativecommons.org/publicdomain/zero/1.0/",
+    "duration": 0.224896
+  },
+  {
+    "file": "ss-powerup.mp3",
+    "id": 523654,
+    "title": "Powerup 10.wav",
+    "author": "LilMati",
+    "license": "http://creativecommons.org/publicdomain/zero/1.0/",
+    "duration": 1.8112
+  },
+  {
+    "file": "ss-gameover.mp3",
+    "id": 488381,
+    "title": "UIHover1.wav",
+    "author": "wobesound",
+    "license": "http://creativecommons.org/publicdomain/zero/1.0/",
+    "duration": 0.319875
+  },
+  {
     "file": "ui-click.mp3",
     "id": 380292,
     "title": "UI 03",

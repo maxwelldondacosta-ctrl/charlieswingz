@@ -203,8 +203,8 @@ class SnakeGame extends Phaser.Scene {
     this.speed = 150; // ms per move
     this.lastMoveTime = 0;
     
-    this.food = this.add.sprite(0, 0, 'wing').setScale(0.1).setDepth(10);
-    this.crown = this.add.sprite(-100, -100, 'crown').setScale(0.1).setDepth(10).setVisible(false);
+    this.food = this.add.sprite(0, 0, 'wing').setScale(0.45).setDepth(10);
+    this.crown = this.add.sprite(-100, -100, 'crown').setScale(0.85).setDepth(10).setVisible(false);
     
     // Swipe controls for mobile
     this.input.on('pointerup', this.handleSwipe, this);
@@ -236,7 +236,7 @@ class SnakeGame extends Phaser.Scene {
     // Initial snake
     for (let i = 0; i < 3; i++) {
         const sprite = this.add.sprite(300 - i * this.TILE_SIZE, 300, i === 0 ? 'head' : 'body');
-        sprite.setScale(i === 0 ? 0.15 : 0.1);
+        sprite.setScale(i === 0 ? 0.22 : 0.025);
         sprite.setDepth(20 - i);
         this.snake.push(sprite);
     }
@@ -345,7 +345,7 @@ class SnakeGame extends Phaser.Scene {
 
     // Grow tail
     const tail = this.snake[this.snake.length - 1];
-    const newSeg = this.add.sprite(tail.x, tail.y, 'body').setScale(0.1).setDepth(20 - this.snake.length);
+    const newSeg = this.add.sprite(tail.x, tail.y, 'body').setScale(0.025).setDepth(20 - this.snake.length);
     this.snake.push(newSeg);
 
     this.spawnFood();

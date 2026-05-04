@@ -105,17 +105,16 @@ class WingKing extends Phaser.Scene {
   constructor() { super('WingKing'); }
 
   preload() {
-    this.load.image('bg', '/game-assets/shooter/bg-tile.png');
+    this.load.image('bg', '/game-assets/platformer/bg-city.png');
     this.load.image('platform', '/game-assets/platformer/platform-tile.png');
-    this.load.svg('player', '/game-assets/vector/rooster.svg', { width: 128, height: 128 });
-    this.load.svg('bin', '/game-assets/vector/bin.svg', { width: 64, height: 64 });
-    this.load.svg('inspector', '/game-assets/vector/inspector.svg', { width: 64, height: 64 });
-    this.load.svg('wing', '/game-assets/vector/wing.svg', { width: 64, height: 64 });
-    
-    // SFX
-    this.load.audio('jump', '/sfx/wr-hop.mp3');
-    this.load.audio('collect', '/sfx/wr-deliver.mp3');
-    this.load.audio('die', '/sfx/wr-crash.mp3');
+    this.load.image('player', '/game-assets/platformer/player-idle.png');
+    this.load.image('bin', '/game-assets/platformer/enemy-bin.png');
+    this.load.image('inspector', '/game-assets/platformer/enemy-inspector.png');
+    this.load.image('wing', '/game-assets/platformer/collectible-wing.png');
+
+    this.load.audio('jump', '/sfx/wk-jump.mp3');
+    this.load.audio('collect', '/sfx/wk-collect.mp3');
+    this.load.audio('die', '/sfx/wk-die.mp3');
   }
 
   create() {
@@ -131,8 +130,8 @@ class WingKing extends Phaser.Scene {
     // Player
     this.player = this.physics.add.sprite(150, 200, 'player');
     this.player.setCollideWorldBounds(true);
-    this.player.setScale(0.6).setDepth(10);
-    this.player.body.setSize(80, 110).setOffset(24, 18);
+    this.player.setScale(0.5).setDepth(10);
+    this.player.body.setSize(60, 70).setOffset(34, 37);
     this.physics.add.collider(this.player, this.ground);
 
     // Groups
@@ -214,7 +213,7 @@ class WingKing extends Phaser.Scene {
     if (!this.gameActive) return;
     const type = Math.random() > 0.5 ? 'bin' : 'inspector';
     const o = this.obstacles.create(850, 320, type);
-    o.setScale(0.8).setOrigin(0.5, 1);
+    o.setScale(0.5).setOrigin(0.5, 1);
     o.body.allowGravity = false;
     o.setVelocityX(-this.speed);
   }
@@ -222,7 +221,7 @@ class WingKing extends Phaser.Scene {
   spawnWing() {
     if (!this.gameActive) return;
     const w = this.wingsGroup.create(850, Phaser.Math.Between(100, 280), 'wing');
-    w.setScale(0.8);
+    w.setScale(0.4);
     w.body.allowGravity = false;
     w.setVelocityX(-this.speed);
     // Bobbing tween

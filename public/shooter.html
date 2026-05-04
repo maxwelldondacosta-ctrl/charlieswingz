@@ -99,13 +99,19 @@ class SauceShooter extends Phaser.Scene {
 
   preload() {
     this.load.image('bg', '/game-assets/shooter/bg-tile.png');
-    this.load.svg('player', '/game-assets/vector/ufo.svg', { width: 64, height: 64 });
-    this.load.svg('enemy1', '/game-assets/vector/van.svg', { width: 64, height: 64 });
-    this.load.svg('enemy2', '/game-assets/vector/truck.svg', { width: 64, height: 64 });
-    this.load.svg('bullet', '/game-assets/vector/drop.svg', { width: 24, height: 32 });
-    this.load.svg('pu_shield', '/game-assets/vector/shield.svg', { width: 48, height: 48 });
-    this.load.svg('pu_rapid', '/game-assets/vector/bolt.svg', { width: 48, height: 48 });
-    this.load.svg('explosion', '/game-assets/vector/boom.svg', { width: 64, height: 64 });
+    this.load.image('player', '/game-assets/shooter/player-ship.png');
+    this.load.image('enemy1', '/game-assets/shooter/enemy-van-1.png');
+    this.load.image('enemy2', '/game-assets/shooter/enemy-van-2.png');
+    this.load.image('bullet', '/game-assets/shooter/bullet-sauce.png');
+    this.load.image('pu_shield', '/game-assets/shooter/powerup-shield.png');
+    this.load.image('pu_rapid', '/game-assets/shooter/powerup-rapid.png');
+    this.load.image('explosion', '/game-assets/shooter/explosion.png');
+
+    this.load.audio('shoot', '/sfx/ss-shoot.mp3');
+    this.load.audio('boom', '/sfx/ss-explosion.mp3');
+    this.load.audio('hit', '/sfx/ss-hit.mp3');
+    this.load.audio('powerup', '/sfx/ss-powerup.mp3');
+    this.load.audio('gameover', '/sfx/ss-gameover.mp3');
   }
 
   create() {
@@ -119,7 +125,7 @@ class SauceShooter extends Phaser.Scene {
     this.bg = this.add.tileSprite(200, 300, 400, 600, 'bg');
 
     // Player
-    this.player = this.physics.add.sprite(200, 520, 'player').setCollideWorldBounds(true);
+    this.player = this.physics.add.sprite(200, 520, 'player').setCollideWorldBounds(true).setScale(0.4);
     this.player.setDepth(10);
     
     // Groups
@@ -211,8 +217,9 @@ class SauceShooter extends Phaser.Scene {
   fireBullet() {
     const b = this.bullets.create(this.player.x, this.player.y - 20, 'bullet');
     if (b) {
-      b.setActive(true).setVisible(true).setDepth(5);
+      b.setActive(true).setVisible(true).setDepth(5).setScale(0.3);
       b.body.velocity.y = -600;
+      this.sound.play('shoot', { volume: 0.3 });
     }
   }
 
@@ -221,12 +228,13 @@ class SauceShooter extends Phaser.Scene {
     const type = Phaser.Math.Between(1, 2);
     const x = Phaser.Math.Between(50, 350);
     const e = this.enemies.create(x, -50, `enemy${type}`);
-    e.setDepth(8);
+    e.setDepth(8).setScale(0.4);
     e.body.velocity.y = 250 + (this.score / 100);
   }
 
   hitEnemy(bullet, enemy) {
     this.explode(enemy.x, enemy.y);
+    this.sound.play('boom', { volume: 0.5 });
     bullet.destroy();
     enemy.destroy();
     this.score += 100;
@@ -247,6 +255,7 @@ class SauceShooter extends Phaser.Scene {
     const type = pu.getData('type');
     if (type === 'shield') this.shieldActive = 8000;
     else this.rapidFire = 5000;
+    this.sound.play('powerup', { volume: 0.5 });
     pu.destroy();
   }
 
@@ -265,6 +274,7 @@ class SauceShooter extends Phaser.Scene {
 
     // Camera shake
     this.cameras.main.shake(200, 0.02);
+    this.sound.play('hit', { volume: 0.6 });
 
     if (this.lives <= 0) this.gameOver();
   }
@@ -277,6 +287,7 @@ class SauceShooter extends Phaser.Scene {
   gameOver() {
     this.isGameOver = true;
     this.physics.pause();
+    this.sound.play('gameover', { volume: 0.7 });
     this.player.setTint(0xff0000);
     this.spawnTimer?.destroy();
     document.getElementById('ui-overlay').classList.remove('hidden');

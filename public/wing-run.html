@@ -106,14 +106,13 @@ class WingRun extends Phaser.Scene {
   constructor() { super('WingRun'); }
 
   preload() {
-    this.load.image('bg-road', '/game-assets/shooter/bg-tile.png');
-    this.load.svg('bike', '/game-assets/vector/scooter.svg', { width: 64, height: 64 });
-    this.load.svg('car1', '/game-assets/vector/car.svg', { width: 64, height: 64 });
-    this.load.svg('car2', '/game-assets/vector/truck.svg', { width: 64, height: 64 });
-    this.load.svg('shop', '/game-assets/vector/shop.svg', { width: 128, height: 128 });
-    this.load.svg('house', '/game-assets/vector/house.svg', { width: 128, height: 128 });
-    
-    // SFX
+    this.load.image('bg-road', '/game-assets/wingrun/bg-road.png');
+    this.load.image('bike', '/game-assets/wingrun/player-bike.png');
+    this.load.image('car1', '/game-assets/wingrun/enemy-car-1.png');
+    this.load.image('car2', '/game-assets/wingrun/enemy-car-2.png');
+    this.load.image('shop', '/game-assets/wingrun/building-shop.png');
+    this.load.image('house', '/game-assets/wingrun/building-house.png');
+
     this.load.audio('deliver', '/sfx/wr-deliver.mp3');
     this.load.audio('crash', '/sfx/wr-crash.mp3');
     this.load.audio('hop', '/sfx/wr-hop.mp3');
@@ -130,7 +129,7 @@ class WingRun extends Phaser.Scene {
     this.road = this.add.tileSprite(200, 350, 400, 700, 'bg-road');
 
     // Player
-    this.player = this.physics.add.sprite(200, 600, 'bike').setCollideWorldBounds(true);
+    this.player = this.physics.add.sprite(200, 600, 'bike').setCollideWorldBounds(true).setScale(0.6);
     this.player.setDepth(20);
 
     // Groups
@@ -259,6 +258,7 @@ class WingRun extends Phaser.Scene {
     const type = Phaser.Math.Between(1, 2);
     const car = this.cars.create(laneX, -100, `car${type}`);
     car.setDepth(15);
+    car.setScale(0.4);
     car.setVelocityY(this.speed * 0.4);
   }
 
