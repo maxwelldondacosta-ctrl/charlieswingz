@@ -28,7 +28,7 @@ function newId(): string {
   return `order-${++_idCounter}-${Date.now()}`
 }
 
-type CreateOrderParams = {
+export type CreateOrderParams = {
   customerId: string
   level: number
   activeStations: StationKey[]
@@ -63,11 +63,12 @@ type OrderEvent =
 
 export function transitionOrder(order: Order, event: OrderEvent): Order {
   const s = order.state
+  const TERMINAL: OrderState[] = ['completed', 'walkedOut', 'voided']
 
-  if (event === 'WALKOUT') {
+  if (event === 'WALKOUT' && !TERMINAL.includes(s)) {
     return { ...order, state: 'walkedOut' }
   }
-  if (event === 'VOID') {
+  if (event === 'VOID' && !TERMINAL.includes(s)) {
     return { ...order, state: 'voided' }
   }
 
@@ -105,6 +106,7 @@ export function transitionOrder(order: Order, event: OrderEvent): Order {
     }
   }
 
+  console.warn(`[orderMachine] Invalid transition: event="${event}" from state="${order.state}"`)
   return order
 }
 
