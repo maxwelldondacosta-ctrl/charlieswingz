@@ -25,7 +25,7 @@
 
 <div id="game-container"></div>
 
-<div class="ui-overlay" id="ui-overlay">
+<div class="ui-overlay hidden" id="ui-overlay">
   <!-- Start Screen -->
   <div class="overlay-panel" id="start-screen">
     <div style="font-size:4rem;margin-bottom:10px;">🛸</div>
@@ -58,14 +58,16 @@
 
 <script>
 // ── Auth & API Logic ──────────────────────────────────────────────────────────
+const _sess = JSON.parse(localStorage.getItem('cw_session') || 'null');
 const API = {
-  token: localStorage.getItem('cw_game_token'),
+  token: _sess ? _sess.token : null,
+  user:  _sess ? _sess.user  : null,
   async login(email, password) {
     const res = await fetch('/api/game/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, password }) });
     const d = await res.json();
-    if (!res.ok) throw new Error(d.message);
-    this.token = d.token;
-    localStorage.setItem('cw_game_token', d.token);
+    if (!res.ok) throw new Error(d.error || d.message || 'Login failed');
+    this.token = d.token; this.user = d.user;
+    localStorage.setItem('cw_session', JSON.stringify({ token: d.token, user: d.user }));
     return d;
   },
   async saveGame(score) {
@@ -227,6 +229,11 @@ class SauceShooter extends Phaser.Scene {
 
     // Spawning
     this.spawnTimer = this.time.addEvent({ delay: 600, callback: this.spawnEnemy, callbackScope: this, loop: true, paused: true });
+
+    // If session already restored (overlay hidden before scene ready), auto-start
+    if (document.getElementById('ui-overlay').classList.contains('hidden')) {
+      this.time.delayedCall(50, () => this.startGame());
+    }
   }
 
   startGame() {
@@ -373,20 +380,12 @@ const config = {
 
 let gameInstance = new Phaser.Game(config);
 
-// Restore session on load
-(async () => {
-  if (API.token) {
-    try {
-      const res = await fetch('/api/game/progress', { headers: { 'Authorization': `Bearer ${API.token}` } });
-      const d = await res.json();
-      if (res.ok) {
-        document.getElementById('auth-section').classList.add('hidden');
-        document.getElementById('welcome-section').classList.remove('hidden');
-        document.getElementById('player-name').textContent = d.user?.name || d.totalScore + ' pts';
-      }
-    } catch (e) {}
-  }
-})();
+// Restore session — overlay starts hidden; show it only if no valid session
+if (API.token) {
+  // overlay stays hidden, create() will auto-start
+} else {
+  document.getElementById('ui-overlay').classList.remove('hidden');
+}
 </script>
 </body>
 </html>

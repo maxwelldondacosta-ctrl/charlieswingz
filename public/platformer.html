@@ -26,7 +26,7 @@
 
 <div id="game-container"></div>
 
-<div class="ui-overlay" id="overlay">
+<div class="ui-overlay hidden" id="overlay">
   <!-- Login -->
   <div class="panel" id="pLogin">
     <h2>Wing King</h2>
@@ -313,11 +313,13 @@ const config = {
 
 let gameInstance = new Phaser.Game(config);
 
-// Restore session
+// Restore session — overlay starts hidden; show it only if no valid session
 const s = JSON.parse(localStorage.getItem('cw_session') || 'null');
 if (s && s.token) {
   API.token = s.token; API.user = s.user;
-  document.getElementById('overlay').classList.add('hidden');
+  // overlay stays hidden, create() will auto-start
+} else {
+  document.getElementById('overlay').classList.remove('hidden');
 }
 </script>
 </body>

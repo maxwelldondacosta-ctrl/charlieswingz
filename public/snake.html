@@ -26,7 +26,7 @@
 
 <div id="game-container"></div>
 
-<div class="ui-overlay" id="overlay">
+<div class="ui-overlay hidden" id="overlay">
   <!-- Login -->
   <div class="panel" id="pLogin">
     <div style="font-size:4rem;margin-bottom:10px;">🐍</div>
@@ -390,11 +390,12 @@ function startGameCustom() {
     if (gameInstance) gameInstance.scene.getAt(0).startGame();
 }
 
-// Restore session
+// Restore session — overlay starts hidden; show it only if no valid session
 const s = JSON.parse(localStorage.getItem('cw_session') || 'null');
 if (s && s.token) {
   API.token = s.token; API.user = s.user;
-  document.getElementById('overlay').classList.add('hidden');
+} else {
+  document.getElementById('overlay').classList.remove('hidden');
 }
 </script>
 </body>
