@@ -5,7 +5,10 @@ const Database = require('better-sqlite3');
 const path = require('path');
 
 // Store database OUTSIDE public_html for security
-const DB_PATH = path.join('/home/charlies', 'charlies_wingz.db');
+// Falls back to local directory when /home/charlies doesn't exist (local dev)
+const DB_PATH = require('fs').existsSync('/home/charlies')
+    ? path.join('/home/charlies', 'charlies_wingz.db')
+    : path.join(__dirname, 'charlies_wingz_dev.db');
 const db = new Database(DB_PATH);
 
 // Enable WAL mode for better concurrent read/write performance
@@ -262,6 +265,16 @@ db.exec(`
     );
     CREATE INDEX IF NOT EXISTS idx_game_sessions_email ON game_sessions(email);
     CREATE INDEX IF NOT EXISTS idx_game_sessions_expires ON game_sessions(expires_at);
+
+    CREATE TABLE IF NOT EXISTS chicken_shop_progress (
+        email TEXT PRIMARY KEY,
+        unlocked_level INTEGER DEFAULT 1,
+        credits INTEGER DEFAULT 0,
+        lives INTEGER DEFAULT 3,
+        lives_refill_at INTEGER,
+        updated_at INTEGER NOT NULL,
+        version INTEGER DEFAULT 0
+    );
 `);
 
 // Ensure lottery row exists
@@ -470,6 +483,9 @@ const stmts = {
     getGameSession:     db.prepare('SELECT email FROM game_sessions WHERE token = ? AND expires_at > ?'),
     deleteGameSession:  db.prepare('DELETE FROM game_sessions WHERE token = ?'),
     purgeExpiredGameSessions: db.prepare('DELETE FROM game_sessions WHERE expires_at < ?'),
+
+    getChickenProgress:    db.prepare('SELECT * FROM chicken_shop_progress WHERE email = ?'),
+    upsertChickenProgress: db.prepare('INSERT INTO chicken_shop_progress (email, unlocked_level, credits, lives, lives_refill_at, updated_at, version) VALUES (?, ?, ?, ?, ?, ?, ?) ON CONFLICT(email) DO UPDATE SET unlocked_level=excluded.unlocked_level, credits=excluded.credits, lives=excluded.lives, lives_refill_at=excluded.lives_refill_at, updated_at=excluded.updated_at, version=excluded.version'),
 };
 
 // ── Orders ───────────────────────────────────────────────────────────────────
@@ -1670,6 +1686,26 @@ function getOrdersByEmail(email) {
     }));
 }
 
+// ── Chicken Shop Manager progress ─────────────────────────────────────────────
+
+function getChickenProgress(email) {
+    return stmts.getChickenProgress.get(email.toLowerCase()) || null;
+}
+
+function upsertChickenProgress(email, { unlockedLevel, credits, lives, livesRefillAt, version }) {
+    const now = Date.now();
+    stmts.upsertChickenProgress.run(
+        email.toLowerCase(),
+        unlockedLevel,
+        credits,
+        lives,
+        livesRefillAt !== null && livesRefillAt !== undefined ? livesRefillAt : null,
+        now,
+        version
+    );
+    return stmts.getChickenProgress.get(email.toLowerCase());
+}
+
 // ── Compat helpers (JSON db used load/save — expose as no-ops) ──────────────
 function load() { return {}; }
 function save() { }
@@ -1745,4 +1781,6 @@ module.exports = {
     getReferralCount, insertReferralDiscount,
     // Game sessions (DB-backed)
     createGameSession, getGameSessionEmail, deleteGameSession,
+    // Chicken Shop Manager progress
+    getChickenProgress, upsertChickenProgress,
 };

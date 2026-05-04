@@ -2209,6 +2209,96 @@ app.get('/chicken-shop', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'games', 'chicken-shop', 'index.html'));
 });
 
+// ── Chicken Shop Manager API ──────────────────────────────────────────────────
+
+function chickenProgressToResponse(row) {
+    return {
+        game: 'chicken-shop',
+        unlockedLevel: row.unlocked_level,
+        credits: row.credits,
+        lives: row.lives,
+        livesRefillAt: row.lives_refill_at || null,
+        updatedAt: row.updated_at,
+        version: row.version,
+    };
+}
+
+function getOrCreateChickenProgress(email) {
+    let row = db.getChickenProgress(email);
+    if (!row) {
+        row = db.upsertChickenProgress(email, { unlockedLevel: 1, credits: 0, lives: 3, livesRefillAt: null, version: 0 });
+    }
+    return row;
+}
+
+app.get('/api/games/chicken-shop/progress', requireGameAuth, (req, res) => {
+    const row = getOrCreateChickenProgress(req.playerEmail);
+    res.json({ progress: chickenProgressToResponse(row) });
+});
+
+app.post('/api/games/chicken-shop/complete-level', requireGameAuth, (req, res) => {
+    const { level, cashEarnedPence } = req.body;
+    if (!level || cashEarnedPence === undefined) return res.status(400).json({ code: 'MISSING_FIELDS' });
+    const row = getOrCreateChickenProgress(req.playerEmail);
+    const creditsEarned = Math.max(1, Math.floor(cashEarnedPence / 50));
+    const newUnlocked = (level >= row.unlocked_level) ? Math.min(100, level + 1) : row.unlocked_level;
+    // Refill one life on level complete (up to max 3)
+    const newLives = Math.min(3, row.lives + (row.lives < 3 ? 1 : 0));
+    const updated = db.upsertChickenProgress(req.playerEmail, {
+        unlockedLevel: newUnlocked,
+        credits: row.credits + creditsEarned,
+        lives: newLives,
+        livesRefillAt: newLives >= 3 ? null : row.lives_refill_at,
+        version: row.version + 1,
+    });
+    res.json({ progress: chickenProgressToResponse(updated) });
+});
+
+app.post('/api/games/chicken-shop/fail-level', requireGameAuth, (req, res) => {
+    const row = getOrCreateChickenProgress(req.playerEmail);
+    const newLives = Math.max(0, row.lives - 1);
+    const refillAt = newLives < 3 ? Date.now() + 30 * 60 * 1000 : null;
+    const updated = db.upsertChickenProgress(req.playerEmail, {
+        unlockedLevel: row.unlocked_level,
+        credits: row.credits,
+        lives: newLives,
+        livesRefillAt: refillAt,
+        version: row.version + 1,
+    });
+    res.json({ progress: chickenProgressToResponse(updated) });
+});
+
+app.post('/api/games/chicken-shop/refill-lives', requireGameAuth, (req, res) => {
+    const REFILL_COST = 20;
+    const row = getOrCreateChickenProgress(req.playerEmail);
+    if (row.credits < REFILL_COST) return res.status(400).json({ code: 'INSUFFICIENT_CREDITS' });
+    if (row.lives >= 3) return res.status(400).json({ code: 'LIVES_FULL' });
+    const updated = db.upsertChickenProgress(req.playerEmail, {
+        unlockedLevel: row.unlocked_level,
+        credits: row.credits - REFILL_COST,
+        lives: 3,
+        livesRefillAt: null,
+        version: row.version + 1,
+    });
+    res.json({ progress: chickenProgressToResponse(updated) });
+});
+
+app.post('/api/games/chicken-shop/skip-level', requireGameAuth, (req, res) => {
+    const SKIP_COST = 10;
+    const { level } = req.body;
+    const row = getOrCreateChickenProgress(req.playerEmail);
+    if (row.credits < SKIP_COST) return res.status(400).json({ code: 'INSUFFICIENT_CREDITS' });
+    const newUnlocked = Math.min(100, Math.max(row.unlocked_level, (level || row.unlocked_level) + 1));
+    const updated = db.upsertChickenProgress(req.playerEmail, {
+        unlockedLevel: newUnlocked,
+        credits: row.credits - SKIP_COST,
+        lives: row.lives,
+        livesRefillAt: row.lives_refill_at,
+        version: row.version + 1,
+    });
+    res.json({ progress: chickenProgressToResponse(updated) });
+});
+
 app.get('/profile', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'profile.html'));
 });
