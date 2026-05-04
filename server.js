@@ -2183,6 +2183,18 @@ app.get('/shooter', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'shooter.html'));
 });
 
+app.get('/chicken-shop', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'games', 'chicken-shop', 'index.html'));
+});
+
+app.get('/profile', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'profile.html'));
+});
+
+app.get('/live', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'live.html'));
+});
+
 // ── Snake Game API ───────────────────────────────────────────────────────────
 const WING_SHOP = [
     { id: 'pop',     name: 'Free Can of Pop', points: 80000,   amountPence: 80,   type: 'fixed'   },

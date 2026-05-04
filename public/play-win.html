@@ -105,6 +105,27 @@
         .game-card.shooter .play-btn {
             background: linear-gradient(135deg, #2196f3, #1565c0);
         }
+        .game-card.chickenshop .play-btn {
+            background: linear-gradient(135deg, #DAA520, #8B6914);
+        }
+        .cp-store-link {
+            display: block;
+            text-align: center;
+            margin: 0 16px 20px;
+            padding: 14px;
+            background: #16213e;
+            border: 1px solid #DAA520;
+            border-radius: 12px;
+            color: #DAA520;
+            text-decoration: none;
+            font-size: 15px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            max-width: 500px;
+            width: calc(100% - 32px);
+            transition: background 0.2s;
+        }
+        .cp-store-link:hover { background: #1e2f55; }
 
         .rewards-section {
             width: 100%;
@@ -159,21 +180,21 @@
         <div class="crown">👑</div>
         <div class="brand">Charlie's Wingz</div>
         <h1>PLAY & WIN</h1>
-        <p class="tagline">Play games. Earn points. Spend them in the Wing Shop.</p>
+        <p class="tagline">Play games. Earn Charlie Points. Spend them in the CP-Store.</p>
     </div>
 
     <div class="games-container">
         <a href="/wing-run" class="game-card wingrun">
             <div class="icon">🚴</div>
             <div class="title">WING RUN</div>
-            <div class="desc">Deliver wings across the city on your e-bike. Dodge traffic, build combos, and bank points for the Wing Shop.</div>
+            <div class="desc">Deliver wings across the city on your e-bike. Dodge traffic, build combos, and bank CP for the CP-Store.</div>
             <span class="play-btn">Play Now →</span>
         </a>
 
         <a href="/snake" class="game-card snake">
             <div class="icon">🐍</div>
             <div class="title">SNAKE</div>
-            <div class="desc">Classic snake with a Charlie's Wingz twist. Eat wings, collect crowns, and stack up points for the Wing Shop.</div>
+            <div class="desc">Classic snake with a Charlie's Wingz twist. Eat wings, collect crowns, and stack up CP for the CP-Store.</div>
             <span class="play-btn">Play Now →</span>
         </a>
 
@@ -190,7 +211,16 @@
             <div class="desc">Defend the shop from rival food vans! Blast them with hot sauce bottles and collect power-ups to stay alive.</div>
             <span class="play-btn">Play Now →</span>
         </a>
+
+        <a href="/chicken-shop" class="game-card chickenshop">
+            <div class="icon">🍗</div>
+            <div class="title">CHICKEN SHOP MANAGER</div>
+            <div class="desc">Run the kitchen at Charlie's Wingz. Manage the fryer, drinks station, and till across increasingly intense service rushes. Earn massive CP stacks for keeping customers happy.</div>
+            <span class="play-btn">Play Now →</span>
+        </a>
     </div>
+
+    <a href="/profile" class="cp-store-link">🪙 View CP-Store &amp; Redeem Rewards →</a>
 
     <div class="rewards-section">
         <h2>🪙 CP-Store</h2>
