@@ -1415,13 +1415,17 @@
             <div id="loyaltyLoggedOut" style="display:flex;align-items:center;gap:10px;width:100%">
                 <span style="font-size:0.8rem;color:#d4af37;white-space:nowrap">👑 Loyalty</span>
                 <button onclick="showLoyaltyLogin()" style="padding:6px 16px;font-size:0.75rem;font-weight:700;background:transparent;border:1px solid #d4af37;color:#d4af37;border-radius:6px;cursor:pointer;white-space:nowrap">SIGN IN</button>
-                <span style="font-size:0.7rem;color:#666">£25+ orders earn a stamp · 5 stamps = reward</span>
+                <span style="font-size:0.7rem;color:#666;flex:1">£25+ orders earn a stamp · 5 stamps = reward</span>
+                <a href="/live" style="font-size:0.7rem;color:#9ca3af;text-decoration:none;white-space:nowrap">📺 Live</a>
+                <a href="/profile" style="font-size:0.7rem;color:#9ca3af;text-decoration:none;white-space:nowrap">👤 Profile</a>
             </div>
             <!-- Logged in state -->
             <div id="loyaltyLoggedIn" style="display:none;width:100%">
                 <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px">
                     <span style="font-size:0.8rem;color:#d4af37;font-weight:700;cursor:pointer" id="loyaltyName" onclick="toggleAccountPanel()">👑</span>
-                    <div style="display:flex;gap:6px">
+                    <div style="display:flex;gap:6px;align-items:center">
+                        <a href="/live" style="font-size:0.65rem;color:#9ca3af;text-decoration:none;padding:4px 8px">📺 Live</a>
+                        <a href="/profile" style="font-size:0.65rem;color:#9ca3af;text-decoration:none;padding:4px 8px">👤 Profile</a>
                         <button onclick="toggleAccountPanel()" style="padding:4px 10px;font-size:0.65rem;color:#d4af37;background:transparent;border:1px solid rgba(212,175,55,0.4);border-radius:4px;cursor:pointer;font-weight:600" id="accountToggleBtn">My Account ▾</button>
                         <button onclick="loyaltyLogout()" style="padding:4px 10px;font-size:0.65rem;color:#666;background:transparent;border:1px solid #333;border-radius:4px;cursor:pointer">Logout</button>
                     </div>
@@ -1688,6 +1692,8 @@
             <a href="https://tiktok.com/@charlieswingz" target="_blank" rel="noopener">TikTok</a>
             <a href="/custom">Events & Custom Orders</a>
             <a href="/play-win">🎮 Play & Win</a>
+            <a href="/live">📺 Live Stream</a>
+            <a href="/profile">👤 Profile</a>
             <a href="/terms">Terms & Conditions</a>
             <a href="mailto:info@charlieswingz.com">Contact</a>
             <a href="/allergens">Allergen Info</a>

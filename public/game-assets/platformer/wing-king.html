@@ -31,7 +31,7 @@ let player;
 let hiScore = 0;
 
 function resetPlayer() {
-  player = { x:PLX, y:GROUND-72, w:58, h:72, vy:0, onGround:true, frame:0, ftick:0, jumps:0 };
+  player = { x:PLX, y:GROUND-44, w:36, h:44, vy:0, onGround:true, frame:0, ftick:0, jumps:0 };
 }
 
 function newGame() {
@@ -106,6 +106,7 @@ function update() {
     if (hits(player, obstacles[i])) {
       hiScore = Math.max(hiScore, score);
       gState = 'dead';
+      saveScore();
       return;
     }
   }
@@ -513,6 +514,17 @@ function loop() {
   if (gState === 'start') drawStartScreen();
   if (gState === 'dead')  drawDeadScreen();
   requestAnimationFrame(loop);
+}
+
+// ── Auth + Score Save ─────────────────────────────────────────────────────
+const _cwSession = JSON.parse(localStorage.getItem('cw_session') || 'null');
+function saveScore() {
+  if (!_cwSession?.token) return;
+  fetch('/api/game/save', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${_cwSession.token}` },
+    body: JSON.stringify({ score, coins: wings, deliveries: 0 }),
+  }).catch(() => {});
 }
 
 resetPlayer();
