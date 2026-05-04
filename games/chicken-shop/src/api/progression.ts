@@ -47,7 +47,8 @@ export async function drainPendingSaves(): Promise<void> {
   if (!session) return
 
   const remaining: PendingSave[] = []
-  for (const save of saves) {
+  for (let i = 0; i < saves.length; i++) {
+    const save = saves[i]
     try {
       const res = await fetch(save.endpoint, {
         method: 'POST',
@@ -61,10 +62,10 @@ export async function drainPendingSaves(): Promise<void> {
         }
         continue
       }
-      remaining.push(save)
+      remaining.push(...saves.slice(i))
       break
     } catch {
-      remaining.push(save)
+      remaining.push(...saves.slice(i))
       break
     }
   }
@@ -79,9 +80,10 @@ export function hasPendingSaves(): boolean {
 
 async function post<T>(path: string, body: Record<string, unknown>): Promise<T> {
   const session = getSession()
+  if (!session) throw new Error('No session')
   const res = await fetch(`${BASE}${path}`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session?.token}` },
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.token}` },
     body: JSON.stringify(body),
   })
   if (!res.ok) {
@@ -94,7 +96,7 @@ async function post<T>(path: string, body: Record<string, unknown>): Promise<T> 
 export async function fetchProgress(): Promise<ChickenShopProgress> {
   const session = getSession()
   const res = await fetch(`${BASE}/progress`, {
-    headers: { Authorization: `Bearer ${session?.token}` },
+    headers: session ? { Authorization: `Bearer ${session.token}` } : {},
   })
   if (!res.ok) throw new Error(`HTTP ${res.status}`)
   const data = await res.json() as { progress: ChickenShopProgress }
