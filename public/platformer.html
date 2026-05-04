@@ -27,7 +27,15 @@
 <div id="game-container"></div>
 
 <div class="ui-overlay hidden" id="overlay">
-  <!-- Login -->
+  <!-- Game Over (shown when logged in) -->
+  <div class="panel hidden" id="pGameOver">
+    <h2>Game Over</h2>
+    <div id="goScore" style="font-size:1.4rem;color:#fff;margin:8px 0"></div>
+    <div id="goCP" style="font-size:1.1rem;color:#e8a838;margin:0 0 20px"></div>
+    <button class="btn-primary" onclick="closeOverlay()">Play Again</button>
+    <button class="btn-secondary" onclick="location.href='/play-win'">← Arcade</button>
+  </div>
+  <!-- Login (shown when not logged in) -->
   <div class="panel" id="pLogin">
     <h2>Wing King</h2>
     <input id="loginEmail" type="email" placeholder="Email" autocomplete="email">
@@ -75,8 +83,10 @@ const API = {
 };
 
 function showPanel(name) {
+  document.getElementById('pGameOver').classList.add('hidden');
   document.getElementById('pLogin').classList.add('hidden');
   document.getElementById('pRegister').classList.add('hidden');
+  if (name === 'gameover') document.getElementById('pGameOver').classList.remove('hidden');
   if (name === 'login') document.getElementById('pLogin').classList.remove('hidden');
   if (name === 'register') document.getElementById('pRegister').classList.remove('hidden');
 }
@@ -180,9 +190,10 @@ class WingKing extends Phaser.Scene {
     // Ground visual
     this.add.rectangle(240, 632, 480, 16, 0x3d2b0e);
 
-    // Player — physics-driven
+    // Player — physics-driven (display at 42×42, physics body to match)
     this.player = this.physics.add.sprite(120, 300, 'chicken').setDepth(10);
-    this.player.body.setSize(56, 56).setOffset(8, 8);
+    this.player.setDisplaySize(42, 42);
+    this.player.body.setSize(32, 32).setOffset(20, 20);
 
     // State
     this.score = 0;
@@ -337,9 +348,19 @@ class WingKing extends Phaser.Scene {
     this.cameras.main.shake(300, 0.03);
     this.pipeTimer.paused = true;
     this.wingTimer.paused = true;
+    const finalScore = this.score;
+    const finalWings = this.wings;
     setTimeout(() => {
+      const cpEarned = Math.floor(finalWings * 500 + finalScore);
+      if (API.token) {
+        document.getElementById('goScore').textContent = `Score: ${finalScore}  🍗 Wings: ${finalWings}`;
+        document.getElementById('goCP').textContent = `+${cpEarned.toLocaleString()} CP earned`;
+        showPanel('gameover');
+      } else {
+        showPanel('login');
+      }
       document.getElementById('overlay').classList.remove('hidden');
-      API.save(this.score, this.wings);
+      API.save(finalScore, finalWings);
     }, 1000);
   }
 }
