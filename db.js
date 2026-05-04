@@ -253,6 +253,15 @@ db.exec(`
         UNIQUE(email, challenge_id, claim_date)
     );
     CREATE INDEX IF NOT EXISTS idx_daily_completions ON daily_completions(email, claim_date);
+
+    CREATE TABLE IF NOT EXISTS game_sessions (
+        token TEXT PRIMARY KEY,
+        email TEXT NOT NULL,
+        created_at TEXT NOT NULL,
+        expires_at TEXT NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS idx_game_sessions_email ON game_sessions(email);
+    CREATE INDEX IF NOT EXISTS idx_game_sessions_expires ON game_sessions(expires_at);
 `);
 
 // Ensure lottery row exists
@@ -456,6 +465,11 @@ const stmts = {
             code_description = excluded.code_description,
             replay_url       = excluded.replay_url,
             updated_at       = excluded.updated_at`),
+
+    insertGameSession:  db.prepare('INSERT OR REPLACE INTO game_sessions (token, email, created_at, expires_at) VALUES (?, ?, ?, ?)'),
+    getGameSession:     db.prepare('SELECT email FROM game_sessions WHERE token = ? AND expires_at > ?'),
+    deleteGameSession:  db.prepare('DELETE FROM game_sessions WHERE token = ?'),
+    purgeExpiredGameSessions: db.prepare('DELETE FROM game_sessions WHERE expires_at < ?'),
 };
 
 // ── Orders ───────────────────────────────────────────────────────────────────
@@ -1373,7 +1387,7 @@ function touchPushSub(endpoint) {
 
 // ── Admin sessions ──────────────────────────────────────────────────────────
 
-const ADMIN_SESSION_DURATION_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
+const ADMIN_SESSION_DURATION_MS = 24 * 60 * 60 * 1000; // 24 hours
 
 function createAdminSession({ token, adminUser, deviceLabel, ip, userAgent }) {
     if (!token) throw new Error('Token required');
@@ -1617,6 +1631,30 @@ function insertReferralDiscount({ code, email, percent, source, description }) {
     });
 }
 
+// ── Game sessions (DB-backed, replaces in-memory Map) ────────────────────────
+
+const GAME_SESSION_DURATION_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
+
+function createGameSession(email) {
+    const token = require('crypto').randomBytes(32).toString('hex');
+    const now = new Date();
+    const expiresAt = new Date(now.getTime() + GAME_SESSION_DURATION_MS);
+    stmts.insertGameSession.run(token, email.toLowerCase(), now.toISOString(), expiresAt.toISOString());
+    // Opportunistically purge old sessions
+    stmts.purgeExpiredGameSessions.run(now.toISOString());
+    return token;
+}
+
+function getGameSessionEmail(token) {
+    if (!token) return null;
+    const row = stmts.getGameSession.get(token, new Date().toISOString());
+    return row ? row.email : null;
+}
+
+function deleteGameSession(token) {
+    stmts.deleteGameSession.run(token);
+}
+
 // ── Customer order history ────────────────────────────────────────────────────
 
 function getOrdersByEmail(email) {
@@ -1705,4 +1743,6 @@ module.exports = {
     getOrCreateReferralCode, getPlayerByReferralCode, setReferredBy,
     getPlayerReferralState, setReferralRewarded, incrementReferralCount,
     getReferralCount, insertReferralDiscount,
+    // Game sessions (DB-backed)
+    createGameSession, getGameSessionEmail, deleteGameSession,
 };
