@@ -15,6 +15,7 @@ export default function Shop() {
     try {
       const p = await refillLives(version)
       setProgress(p)
+      setError(null)
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'Unknown error')
     } finally {

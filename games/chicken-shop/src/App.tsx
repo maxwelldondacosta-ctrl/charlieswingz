@@ -13,6 +13,7 @@ import LivesEmpty from './ui/LivesEmpty'
 export default function App() {
   const { screen, setScreen, setProgress, hydrated } = useMetaStore()
   const booted = useRef(false)
+  const [bootError, setBootError] = React.useState(false)
 
   useEffect(() => {
     if (booted.current) return
@@ -36,8 +37,7 @@ export default function App() {
         if (cached) {
           setProgress(cached)
         } else {
-          // Hard failure — show retry
-          setScreen('loading')
+          setBootError(true)
           return
         }
       }
@@ -47,6 +47,20 @@ export default function App() {
 
     boot()
   }, [])
+
+  if (bootError) {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100vh', color: '#fff', background: '#1a1a2e', gap: 16 }}>
+        <p style={{ color: '#ef4444' }}>Failed to load progress. Check your connection.</p>
+        <button
+          onClick={() => { setBootError(false); booted.current = false }}
+          style={{ background: '#374151', color: '#fff', border: 'none', borderRadius: 8, padding: '10px 20px', cursor: 'pointer' }}
+        >
+          Retry
+        </button>
+      </div>
+    )
+  }
 
   if (!hydrated) {
     return (
