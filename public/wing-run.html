@@ -170,6 +170,9 @@ class WingRun extends Phaser.Scene {
       g.fillStyle(0xffd700); g.fillCircle(36, 94, 2.5);
     });
 
+    // Invisible zone placeholder
+    this.mk('zone', 4, 4, g => { g.fillStyle(0x000000, 0); g.fillRect(0, 0, 4, 4); });
+
     // House building
     this.mk('house', 60, 110, g => {
       g.fillStyle(0x9e9e9e); g.fillRect(2, 46, 56, 64);         // walls
@@ -238,6 +241,11 @@ class WingRun extends Phaser.Scene {
     // Spawners
     this.carTimer = this.time.addEvent({ delay: 1000, callback: this.spawnCar, callbackScope: this, loop: true, paused: true });
     this.houseTimer = this.time.addEvent({ delay: 2000, callback: this.spawnHouse, callbackScope: this, loop: true, paused: true });
+
+    // If session already restored (overlay hidden before scene ready), start game
+    if (document.getElementById('overlay').classList.contains('hidden')) {
+      this.time.delayedCall(50, () => this.startGame());
+    }
   }
 
   startGame() {
@@ -346,9 +354,8 @@ class WingRun extends Phaser.Scene {
 
     // Drop zone
     const zoneX = isLeft ? 120 : 280;
-    const zone = this.dropZones.create(zoneX, -150, null);
-    zone.setSize(80, 80);
-    this.physics.world.enable(zone);
+    const zone = this.dropZones.create(zoneX, -150, 'zone');
+    zone.setSize(80, 80).setAlpha(0);
     zone.body.allowGravity = false;
     zone.setVelocityY(this.speed);
 

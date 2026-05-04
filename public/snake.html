@@ -190,6 +190,11 @@ class SnakeGame extends Phaser.Scene {
     
     // Swipe controls for mobile
     this.input.on('pointerup', this.handleSwipe, this);
+
+    // If session already restored (overlay hidden before scene ready), start game
+    if (document.getElementById('overlay').classList.contains('hidden')) {
+      this.time.delayedCall(50, () => this.startGame());
+    }
   }
 
   handleSwipe(pointer) {

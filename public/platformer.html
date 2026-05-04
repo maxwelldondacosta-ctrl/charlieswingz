@@ -207,6 +207,11 @@ class WingKing extends Phaser.Scene {
     // Auto-spawn
     this.obsTimer = this.time.addEvent({ delay: 1500, callback: this.spawnObstacle, callbackScope: this, loop: true, paused: true });
     this.wingTimer = this.time.addEvent({ delay: 1000, callback: this.spawnWing, callbackScope: this, loop: true, paused: true });
+
+    // If session already restored (overlay hidden before scene ready), start game
+    if (document.getElementById('overlay').classList.contains('hidden')) {
+      this.time.delayedCall(50, () => this.startGame());
+    }
   }
 
   startGame() {
@@ -227,7 +232,6 @@ class WingKing extends Phaser.Scene {
   update(time, delta) {
     if (!this.gameActive) return;
 
-    this.bg1.tilePositionX += (this.speed * 0.001) * delta * 0.2;
     this.ground.tilePositionX += (this.speed * 0.001) * delta;
 
     this.score += delta * 0.01;
