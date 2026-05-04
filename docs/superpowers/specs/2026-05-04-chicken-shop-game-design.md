@@ -296,11 +296,23 @@ If patience reaches zero before reaching Till:
 
 ### Visual Feedback
 
+At tier 6 the player has 6 stations and up to 6 active orders on screen. Every signal must be readable in peripheral vision — no text scanning under pressure.
+
+**Customer patience:**
+- Customer silhouette changes colour as patience drains: white → yellow → pulsing red. The pulsing red is visible without looking directly at the customer.
+- A patience bar sits below the silhouette as a secondary indicator.
+
+**Output buffer (order waiting for player to release):**
+- Station glows with a looping steam/pulse highlight when an order is sitting in its output buffer. This distinguishes "idle because player hasn't tapped" from "idle because busy."
+
+**Station queue full:**
+- When a station's input queue is at capacity (3 orders), its tap target shows a blocked icon (lock or red X). Prevents wasted taps.
+
+**Order completion:**
 - Green flash: perfect result
 - Yellow flash: recoverable penalty
-- Red flash: burnout, walkout, major miss
-- Floating currency delta on every completed order
-- Queue-full icon when a station cannot accept a buffered order
+- Red flash: burnout, walkout, or major miss
+- Floating currency delta (e.g. "+£13") whenever an order closes at the till
 
 ---
 
@@ -584,6 +596,20 @@ app/games/chicken-shop/
 - React never mutates Pixi entities directly
 - Pixi never calls fetch directly — network mutations pass through `api/progression.ts`
 
+### High-DPI / Retina Scaling
+
+Always initialise the Pixi `Application` with `resolution: window.devicePixelRatio`. This ensures the canvas is sharp on retina iPhones and 4K desktops without any extra work. Because all textures are generated from `Pixi.Graphics` at runtime (no external PNGs), they scale cleanly at any resolution.
+
+```ts
+await app.init({
+  width: CANVAS_W,
+  height: CANVAS_H,
+  resolution: window.devicePixelRatio || 1,
+  autoDensity: true,
+  background: 0x1a1a2e,
+})
+```
+
 ### 60fps Tick Contract
 
 Each tick must:
@@ -666,6 +692,27 @@ Client rules:
 - Cache only successful server responses
 - Cache must include `version` and `updatedAt`
 - Overwritten only by server responses with `version >= localVersion`
+
+### Pending Saves Queue
+
+Mobile networks drop mid-session. If a `complete-level` or `fail-level` POST fails (network error or non-2xx), the payload must not be lost.
+
+- Store failed mutation payloads in localStorage under `cw:games:chicken-shop:pendingSaves` as a JSON array
+- Each entry includes the endpoint path, the full request body, and the timestamp of the original attempt
+- On every app boot, before the player reaches the main menu, drain the queue: attempt each pending save in order, stop on the first failure
+- A successfully synced entry is removed from the queue immediately
+- If a pending entry returns `409 ALREADY_PROCESSED`, treat it as success and remove it (the server already processed it)
+- Do not allow paid actions (skip, refill) while the pending queue is non-empty — force a sync first
+
+```ts
+type PendingSave = {
+  endpoint: string
+  body: Record<string, unknown>
+  queuedAtMs: number
+}
+// localStorage key: 'cw:games:chicken-shop:pendingSaves'
+// Value: JSON.stringify(PendingSave[])
+```
 
 ### Client Boot Flow
 
