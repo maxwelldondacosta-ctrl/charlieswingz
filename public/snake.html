@@ -146,7 +146,7 @@ class SnakeGame extends Phaser.Scene {
   constructor() { super('SnakeGame'); }
 
   preload() {
-    this.assetsToLoad = 5;
+    this.assetsToLoad = 4;
     this.assetsLoaded = 0;
     this.onAssetLoaded = () => {
       this.assetsLoaded++;
@@ -154,16 +154,15 @@ class SnakeGame extends Phaser.Scene {
         this.assetsReady = true;
       }
     };
-    
+
     // Load SFX
     this.load.audio('eat', '/sfx/snake-eat.mp3');
     this.load.audio('die', '/sfx/snake-die.mp3');
     this.load.audio('start', '/sfx/snake-start.mp3');
-    
+
     // Load visual assets via custom transparent loader
     loadImgWithTransparentBg(this, 'bg', '/game-assets/snake/bg-tile.png');
     loadImgWithTransparentBg(this, 'head', '/game-assets/snake/snake-head.png');
-    loadImgWithTransparentBg(this, 'body', '/game-assets/snake/snake-body.png');
     loadImgWithTransparentBg(this, 'wing', '/game-assets/snake/wing.png');
     loadImgWithTransparentBg(this, 'crown', '/game-assets/snake/crown.png');
   }
@@ -172,7 +171,16 @@ class SnakeGame extends Phaser.Scene {
     this.W = 600;
     this.H = 600;
     this.TILE_SIZE = 30;
-    
+
+    // Generate body segment texture — gold rounded square matching TILE_SIZE
+    const bodyGfx = this.make.graphics({ x: 0, y: 0, add: false });
+    bodyGfx.fillStyle(0xe8a838, 1);
+    bodyGfx.fillRoundedRect(2, 2, 26, 26, 5);
+    bodyGfx.lineStyle(2, 0xb07820, 1);
+    bodyGfx.strokeRoundedRect(2, 2, 26, 26, 5);
+    bodyGfx.generateTexture('body', 30, 30);
+    bodyGfx.destroy();
+
     this.waitForAssets = this.time.addEvent({
       delay: 100,
       loop: true,
