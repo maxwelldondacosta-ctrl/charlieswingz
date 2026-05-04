@@ -5,7 +5,7 @@ import { generateTextures } from './textures'
 import { StationEntity } from './Station'
 import { CustomerEntity, spawnFloatingCash } from './Customer'
 import { createOrder, transitionOrder, computePayout, tickPatience, applyPenalty } from './orderMachine'
-import type { LevelConfig, Order, StationKey } from '../types'
+import type { LevelConfig, Order, StationKey, Customer } from '../types'
 import { useRunStore } from '../store/runStore'
 
 const STATION_POSITIONS: Record<StationKey, [number, number]> = {
@@ -34,6 +34,7 @@ export class GameScene {
   private nextSpawnMs: number
   private running = false
   private customerIdCounter = 0
+  private _tickHandler: ((t: { deltaMS: number }) => void) | null = null
 
   constructor(app: Application, config: LevelConfig) {
     this.app = app
@@ -108,7 +109,7 @@ export class GameScene {
       patienceMs: this.config.patienceBaseMs,
     })
 
-    const customer: import('../types').Customer = {
+    const customer: Customer = {
       id: customerId,
       spawnedAtMs: Date.now(),
       orderId: order.id,
@@ -170,6 +171,7 @@ export class GameScene {
     }
 
     // Tick patience + walkouts
+    const walkoutIds: string[] = []
     for (const [orderId, order] of this.orders) {
       if (order.state === 'completed' || order.state === 'voided' || order.state === 'walkedOut') continue
 
@@ -178,17 +180,22 @@ export class GameScene {
       this.orders.set(orderId, ticked)
 
       if (ticked.patienceRemainingMs <= 0) {
-        // Walkout
-        const walkedOut = transitionOrder(ticked, 'WALKOUT')
-        this.orders.set(orderId, walkedOut)
-        for (const station of this.stations.values()) {
-          station.removeOrder(orderId)
-        }
-        run.addWalkout()
-        const custEntity = [...this.customers.values()].find(c => c.data.orderId === orderId)
-        if (custEntity) { custEntity.destroy(); this.customers.delete(custEntity.data.id) }
-        this.orders.delete(orderId)
+        walkoutIds.push(orderId)
       }
+    }
+
+    for (const orderId of walkoutIds) {
+      const ticked = this.orders.get(orderId)
+      if (!ticked) continue
+      const walkedOut = transitionOrder(ticked, 'WALKOUT')
+      this.orders.set(orderId, walkedOut)
+      for (const station of this.stations.values()) {
+        station.removeOrder(orderId)
+      }
+      run.addWalkout()
+      const custEntity = [...this.customers.values()].find(c => c.data.orderId === orderId)
+      if (custEntity) { custEntity.destroy(); this.customers.delete(custEntity.data.id) }
+      this.orders.delete(orderId)
     }
 
     // Advance stations
@@ -206,6 +213,7 @@ export class GameScene {
             if (key === 'till') {
               // Till has no minigame — complete immediately
               station.completeActive()
+              station.releaseBuffer()  // clear outputBufferOrderId so till can accept next order
               this.processTill(activeId)
             }
             // Other stations wait for minigame completion via completeStation()
@@ -258,11 +266,16 @@ export class GameScene {
 
   start(): void {
     this.running = true
-    this.app.ticker.add((ticker) => this.tick(ticker))
+    this._tickHandler = (t: { deltaMS: number }) => this.tick(t)
+    this.app.ticker.add(this._tickHandler)
   }
 
   stop(): void {
     this.running = false
+    if (this._tickHandler) {
+      this.app.ticker.remove(this._tickHandler)
+      this._tickHandler = null
+    }
   }
 
   destroy(): void {

@@ -1,5 +1,6 @@
 import { Container, Sprite, Text, TextStyle } from 'pixi.js'
 import { getTexture } from './textures'
+import { getApp } from './PixiApp'
 import type { Customer as CustomerData, CustomerMood } from '../types'
 
 const MOOD_TINT: Record<CustomerMood, number> = {
@@ -62,6 +63,7 @@ export class CustomerEntity {
 }
 
 export function spawnFloatingCash(parent: Container, x: number, y: number, pence: number): void {
+  const app = getApp()
   const label = new Text({
     text: `+£${(pence / 100).toFixed(2)}`,
     style: new TextStyle({ fontSize: 16, fill: 0xfacc15, fontWeight: 'bold' }),
@@ -77,8 +79,9 @@ export function spawnFloatingCash(parent: Container, x: number, y: number, pence
     label.y -= ticker.deltaMS * 0.04
     label.alpha = Math.max(0, 1 - elapsed / 1200)
     if (elapsed >= 1200) {
+      app.ticker.remove(tick)
       label.destroy()
     }
   }
-  ;(label as any).__tick = tick
+  app.ticker.add(tick)
 }
