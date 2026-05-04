@@ -4,6 +4,7 @@ import { useRunStore } from '../store/runStore'
 import { useMetaStore } from '../store/metaStore'
 import { completeLevel, failLevel } from '../api/progression'
 import { getLevelConfig } from '../game/levelConfig'
+import { trackLevelCompleted, trackLevelFailed } from '../api/analytics'
 
 export default function LevelResult() {
   const { result, currentLevel, cashEarnedPence, cashTargetPence, walkouts, completedOrders, reset } = useRunStore()
@@ -12,12 +13,27 @@ export default function LevelResult() {
 
   useEffect(() => {
     if (!result) return
-    const durationMs = getLevelConfig(currentLevel).durationMs
+    const cfg = getLevelConfig(currentLevel)
+    const durationMs = cfg.durationMs
     const payload = { level: currentLevel, cashEarnedPence, walkouts, completedOrders, runDurationMs: durationMs, runId }
+    const analyticsPayload = {
+      level: currentLevel,
+      tier: cfg.tier,
+      boss: cfg.boss,
+      modifier: cfg.modifier,
+      cashTargetPence,
+      cashEarnedPence,
+      completedOrders,
+      walkouts,
+      penaltiesByStation: {},
+      runDurationMs: cfg.durationMs,
+    }
 
     if (result === 'success') {
+      trackLevelCompleted(analyticsPayload)
       completeLevel(payload).then(setProgress)
     } else {
+      trackLevelFailed(analyticsPayload)
       failLevel(payload).then(setProgress)
     }
   }, [result])

@@ -7,6 +7,7 @@ import { CustomerEntity, spawnFloatingCash } from './Customer'
 import { createOrder, transitionOrder, computePayout, tickPatience, applyPenalty } from './orderMachine'
 import type { LevelConfig, Order, StationKey, Customer } from '../types'
 import { useRunStore } from '../store/runStore'
+import { trackLevelStarted } from '../api/analytics'
 
 const STATION_POSITIONS: Record<StationKey, [number, number]> = {
   fryer:  [20,  200],
@@ -271,6 +272,13 @@ export class GameScene {
 
   start(): void {
     this.running = true
+
+    trackLevelStarted({
+      level: this.config.level,
+      tier: this.config.tier,
+      boss: this.config.boss,
+      modifier: this.config.modifier,
+    })
 
     // Endgame modifiers (levels 61+)
     if (this.config.modifier === 'rushMinute') {
