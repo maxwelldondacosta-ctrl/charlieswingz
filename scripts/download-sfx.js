@@ -37,55 +37,109 @@ const SOUNDS = [
   },
   {
     name: 'snake-die',
-    query: '8bit retro death game over short',
+    query: 'game over retro',
     maxDuration: 3,
   },
   {
     name: 'snake-start',
-    query: 'arcade game start short beep',
+    query: 'game start beep',
     maxDuration: 2,
   },
   {
     name: 'snake-speedup',
-    query: 'swoosh whoosh speed short',
+    query: 'whoosh swoosh',
     maxDuration: 1,
   },
 
   // ── Wing Run ─────────────────────────────────────────────────────────────
   {
     name: 'wr-deliver',
-    query: 'delivery success ding coins cash register',
+    query: 'cash register',
     maxDuration: 2,
   },
   {
     name: 'wr-crash',
-    query: 'crash collision impact car short',
+    query: 'crash impact collision',
     maxDuration: 2,
   },
   {
     name: 'wr-closecall',
-    query: 'whoosh swish near miss',
+    query: 'whoosh air',
     maxDuration: 1,
   },
   {
     name: 'wr-powerup',
-    query: 'power up collect sparkle pickup',
+    query: 'power up collect',
     maxDuration: 2,
   },
   {
     name: 'wr-round',
-    query: 'level complete fanfare short victory',
+    query: 'victory fanfare short',
     maxDuration: 4,
   },
   {
     name: 'wr-hop',
-    query: 'jump spring bounce short',
+    query: 'jump bounce spring',
     maxDuration: 1,
   },
   {
     name: 'wr-combo',
-    query: 'combo streak bonus ding short',
+    query: 'coins pickup',
     maxDuration: 1.5,
+  },
+
+  // ── Wing King ─────────────────────────────────────────────────────────────
+  {
+    name: 'wk-jump',
+    query: 'cartoon jump boing spring',
+    maxDuration: 0.8,
+  },
+  {
+    name: 'wk-doublejump',
+    query: 'whoosh jump',
+    maxDuration: 1,
+  },
+  {
+    name: 'wk-collect',
+    query: 'coin pickup',
+    maxDuration: 1,
+  },
+  {
+    name: 'wk-die',
+    query: 'fail lose',
+    maxDuration: 2,
+  },
+  {
+    name: 'wk-gameover',
+    query: 'game over',
+    maxDuration: 5,
+  },
+
+  // ── Sauce Shooter ────────────────────────────────────────────────────────
+  {
+    name: 'ss-shoot',
+    query: 'laser shoot zap blaster short',
+    maxDuration: 0.5,
+  },
+  {
+    name: 'ss-explosion',
+    query: 'explosion boom blast',
+    maxDuration: 1.5,
+  },
+  {
+    name: 'ss-hit',
+    query: 'hit impact thud damage',
+    maxDuration: 0.5,
+  },
+  {
+    name: 'ss-powerup',
+    query: 'powerup pickup',
+    maxDuration: 2,
+  },
+  {
+    name: 'ss-gameover',
+    query: 'game over',
+    maxDuration: 5,
   },
 
   // ── Shared UI ────────────────────────────────────────────────────────────
