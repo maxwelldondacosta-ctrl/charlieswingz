@@ -113,35 +113,88 @@ class SauceShooter extends Phaser.Scene {
   }
 
   createTextures() {
-    // Charlie's gold van (player) — top-down
-    this.mk('player', 52, 80, g => {
-      g.fillStyle(0xe8a838); g.fillRoundedRect(4, 4, 44, 72, 8);
-      g.fillStyle(0x88bbff); g.fillRoundedRect(10, 10, 32, 16, 3);
-      g.fillStyle(0xb07820); g.fillRoundedRect(12, 30, 28, 34, 4);
-      g.fillStyle(0x222222);
-      g.fillRoundedRect(0, 10, 6, 12, 2); g.fillRoundedRect(46, 10, 6, 12, 2);
-      g.fillRoundedRect(0, 58, 6, 12, 2); g.fillRoundedRect(46, 58, 6, 12, 2);
-      g.fillStyle(0xffff88); g.fillRect(12, 4, 8, 4); g.fillRect(32, 4, 8, 4);
+    // CW Wings Spaceship — Charlie's Wingz logo as a proper fighter craft
+    this.mk('player', 72, 80, g => {
+      // Engine glow
+      g.fillStyle(0x44aaff); g.fillEllipse(36, 78, 24, 10);
+      g.fillStyle(0x88ccff); g.fillEllipse(36, 76, 12, 6);
+      // Left wing
+      g.fillStyle(0xe8a838);
+      g.fillTriangle(0, 64, 28, 32, 18, 72);
+      g.fillStyle(0xb07820); g.fillRect(2, 52, 18, 4); // wing stripe
+      // Right wing
+      g.fillStyle(0xe8a838);
+      g.fillTriangle(72, 64, 44, 32, 54, 72);
+      g.fillStyle(0xb07820); g.fillRect(52, 52, 18, 4);
+      // Fuselage body
+      g.fillStyle(0xe8a838); g.fillRoundedRect(22, 4, 28, 68, 8);
+      g.fillStyle(0xb07820); g.fillRoundedRect(26, 8, 20, 56, 6);
+      // Cockpit canopy
+      g.fillStyle(0x001833); g.fillEllipse(36, 28, 20, 26);
+      g.fillStyle(0x1166bb); g.fillEllipse(36, 27, 13, 18);
+      g.fillStyle(0x55aaee); g.fillEllipse(34, 24, 6, 9);
+      // Wing cannon barrels
+      g.fillStyle(0x888888);
+      g.fillRect(0, 62, 10, 14); g.fillRect(62, 62, 10, 14);
+      g.fillStyle(0x444444); g.fillRect(3, 60, 4, 16); g.fillRect(65, 60, 4, 16);
+      // CW logo on fuselage
+      g.fillStyle(0x0d0d1a);
+      g.fillRect(25, 44, 3, 12); g.fillRect(25, 44, 10, 3); g.fillRect(25, 56, 10, 3); // C
+      g.fillRect(38, 44, 3, 12); g.fillRect(44, 44, 3, 12); g.fillRect(41, 50, 3, 6); // W
     });
-    // Red rival van
-    this.mk('enemy1', 52, 80, g => {
-      g.fillStyle(0xcc2222); g.fillRoundedRect(4, 4, 44, 72, 8);
-      g.fillStyle(0x88bbff); g.fillRoundedRect(10, 50, 32, 16, 3);
-      g.fillStyle(0xaa1111); g.fillRoundedRect(12, 10, 28, 34, 4);
-      g.fillStyle(0x222222);
-      g.fillRoundedRect(0, 10, 6, 12, 2); g.fillRoundedRect(46, 10, 6, 12, 2);
-      g.fillRoundedRect(0, 58, 6, 12, 2); g.fillRoundedRect(46, 58, 6, 12, 2);
-      g.fillStyle(0xff8888); g.fillRect(12, 72, 8, 4); g.fillRect(32, 72, 8, 4);
+
+    // "Clucky's" — red bucket UFO (KFC parody)
+    this.mk('enemy1', 64, 56, g => {
+      // Saucer body
+      g.fillStyle(0xcc1a1a); g.fillEllipse(32, 36, 62, 30);
+      g.fillStyle(0xee3333); g.fillEllipse(32, 34, 48, 18);
+      // Bucket dome on top
+      g.fillStyle(0xcc1a1a); g.fillRoundedRect(18, 10, 28, 26, 4);
+      // Red & white stripes
+      g.fillStyle(0xffffff); g.fillRect(18, 15, 28, 5); g.fillRect(18, 27, 28, 5);
+      // Little face (colonel parody)
+      g.fillStyle(0xffddcc); g.fillCircle(32, 22, 6);
+      g.fillStyle(0x222222); g.fillCircle(30, 21, 1.5); g.fillCircle(34, 21, 1.5);
+      g.fillStyle(0xffffff); g.fillRect(29, 25, 6, 2); // moustache
+      // Engine glow
+      g.fillStyle(0xff6666); g.fillEllipse(32, 46, 28, 8);
     });
-    // Purple rival van
-    this.mk('enemy2', 52, 80, g => {
-      g.fillStyle(0x7722cc); g.fillRoundedRect(4, 4, 44, 72, 8);
-      g.fillStyle(0x88bbff); g.fillRoundedRect(10, 50, 32, 16, 3);
-      g.fillStyle(0x5500aa); g.fillRoundedRect(12, 10, 28, 34, 4);
-      g.fillStyle(0x222222);
-      g.fillRoundedRect(0, 10, 6, 12, 2); g.fillRoundedRect(46, 10, 6, 12, 2);
-      g.fillRoundedRect(0, 58, 6, 12, 2); g.fillRoundedRect(46, 58, 6, 12, 2);
-      g.fillStyle(0xcc88ff); g.fillRect(12, 72, 8, 4); g.fillRect(32, 72, 8, 4);
+
+    // "McWings" — golden arches UFO (McDonald's parody)
+    this.mk('enemy2', 64, 56, g => {
+      // Saucer
+      g.fillStyle(0xdd9900); g.fillEllipse(32, 36, 62, 30);
+      g.fillStyle(0xffcc00); g.fillEllipse(32, 34, 48, 18);
+      // Yellow dome
+      g.fillStyle(0xffaa00); g.fillRoundedRect(16, 8, 32, 28, 10);
+      // Big M arches in red
+      g.fillStyle(0xcc1111);
+      g.fillRect(18, 12, 5, 16);   // left post
+      g.fillRect(41, 12, 5, 16);   // right post
+      g.fillRect(29, 12, 6, 16);   // center post
+      g.fillTriangle(18, 12, 23, 22, 29, 12); // left arch
+      g.fillTriangle(29, 12, 35, 22, 41, 12); // right arch
+      // Engine glow
+      g.fillStyle(0xffee44); g.fillEllipse(32, 46, 28, 8);
+    });
+
+    // "Flamingo's" — orange flame-bird UFO (Nando's parody)
+    this.mk('enemy3', 64, 56, g => {
+      // Saucer
+      g.fillStyle(0xcc4400); g.fillEllipse(32, 36, 62, 30);
+      g.fillStyle(0xff6600); g.fillEllipse(32, 34, 48, 18);
+      // Dome
+      g.fillStyle(0xee5500); g.fillRoundedRect(16, 6, 32, 30, 8);
+      // Rooster/flame silhouette
+      g.fillStyle(0xffaa00); g.fillEllipse(32, 20, 14, 16); // body
+      g.fillStyle(0xff3300); // flame comb
+      g.fillTriangle(26, 8, 30, 2, 32, 10);
+      g.fillTriangle(30, 6, 34, 0, 36, 8);
+      g.fillTriangle(34, 8, 38, 3, 40, 10);
+      g.fillStyle(0xff9900); g.fillTriangle(38, 18, 46, 20, 38, 26); // beak/wing
+      g.fillStyle(0x111111); g.fillCircle(36, 17, 2.5); // eye
+      // Engine glow
+      g.fillStyle(0xff8833); g.fillEllipse(32, 46, 28, 8);
     });
     // Sauce drop bullet
     this.mk('bullet', 14, 22, g => {
@@ -296,11 +349,13 @@ class SauceShooter extends Phaser.Scene {
 
   spawnEnemy() {
     if (this.isGameOver) return;
-    const type = Phaser.Math.Between(1, 2);
-    const x = Phaser.Math.Between(50, 350);
-    const e = this.enemies.create(x, -50, `enemy${type}`);
-    e.setDepth(8).setScale(0.4);
+    const type = Phaser.Math.Between(1, 3);
+    const x = Phaser.Math.Between(40, 360);
+    const e = this.enemies.create(x, -60, `enemy${type}`);
+    e.setDepth(8);
     e.body.velocity.y = 250 + (this.score / 100);
+    // Slow wobble
+    this.tweens.add({ targets: e, x: e.x + Phaser.Math.Between(-30, 30), duration: 1200, yoyo: true, loop: -1, ease: 'Sine.easeInOut' });
   }
 
   hitEnemy(bullet, enemy) {

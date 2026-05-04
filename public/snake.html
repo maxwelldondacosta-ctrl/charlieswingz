@@ -221,7 +221,7 @@ class SnakeGame extends Phaser.Scene {
     
     // Initial snake
     for (let i = 0; i < 3; i++) {
-        const sprite = this.add.sprite(300 - i * this.TILE_SIZE, 300, i === 0 ? 'head' : 'body');
+        const sprite = this.add.sprite(315 - i * this.TILE_SIZE, 315, i === 0 ? 'head' : 'body');
         sprite.setScale(1);
         sprite.setDepth(20 - i);
         this.snake.push(sprite);
