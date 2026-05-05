@@ -275,6 +275,15 @@ db.exec(`
         updated_at INTEGER NOT NULL,
         version INTEGER DEFAULT 0
     );
+
+    CREATE TABLE IF NOT EXISTS chicken_shop_attempts (
+        run_id TEXT PRIMARY KEY,
+        email TEXT NOT NULL,
+        level INTEGER NOT NULL,
+        outcome TEXT NOT NULL,
+        created_at INTEGER NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS idx_chicken_shop_attempts_email ON chicken_shop_attempts(email, created_at);
 `);
 
 // Ensure lottery row exists
@@ -486,6 +495,7 @@ const stmts = {
 
     getChickenProgress:    db.prepare('SELECT * FROM chicken_shop_progress WHERE email = ?'),
     upsertChickenProgress: db.prepare('INSERT INTO chicken_shop_progress (email, unlocked_level, credits, lives, lives_refill_at, updated_at, version) VALUES (?, ?, ?, ?, ?, ?, ?) ON CONFLICT(email) DO UPDATE SET unlocked_level=excluded.unlocked_level, credits=excluded.credits, lives=excluded.lives, lives_refill_at=excluded.lives_refill_at, updated_at=excluded.updated_at, version=excluded.version'),
+    insertChickenAttempt:  db.prepare('INSERT OR IGNORE INTO chicken_shop_attempts (run_id, email, level, outcome, created_at) VALUES (?, ?, ?, ?, ?)'),
 };
 
 // ── Orders ───────────────────────────────────────────────────────────────────
@@ -1706,6 +1716,18 @@ function upsertChickenProgress(email, { unlockedLevel, credits, lives, livesRefi
     return stmts.getChickenProgress.get(email.toLowerCase());
 }
 
+function recordChickenAttempt(runId, email, level, outcome) {
+    if (!runId || !email) return false;
+    const result = stmts.insertChickenAttempt.run(
+        String(runId),
+        email.toLowerCase(),
+        level || 0,
+        outcome || 'unknown',
+        Date.now()
+    );
+    return result.changes > 0;
+}
+
 // ── Compat helpers (JSON db used load/save — expose as no-ops) ──────────────
 function load() { return {}; }
 function save() { }
@@ -1782,5 +1804,5 @@ module.exports = {
     // Game sessions (DB-backed)
     createGameSession, getGameSessionEmail, deleteGameSession,
     // Chicken Shop Manager progress
-    getChickenProgress, upsertChickenProgress,
+    getChickenProgress, upsertChickenProgress, recordChickenAttempt,
 };
