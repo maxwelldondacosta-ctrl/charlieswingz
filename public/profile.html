@@ -575,6 +575,7 @@
             <a href="/">Menu</a>
             <a href="/live">Live</a>
             <a href="/play-win">Games</a>
+            <a href="/games/chicken-shop/">Chicken Shop</a>
             <a href="/profile" class="active">Profile</a>
         </div>
         <button class="logout-btn" id="logout-btn" onclick="logout()">Log Out</button>
@@ -671,6 +672,16 @@
 
         <!-- Tab: Game -->
         <div id="tab-game" class="tab-content">
+            <div class="card" style="background:linear-gradient(135deg,#3b1d12,#7c2d12);border:1px solid rgba(250,204,21,0.35);margin-bottom:16px;">
+                <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;">
+                    <div>
+                        <div style="font-size:0.7rem;color:#facc15;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">New Game</div>
+                        <div style="font-size:1.25rem;font-weight:900;color:#fff7ed;margin-bottom:6px;">Chicken Shop Manager</div>
+                        <p style="font-size:0.88rem;color:#f5f0e8;opacity:0.9;line-height:1.5;">Manage the queue, run the kitchen, and push through 100 levels inside Charlie's Wingz.</p>
+                    </div>
+                    <a href="/games/chicken-shop/" class="btn-primary" style="text-decoration:none;display:inline-block;white-space:nowrap;">Play Chicken Shop</a>
+                </div>
+            </div>
             <div class="card" style="text-align:center;margin-bottom:16px;">
                 <div style="font-size:0.7rem;color:var(--cream-dim);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">Charlie Points (CP)</div>
                 <div style="font-size:1.8rem;font-weight:900;color:var(--gold);font-family:monospace;" id="points-balance">0</div>
