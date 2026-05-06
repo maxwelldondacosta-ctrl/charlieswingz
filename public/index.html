@@ -1409,100 +1409,103 @@
     </div>
 
     <!-- Loyalty Account Bar -->
-    <div id="loyaltyBar" style="background:linear-gradient(135deg,#0d1117,#161b22);border-bottom:1px solid rgba(212,175,55,0.2);padding:10px 16px;position:sticky;top:0;z-index:1000">
-        <div style="max-width:800px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:10px">
-            <!-- Logged out state -->
-            <div id="loyaltyLoggedOut" style="display:flex;align-items:center;gap:10px;width:100%">
-                <span style="font-size:0.8rem;color:#d4af37;white-space:nowrap">👑 Loyalty</span>
-                <button onclick="showLoyaltyLogin()" style="padding:6px 16px;font-size:0.75rem;font-weight:700;background:transparent;border:1px solid #d4af37;color:#d4af37;border-radius:6px;cursor:pointer;white-space:nowrap">SIGN IN</button>
-                <span style="font-size:0.7rem;color:#666;flex:1">£25+ orders earn a stamp · 5 stamps = reward</span>
-                <a href="/live" style="font-size:0.7rem;color:#9ca3af;text-decoration:none;white-space:nowrap">📺 Live</a>
-                <a href="/profile" style="font-size:0.7rem;color:#9ca3af;text-decoration:none;white-space:nowrap">👤 Profile</a>
+    <div id="loyaltyBar" style="background:rgba(10,10,10,0.97);backdrop-filter:blur(8px);border-bottom:1px solid rgba(212,168,75,0.2);position:sticky;top:0;z-index:1000">
+        <!-- Logged out state -->
+        <div id="loyaltyLoggedOut" style="display:flex;align-items:center;justify-content:space-between;gap:10px;max-width:900px;margin:0 auto;padding:10px 16px">
+            <span style="font-family:'Playfair Display',serif;font-size:0.95rem;color:#D4A84B;letter-spacing:0.02em">Charlie's Wingz</span>
+            <div style="display:flex;align-items:center;gap:12px">
+                <span style="font-size:0.72rem;color:#666">£25+ orders earn a stamp</span>
+                <button onclick="showLoyaltyLogin()" style="padding:6px 18px;font-size:0.72rem;font-weight:700;background:linear-gradient(135deg,#D4A84B,#b8952e);color:#000;border:none;border-radius:6px;cursor:pointer;letter-spacing:0.05em">SIGN IN</button>
+                <a href="/live" style="font-size:0.72rem;color:#9ca3af;text-decoration:none">📺 Live</a>
+                <a href="/profile" style="font-size:0.72rem;color:#9ca3af;text-decoration:none">Profile</a>
             </div>
-            <!-- Logged in state -->
-            <div id="loyaltyLoggedIn" style="display:none;width:100%">
-                <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px">
-                    <span style="font-size:0.8rem;color:#d4af37;font-weight:700;cursor:pointer" id="loyaltyName" onclick="toggleAccountPanel()">👑</span>
-                    <div style="display:flex;gap:6px;align-items:center">
-                        <a href="/live" style="font-size:0.65rem;color:#9ca3af;text-decoration:none;padding:4px 8px">📺 Live</a>
-                        <a href="/profile" style="font-size:0.65rem;color:#9ca3af;text-decoration:none;padding:4px 8px">👤 Profile</a>
-                        <button onclick="toggleAccountPanel()" style="padding:4px 10px;font-size:0.65rem;color:#d4af37;background:transparent;border:1px solid rgba(212,175,55,0.4);border-radius:4px;cursor:pointer;font-weight:600" id="accountToggleBtn">My Account ▾</button>
-                        <button onclick="loyaltyLogout()" style="padding:4px 10px;font-size:0.65rem;color:#666;background:transparent;border:1px solid #333;border-radius:4px;cursor:pointer">Logout</button>
+        </div>
+        <!-- Logged in state -->
+        <div id="loyaltyLoggedIn" style="display:none;max-width:900px;margin:0 auto;padding:10px 16px">
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:12px">
+                <!-- Left: name + stamp pills -->
+                <div style="display:flex;align-items:center;gap:14px;min-width:0">
+                    <span id="loyaltyName" style="font-family:'Playfair Display',serif;font-size:1rem;color:#D4A84B;white-space:nowrap;cursor:pointer;flex-shrink:0" onclick="toggleAccountPanel()">👑</span>
+                    <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+                        <div id="loyaltyStamps" style="display:flex;gap:4px;align-items:center"></div>
+                        <span id="loyaltyCount" style="font-size:0.65rem;color:#6b7280;white-space:nowrap"></span>
                     </div>
                 </div>
-                <div style="display:flex;align-items:center;gap:8px">
-                    <div id="loyaltyStamps" style="display:flex;gap:3px;flex:1"></div>
-                    <span id="loyaltyCount" style="font-size:0.7rem;color:#888;white-space:nowrap"></span>
+                <!-- Right: nav + controls -->
+                <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
+                    <a href="/live" style="font-size:0.7rem;color:#9ca3af;text-decoration:none;opacity:0.7;letter-spacing:0.05em">📺 Live</a>
+                    <a href="/profile" style="font-size:0.7rem;color:#9ca3af;text-decoration:none;opacity:0.7;letter-spacing:0.05em">Profile</a>
+                    <button onclick="toggleAccountPanel()" id="accountToggleBtn" style="padding:5px 12px;font-size:0.7rem;font-weight:700;color:#D4A84B;background:transparent;border:1px solid rgba(212,168,75,0.35);border-radius:6px;cursor:pointer;letter-spacing:0.05em;white-space:nowrap">Account ▾</button>
+                    <button onclick="loyaltyLogout()" style="padding:5px 10px;font-size:0.7rem;color:#555;background:transparent;border:1px solid #2a2a2a;border-radius:6px;cursor:pointer">Out</button>
                 </div>
             </div>
         </div>
     </div>
 
     <!-- Account Panel -->
-    <div id="accountPanel" style="display:none;background:linear-gradient(180deg,#0d1117,#111827);border-bottom:1px solid rgba(212,175,55,0.2);overflow:hidden;position:sticky;top:52px;z-index:999">
-        <div style="max-width:800px;margin:0 auto;padding:16px">
+    <div id="accountPanel" style="display:none;background:#0a0a0a;border-bottom:1px solid #2a2a2a;overflow:hidden;position:sticky;top:52px;z-index:999">
+        <div style="max-width:800px;margin:0 auto;padding:16px 20px 20px">
 
             <!-- Loyalty Card -->
-            <div style="margin-bottom:14px">
-                <div style="font-size:0.65rem;color:#888;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:6px">Loyalty Card <span style="color:#555;text-transform:none;letter-spacing:0">— stamps awarded on £25+ orders</span></div>
-                <div id="accountStampCard" style="background:#161b22;border:1px solid #233554;border-radius:10px;padding:12px"></div>
+            <div style="margin-bottom:16px">
+                <div style="font-family:'Playfair Display',Georgia,serif;font-size:11px;color:#D4A84B;letter-spacing:3px;text-transform:uppercase;margin-bottom:8px">Loyalty Card <span style="font-family:'Inter',sans-serif;color:#555;text-transform:none;letter-spacing:0;font-size:10px">— stamps on £25+ orders</span></div>
+                <div id="accountStampCard" style="background:#111;border:1px solid #2a2a2a;border-radius:10px;padding:14px"></div>
             </div>
 
-            <!-- Game Stats + Play Links -->
-            <div style="margin-bottom:14px">
-                <div style="font-size:0.65rem;color:#888;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:6px">Game Progress <span style="color:#555;text-transform:none;letter-spacing:0">(combined across Wing Run & Snake)</span></div>
-                <div style="background:#161b22;border:1px solid #233554;border-radius:10px;padding:12px;margin-bottom:8px">
+            <!-- Game Stats -->
+            <div style="margin-bottom:16px">
+                <div style="font-family:'Playfair Display',Georgia,serif;font-size:11px;color:#D4A84B;letter-spacing:3px;text-transform:uppercase;margin-bottom:8px">Game Progress <span style="font-family:'Inter',sans-serif;color:#555;text-transform:none;letter-spacing:0;font-size:10px">— Wing Run & Snake</span></div>
+                <div style="background:#111;border:1px solid #2a2a2a;border-radius:10px;padding:14px;margin-bottom:8px">
                     <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;text-align:center;margin-bottom:10px" id="gameStatsGrid">
-                        <div><div style="font-size:1.1rem;font-weight:900;color:#fdd835">—</div><div style="font-size:0.6rem;color:#888;text-transform:uppercase;letter-spacing:0.5px">🏆 Best Score</div></div>
-                        <div><div style="font-size:1.1rem;font-weight:900;color:#fdd835">—</div><div style="font-size:0.6rem;color:#888;text-transform:uppercase;letter-spacing:0.5px">⭐ Total Score</div></div>
-                        <div><div style="font-size:1.1rem;font-weight:900;color:#fdd835">—</div><div style="font-size:0.6rem;color:#888;text-transform:uppercase;letter-spacing:0.5px">🎮 Plays</div></div>
+                        <div><div style="font-family:'Bebas Neue',Impact,sans-serif;font-size:1.4rem;color:#D4A84B;letter-spacing:1px">—</div><div style="font-size:0.6rem;color:#555;text-transform:uppercase;letter-spacing:0.5px">🏆 Best Score</div></div>
+                        <div><div style="font-family:'Bebas Neue',Impact,sans-serif;font-size:1.4rem;color:#D4A84B;letter-spacing:1px">—</div><div style="font-size:0.6rem;color:#555;text-transform:uppercase;letter-spacing:0.5px">⭐ Total Score</div></div>
+                        <div><div style="font-family:'Bebas Neue',Impact,sans-serif;font-size:1.4rem;color:#D4A84B;letter-spacing:1px">—</div><div style="font-size:0.6rem;color:#555;text-transform:uppercase;letter-spacing:0.5px">🎮 Plays</div></div>
                     </div>
                     <div id="gameMilestones"></div>
                 </div>
                 <div style="display:flex;gap:8px">
-                    <a href="/wing-run" style="flex:1;display:block;text-align:center;padding:10px;font-size:0.7rem;font-weight:800;letter-spacing:1px;background:linear-gradient(135deg,#e53935,#b71c1c);color:#fff;border-radius:8px;text-decoration:none">🚴 PLAY WING RUN</a>
-                    <a href="/snake" style="flex:1;display:block;text-align:center;padding:10px;font-size:0.7rem;font-weight:800;letter-spacing:1px;background:linear-gradient(135deg,#2e7d32,#1b5e20);color:#fff;border-radius:8px;text-decoration:none">🐍 PLAY SNAKE</a>
+                    <a href="/wing-run" style="flex:1;display:block;text-align:center;padding:10px;font-size:0.7rem;font-weight:800;letter-spacing:1px;background:linear-gradient(135deg,#e53935,#b71c1c);color:#fff;border-radius:8px;text-decoration:none">🚴 WING RUN</a>
+                    <a href="/snake" style="flex:1;display:block;text-align:center;padding:10px;font-size:0.7rem;font-weight:800;letter-spacing:1px;background:linear-gradient(135deg,#2e7d32,#1b5e20);color:#fff;border-radius:8px;text-decoration:none">🐍 SNAKE</a>
                 </div>
-<!-- Chicken Shop Manager link hidden — game temporarily offline for visual updates -->
             </div>
 
             <!-- Discount Codes -->
-            <div style="margin-bottom:14px">
-                <div style="font-size:0.65rem;color:#888;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:6px">My Discount Codes</div>
-                <div id="accountCodes" style="background:#161b22;border:1px solid #233554;border-radius:10px;padding:12px;font-size:0.8rem;color:#ccc">
-                    <span style="color:#555">Loading...</span>
+            <div style="margin-bottom:16px">
+                <div style="font-family:'Playfair Display',Georgia,serif;font-size:11px;color:#D4A84B;letter-spacing:3px;text-transform:uppercase;margin-bottom:8px">My Discount Codes</div>
+                <div id="accountCodes" style="background:#111;border:1px solid #2a2a2a;border-radius:10px;padding:14px;font-size:0.8rem;color:#888">
+                    <span style="color:#444">Loading...</span>
                 </div>
             </div>
 
             <!-- Saved Details -->
             <div>
-                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-                    <div style="font-size:0.65rem;color:#888;letter-spacing:1.5px;text-transform:uppercase">My Details</div>
-                    <button onclick="toggleEditProfile()" id="editProfileBtn" style="font-size:0.65rem;color:#d4af37;background:transparent;border:1px solid rgba(212,175,55,0.4);border-radius:4px;padding:3px 10px;cursor:pointer">Edit</button>
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+                    <div style="font-family:'Playfair Display',Georgia,serif;font-size:11px;color:#D4A84B;letter-spacing:3px;text-transform:uppercase">My Details</div>
+                    <button onclick="toggleEditProfile()" id="editProfileBtn" style="font-size:0.65rem;font-weight:600;color:#D4A84B;background:transparent;border:1px solid rgba(212,168,75,0.4);border-radius:4px;padding:3px 10px;cursor:pointer;letter-spacing:0.5px">Edit</button>
                 </div>
                 <!-- View mode -->
-                <div id="accountDetailsView" style="background:#161b22;border:1px solid #233554;border-radius:10px;padding:12px;font-size:0.8rem;color:#ccc;line-height:1.8"></div>
+                <div id="accountDetailsView" style="background:#111;border:1px solid #2a2a2a;border-radius:10px;padding:14px;font-size:0.8rem;color:#888;line-height:1.9"></div>
                 <!-- Edit mode -->
-                <div id="accountDetailsEdit" style="display:none;background:#161b22;border:1px solid #233554;border-radius:10px;padding:12px">
-                    <div style="margin-bottom:8px"><label style="font-size:0.65rem;color:#888;display:block;margin-bottom:3px">Name</label><input id="profileEditName" type="text" style="width:100%;padding:8px 10px;font-size:13px;border-radius:6px;background:#0d1b2a;border:1px solid #233554;color:#eee;outline:none;box-sizing:border-box"></div>
-                    <div style="margin-bottom:8px"><label style="font-size:0.65rem;color:#888;display:block;margin-bottom:3px">Phone</label><input id="profileEditPhone" type="tel" style="width:100%;padding:8px 10px;font-size:13px;border-radius:6px;background:#0d1b2a;border:1px solid #233554;color:#eee;outline:none;box-sizing:border-box" placeholder="07xxx xxxxxx"></div>
-                    <div style="margin-bottom:8px">
-                        <label style="font-size:0.65rem;color:#888;display:block;margin-bottom:3px">Delivery Address <span style="color:#555">(optional — saves time at checkout)</span></label>
-                        <input id="profileEditAddress" type="text" style="width:100%;padding:8px 10px;font-size:13px;border-radius:6px;background:#0d1b2a;border:1px solid #233554;color:#eee;outline:none;box-sizing:border-box;margin-bottom:6px" placeholder="e.g. 12 Green Street">
+                <div id="accountDetailsEdit" style="display:none;background:#111;border:1px solid #2a2a2a;border-radius:10px;padding:14px">
+                    <div style="margin-bottom:10px"><label style="font-size:0.6rem;color:#D4A84B;display:block;margin-bottom:4px;letter-spacing:1px;text-transform:uppercase">Name</label><input id="profileEditName" type="text" style="width:100%;padding:8px 10px;font-size:13px;border-radius:6px;background:#1a1a1a;border:1px solid #2a2a2a;color:#eee;outline:none;box-sizing:border-box"></div>
+                    <div style="margin-bottom:10px"><label style="font-size:0.6rem;color:#D4A84B;display:block;margin-bottom:4px;letter-spacing:1px;text-transform:uppercase">Phone</label><input id="profileEditPhone" type="tel" style="width:100%;padding:8px 10px;font-size:13px;border-radius:6px;background:#1a1a1a;border:1px solid #2a2a2a;color:#eee;outline:none;box-sizing:border-box" placeholder="07xxx xxxxxx"></div>
+                    <div style="margin-bottom:10px">
+                        <label style="font-size:0.6rem;color:#D4A84B;display:block;margin-bottom:4px;letter-spacing:1px;text-transform:uppercase">Delivery Address <span style="color:#444;text-transform:none;letter-spacing:0;font-size:0.55rem">(optional)</span></label>
+                        <input id="profileEditAddress" type="text" style="width:100%;padding:8px 10px;font-size:13px;border-radius:6px;background:#1a1a1a;border:1px solid #2a2a2a;color:#eee;outline:none;box-sizing:border-box;margin-bottom:6px" placeholder="e.g. 12 Green Street">
                         <div style="display:flex;gap:6px">
-                            <input id="profileEditCity" type="text" value="London" style="flex:1;padding:8px 10px;font-size:13px;border-radius:6px;background:#0d1b2a;border:1px solid #233554;color:#eee;outline:none;box-sizing:border-box" placeholder="City">
-                            <input id="profileEditPostcode" type="text" style="flex:1;padding:8px 10px;font-size:13px;border-radius:6px;background:#0d1b2a;border:1px solid #233554;color:#eee;outline:none;box-sizing:border-box;text-transform:uppercase" placeholder="Postcode">
+                            <input id="profileEditCity" type="text" value="London" style="flex:1;padding:8px 10px;font-size:13px;border-radius:6px;background:#1a1a1a;border:1px solid #2a2a2a;color:#eee;outline:none;box-sizing:border-box" placeholder="City">
+                            <input id="profileEditPostcode" type="text" style="flex:1;padding:8px 10px;font-size:13px;border-radius:6px;background:#1a1a1a;border:1px solid #2a2a2a;color:#eee;outline:none;box-sizing:border-box;text-transform:uppercase" placeholder="Postcode">
                         </div>
                     </div>
-                    <div style="margin-bottom:12px"><label style="font-size:0.65rem;color:#888;display:block;margin-bottom:3px">Preferred contact method</label>
+                    <div style="margin-bottom:14px"><label style="font-size:0.6rem;color:#D4A84B;display:block;margin-bottom:4px;letter-spacing:1px;text-transform:uppercase">Preferred Contact</label>
                         <div style="display:flex;gap:6px" id="profileEditPref">
-                            <button type="button" onclick="selectProfilePref('email')" data-pref="email" style="flex:1;padding:6px;font-size:0.7rem;font-weight:700;border-radius:6px;cursor:pointer;border:1px solid #233554;background:transparent;color:#888">📧 Email</button>
-                            <button type="button" onclick="selectProfilePref('sms')" data-pref="sms" style="flex:1;padding:6px;font-size:0.7rem;font-weight:700;border-radius:6px;cursor:pointer;border:1px solid #233554;background:transparent;color:#888">📱 SMS</button>
+                            <button type="button" onclick="selectProfilePref('email')" data-pref="email" style="flex:1;padding:8px 6px;font-size:0.7rem;font-weight:700;border-radius:6px;cursor:pointer;border:1px solid #2a2a2a;background:transparent;color:#666">📧 Email</button>
+                            <button type="button" onclick="selectProfilePref('sms')" data-pref="sms" style="flex:1;padding:8px 6px;font-size:0.7rem;font-weight:700;border-radius:6px;cursor:pointer;border:1px solid #2a2a2a;background:transparent;color:#666">📱 SMS</button>
                         </div>
                     </div>
                     <div style="display:flex;gap:8px">
-                        <button onclick="saveEditProfile()" id="saveProfileBtn" style="flex:1;padding:10px;font-size:0.75rem;font-weight:800;background:linear-gradient(135deg,#d4af37,#b8952e);color:#000;border:none;border-radius:8px;cursor:pointer;letter-spacing:1px">SAVE</button>
-                        <button onclick="toggleEditProfile()" style="padding:10px 16px;font-size:0.75rem;font-weight:600;background:transparent;color:#888;border:1px solid #333;border-radius:8px;cursor:pointer">Cancel</button>
+                        <button onclick="saveEditProfile()" id="saveProfileBtn" style="flex:1;padding:11px;font-size:0.75rem;font-weight:800;background:linear-gradient(135deg,#D4A84B,#b8952e);color:#000;border:none;border-radius:8px;cursor:pointer;letter-spacing:1.5px">SAVE</button>
+                        <button onclick="toggleEditProfile()" style="padding:11px 16px;font-size:0.75rem;font-weight:600;background:transparent;color:#666;border:1px solid #2a2a2a;border-radius:8px;cursor:pointer">Cancel</button>
                     </div>
                 </div>
             </div>
@@ -4198,7 +4201,7 @@
                 const active = b.dataset.pref === pref;
                 b.style.background = active ? '#d4af37' : 'transparent';
                 b.style.color = active ? '#000' : '#888';
-                b.style.borderColor = active ? '#d4af37' : '#233554';
+                b.style.borderColor = active ? '#D4A84B' : '#2a2a2a';
             });
         }
 
